@@ -12,9 +12,9 @@ export default function Titlebar() {
             /taste-board
           </Link>
           <span className="text-text-muted">·</span>
-          <Link href="/me" className="hover:text-accent transition-colors">
+          <a href="https://gavin.builderbio.dev" className="hover:text-accent transition-colors">
             /built-by
-          </Link>
+          </a>
         </nav>
       </div>
     </header>
