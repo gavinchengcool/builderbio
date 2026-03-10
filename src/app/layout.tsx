@@ -42,7 +42,7 @@ export const viewport: Viewport = {
 
 function Footer() {
   return (
-    <footer className="border-t border-border bg-bg-secondary/50 py-6 text-center text-xs text-text-muted">
+    <footer className="py-6 text-center text-xs text-text-muted">
       <div className="mx-auto max-w-6xl px-4 flex flex-col items-center gap-3">
         <p>
           The bio link for builders who ship with AI
