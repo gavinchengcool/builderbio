@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 
 interface HeroSectionProps {
   t: (key: string) => string;
@@ -43,13 +42,13 @@ export default function HeroSection({ t }: HeroSectionProps) {
     <section ref={sectionRef} className="pb-12 sm:pb-24 px-4 hero-glow">
       {/* Nav */}
       <div className="mx-auto flex h-12 max-w-5xl items-center justify-between relative z-10">
-        <Link href="/" className="flex items-center gap-2 text-accent font-bold text-xs sm:text-sm tracking-wide">
+        <a href="https://builderbio.dev" className="flex items-center gap-2 text-accent font-bold text-xs sm:text-sm tracking-wide">
           <span className="text-text-muted">~/</span>builderbio
-        </Link>
+        </a>
         <nav className="flex items-center gap-3 sm:gap-4 text-xs text-text-secondary">
-          <Link href="/club" className="hover:text-accent transition-colors">
+          <a href="https://builderbio.dev/club" className="hover:text-accent transition-colors">
             /taste-board
-          </Link>
+          </a>
           <span className="text-text-muted">·</span>
           <a href="https://gavin.builderbio.dev" className="hover:text-accent transition-colors">
             /built-by
