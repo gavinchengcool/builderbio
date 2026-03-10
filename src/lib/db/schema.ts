@@ -70,6 +70,7 @@ export const profiles = pgTable(
     behavioralFingerprint: jsonb("behavioral_fingerprint"),
     searchProfile: jsonb("search_profile"),
     searchVector: text("search_vector"),
+    builderBioData: jsonb("builder_bio_data"),
     sessionsAnalyzed: integer("sessions_analyzed").default(0),
     totalTokens: integer("total_tokens").default(0),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

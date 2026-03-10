@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuilderBio</title>
+<style>
+:root {
+  --bg:#050507;--s1:#0c0c10;--s2:#131318;--s3:#1a1a21;
+  --bd:#1e1e28;--bd2:#2a2a38;
+  --t:#f0f0f5;--t2:#b8b8c8;--tm:#6b6b80;
+  --ac:#818cf8;--acd:#6366f1;--acb:rgba(99,102,241,.08);
+  --g:#34d399;--gd:rgba(52,211,153,.1);
+  --y:#fbbf24;--yd:rgba(251,191,36,.1);
+  --b:#60a5fa;--bd3:rgba(96,165,250,.1);
+  --p:#a78bfa;--pd:rgba(167,139,250,.1);
+  --o:#fb923c;--od:rgba(251,146,60,.1);
+  --pk:#f472b6;--r:#f87171;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--t);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.c{max-width:880px;margin:0 auto;padding:0 24px}
+section{padding:60px 0}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--bd),transparent)}
+.sh{margin-bottom:28px}.sh h2{font-size:22px;font-weight:700;letter-spacing:-.02em}.sh p{font-size:13px;color:var(--tm);margin-top:2px}
+
+/* HERO */
+.hero{padding:80px 0 60px;text-align:center;position:relative}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.06)0%,rgba(52,211,153,.03)40%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:100px;font-size:12px;font-weight:600;color:var(--ac);background:var(--acb);border:1px solid rgba(99,102,241,.15);margin-bottom:24px;letter-spacing:.3px}
+.hero h1{font-size:48px;font-weight:800;letter-spacing:-.04em;background:linear-gradient(135deg,var(--t) 0%,var(--t2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.hero .sub{font-size:15px;color:var(--tm);margin-bottom:40px}
+.stats-row{display:flex;justify-content:center;gap:48px;flex-wrap:wrap}
+.stat{text-align:center}.stat .num{font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.stat .num.ac{color:var(--ac)}.stat .num.gc{color:var(--g)}.stat .num.yc{color:var(--y)}.stat .num.bc{color:var(--b)}
+.stat .lbl{font-size:11px;color:var(--tm);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-top:6px}
+.agent-row{display:flex;justify-content:center;gap:10px;margin-top:28px;flex-wrap:wrap}
+.agent-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;border-radius:100px;font-size:13px;font-weight:500;background:var(--s2);color:var(--t2);border:1px solid var(--bd)}
+.agent-dot{width:8px;height:8px;border-radius:50%}
+.hero-avatar{width:88px;height:88px;border-radius:50%;border:3px solid var(--bd2);object-fit:cover;margin-bottom:16px;box-shadow:0 0 0 4px var(--bg),0 0 24px rgba(99,102,241,.15);display:none}
+.social-row{display:flex;justify-content:center;gap:14px;margin-top:22px}
+.social-link{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--s2);border:1px solid var(--bd);color:var(--t2);transition:all .25s;text-decoration:none}
+.social-link:hover{border-color:var(--bd2);color:var(--t);transform:translateY(-2px)}
+.social-link svg{width:20px;height:20px;fill:currentColor}
+
+/* PROJECTS */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.pcard{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:20px;transition:all .25s}
+.pcard:hover{border-color:var(--bd2);transform:translateY(-2px)}
+.pcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.pname{font-size:15px;font-weight:700;line-height:1.3}
+.pstatus{padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.ps-shipped{background:var(--gd);color:var(--g)}.ps-progress{background:var(--yd);color:var(--y)}.ps-explored{background:var(--bd3);color:var(--b)}
+.pdesc{font-size:12.5px;color:var(--t2);margin-bottom:12px;line-height:1.55}
+.ptags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.ptag{padding:3px 10px;border-radius:100px;font-size:10.5px;background:var(--s3);color:var(--tm);border:1px solid var(--bd);font-weight:500}
+.pmeta{font-size:11.5px;color:var(--tm);display:flex;gap:12px}.pmeta strong{color:var(--t2);font-weight:600}
+
+/* STYLE */
+.style-hero{text-align:center;margin-bottom:32px;padding:28px 0}
+.style-label{font-size:32px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,var(--ac),var(--p));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.style-sub{font-size:14px;color:var(--tm);margin-top:6px}
+.traits{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.trait{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:18px;text-align:center}
+.trait .tname{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:8px}
+.trait .tval{font-size:20px;font-weight:800}.trait .tdesc{font-size:11px;color:var(--tm);margin-top:4px;line-height:1.4}
+.tbar-wrap{margin-top:28px}.tbar-label{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:10px}
+.tbar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px}.tseg{height:100%;border-radius:3px;min-width:3px}
+.tleg{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}.tleg-i{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tm);font-weight:500}.tleg-d{width:7px;height:7px;border-radius:2px}
+
+/* TECH RADAR */
+.radar-wrap{display:flex;justify-content:center;padding:20px 0}
+.radar-bars{width:100%;max-width:600px}
+.radar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.radar-label{width:140px;font-size:12px;color:var(--t2);text-align:right;font-weight:500;flex-shrink:0}
+.radar-bar-bg{flex:1;height:20px;background:var(--s2);border-radius:10px;overflow:hidden}
+.radar-bar{height:100%;border-radius:10px;transition:width .6s ease}
+.radar-val{width:36px;font-size:11px;color:var(--tm);font-weight:600}
+
+/* EVOLUTION CHART */
+.evo-chart{position:relative;height:200px;display:flex;align-items:flex-end;gap:6px;padding:0 0 28px}
+.evo-bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.evo-bar{width:100%;border-radius:6px 6px 0 0;transition:height .4s ease;position:relative;min-height:4px}
+.evo-bar:hover{opacity:.85}
+.evo-val{font-size:10px;color:var(--tm);font-weight:600}
+.evo-label{font-size:10px;color:var(--tm);position:absolute;bottom:-24px;white-space:nowrap}
+.evo-legend{display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--tm)}
+.evo-legend span{display:flex;align-items:center;gap:5px}
+.evo-legend-dot{width:8px;height:8px;border-radius:2px}
+
+/* TIME DISTRIBUTION */
+.time-bars{display:flex;align-items:flex-end;gap:3px;height:120px;padding:0 0 24px;position:relative}
+.time-bar{flex:1;border-radius:4px 4px 0 0;min-height:2px;transition:height .3s;position:relative}
+.time-bar:hover .time-tip{opacity:1}
+.time-tip{position:absolute;top:-26px;left:50%;transform:translateX(-50%);font-size:10px;background:var(--s3);color:var(--t2);padding:2px 6px;border-radius:4px;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
+.time-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--tm);margin-top:4px}
+.time-type{text-align:center;margin-top:20px}
+.time-type .big{font-size:28px;font-weight:800;letter-spacing:-.02em}
+.time-type .small{font-size:13px;color:var(--tm);margin-top:4px}
+.period-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px}
+.period-card{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px;text-align:center}
+.period-card .p-name{font-size:11px;color:var(--tm);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.period-card .p-val{font-size:20px;font-weight:800;margin:4px 0 2px}
+.period-card .p-sub{font-size:10.5px;color:var(--tm)}
+
+/* KEYWORDS */
+.kw-cloud{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:20px 0}
+.kw{padding:6px 16px;border-radius:100px;font-weight:600;border:1px solid var(--bd);transition:all .2s;cursor:default}
+.kw:hover{border-color:var(--bd2);transform:scale(1.05)}
+
+/* AGENT COMPARISON */
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cmp-card{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:24px}
+.cmp-name{font-size:18px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.cmp-name .dot{width:10px;height:10px;border-radius:50%}
+.cmp-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cmp-stat{text-align:center;padding:10px;background:var(--s2);border-radius:10px}
+.cmp-stat .cv{font-size:20px;font-weight:800}.cmp-stat .cl{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.cmp-tools{margin-top:14px}.cmp-tools-label{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px}
+.cmp-tool-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;color:var(--t2)}
+.cmp-tool-bar{flex:1;height:6px;background:var(--s3);border-radius:3px;overflow:hidden}.cmp-tool-fill{height:100%;border-radius:3px}
+
+/* HEATMAP */
+.hm-scroll{overflow-x:auto;padding:4px 0}.hm-grid{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;gap:3px}
+.hm-cell{width:13px;height:13px;border-radius:3px;background:var(--s2);transition:background .15s}
+.hm-0{background:var(--s2)}.hm-1{background:rgba(52,211,153,.18)}.hm-2{background:rgba(52,211,153,.38)}.hm-3{background:rgba(52,211,153,.6)}.hm-4{background:rgba(52,211,153,.88)}
+.hm-meta{display:flex;gap:24px;margin-top:14px;font-size:12.5px;color:var(--tm)}.hm-meta strong{color:var(--t2)}
+.hm-legend{display:flex;align-items:center;gap:4px;margin-top:10px;font-size:11px;color:var(--tm)}.hm-legend-cell{width:13px;height:13px;border-radius:3px}
+
+/* HIGHLIGHTS */
+.hl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.hl{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:24px;position:relative;overflow:hidden}
+.hl::before{content:'';position:absolute;top:0;right:0;width:100px;height:100px;border-radius:50%;filter:blur(40px);opacity:.08;pointer-events:none}
+.hl:nth-child(1)::before{background:var(--ac)}.hl:nth-child(2)::before{background:var(--g)}.hl:nth-child(3)::before{background:var(--y)}.hl:nth-child(4)::before{background:var(--p)}
+.hl .hl-t{font-size:10.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.hl .hl-v{font-size:28px;font-weight:800;margin:8px 0 4px;letter-spacing:-.02em}.hl .hl-d{font-size:12px;color:var(--tm);line-height:1.5}
+.fav-prompt{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:28px;margin-top:18px;border-left:3px solid var(--ac)}
+.fp-label{font-size:10.5px;color:var(--ac);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:12px}
+.fp-text{font-size:14px;line-height:1.8;color:var(--t2);font-family:"SF Mono","Fira Code","JetBrains Mono",monospace;white-space:pre-wrap;word-break:break-word}
+
+/* CTA */
+.cta{text-align:center;padding:48px 32px;background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(52,211,153,.04));border:1px solid var(--bd);border-radius:18px;margin-top:8px}
+.cta h3{font-size:24px;font-weight:800;margin-bottom:8px}.cta p{font-size:14px;color:var(--tm);margin-bottom:20px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.6}
+.cta code{display:inline-block;padding:10px 24px;background:var(--s2);border:1px solid var(--bd);border-radius:10px;font-family:"SF Mono","Fira Code",monospace;font-size:13px;color:var(--ac);user-select:all;cursor:pointer}
+.cta .cta-sub{font-size:11px;color:var(--tm);margin-top:12px}
+
+.footer{text-align:center;padding:48px 0 40px;font-size:12px;color:var(--tm)}
+
+@media(max-width:640px){
+  .hero h1{font-size:36px}.stats-row{gap:24px}.stat .num{font-size:32px}
+  .pgrid{grid-template-columns:1fr}.traits{grid-template-columns:repeat(2,1fr)}
+  .hl-grid{grid-template-columns:1fr}.cmp-grid{grid-template-columns:1fr}
+  .period-grid{grid-template-columns:repeat(2,1fr)}.c{padding:0 16px}section{padding:40px 0}
+  .radar-label{width:100px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<div class="c">
+
+<section class="hero">
+  <img class="hero-avatar" id="hero-avatar" src="" alt="">
+  <h1 id="hero-title">BuilderBio</h1>
+  <p class="tagline" id="hero-tagline" style="font-size:14px;color:var(--tm);margin-bottom:4px;display:none"></p>
+  <p class="sub" id="date-range"></p>
+  <div class="stats-row" id="stats-row"></div>
+  <div class="agent-row" id="agent-row"></div>
+  <div class="social-row" id="social-row"></div>
+</section>
+<div class="divider"></div>
+
+<section><div class="sh"><h2 id="sh-projects"></h2><p id="shp-projects"></p></div><div class="pgrid" id="projects"></div></section>
+<div class="divider"></div>
+
+<section><div class="sh"><h2 id="sh-tech"></h2><p id="shp-tech"></p></div><div id="tech-radar"></div></section>
+<div class="divider"></div>
+
+<section><div class="sh"><h2 id="sh-style"></h2><p id="shp-style"></p></div><div id="style-section"></div></section>
+<div class="divider"></div>
+
+<section><div class="sh"><h2 id="sh-evolution"></h2><p id="shp-evolution"></p></div><div id="evolution"></div></section>
+<div class="divider"></div>
+
+<section><div class="sh"><h2 id="sh-time"></h2><p id="shp-time"></p></div><div id="time-dist"></div></section>
+<div class="divider"></div>
+
+<section><div class="sh"><h2 id="sh-keywords"></h2><p id="shp-keywords"></p></div><div id="keywords"></div></section>
+<div class="divider"></div>
+
+<section><div class="sh"><h2 id="sh-agentcmp"></h2><p id="shp-agentcmp"></p></div><div id="agent-cmp"></div></section>
+<div class="divider"></div>
+
+<section><div class="sh"><h2 id="sh-heatmap"></h2><p id="shp-heatmap"></p></div><div id="heatmap"></div></section>
+<div class="divider"></div>
+
+<section><div class="sh"><h2 id="sh-highlights"></h2><p id="shp-highlights"></p></div><div id="highlights"></div></section>
+<div class="divider"></div>
+
+<section><div id="cta-section"></div></section>
+
+<div class="footer" id="footer-text" style="padding:24px 0;text-align:center;font-size:12px;color:var(--tm)"></div>
+</div>
+
+<script>
+const D = __PROFILE_DATA_PLACEHOLDER__;
+const E = __EXTRA_DATA_PLACEHOLDER__;
+const TC={"Bash":"#fb923c","Read":"#60a5fa","Write":"#34d399","Edit":"#a78bfa","Grep":"#fbbf24","Glob":"#22d3ee","Task":"#f472b6","TaskUpdate":"#818cf8","TaskCreate":"#818cf8","write_stdin":"#c084fc","WebFetch":"#2dd4bf","WebSearch":"#2dd4bf","AskUserQuestion":"#f43f5e","view_image":"#f472b6","shell_command":"#fb923c","update_plan":"#818cf8","EnterPlanMode":"#a78bfa"};
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+function fN(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toString()}
+
+// === I18N ===
+const LANG=(D.profile&&D.profile.lang)||'zh';
+document.documentElement.lang=LANG==='zh'?'zh':'en';
+const I={
+  // Section headers
+  sh_projects:{zh:'我构建了什么',en:'What I Built'},
+  shp_projects:{zh:'用 AI 编程助手一起完成的项目',en:'Projects built with AI coding agents'},
+  sh_tech:{zh:'技术栈指纹',en:'Tech Stack Fingerprint'},
+  shp_tech:{zh:'我最常接触的技术领域',en:'Technologies I work with most'},
+  sh_style:{zh:'我的构建风格',en:'How I Build'},
+  shp_style:{zh:'与 AI 编程助手的协作方式',en:'My collaboration style with AI coding agents'},
+  sh_evolution:{zh:'协作进化曲线',en:'Collaboration Evolution'},
+  shp_evolution:{zh:'每周的构建密度与深度变化',en:'Weekly building intensity and depth over time'},
+  sh_time:{zh:'我是几点钟的 Builder',en:'When I Build'},
+  shp_time:{zh:'24 小时活跃分布',en:'24-hour activity distribution'},
+  sh_keywords:{zh:'脑中关键词',en:'Prompt Keywords'},
+  shp_keywords:{zh:'从所有 Prompt 中提取的高频词',en:'Top keywords extracted from all prompts'},
+  sh_agentcmp:{zh:'Agent 对比面板',en:'Agent Comparison'},
+  shp_agentcmp:{zh:'不同 AI Agent 的使用差异',en:'Usage differences across AI agents'},
+  sh_heatmap:{zh:'活跃度',en:'Activity'},
+  shp_heatmap:{zh:'每日构建热力图',en:'Daily building heatmap'},
+  sh_highlights:{zh:'高光时刻',en:'Highlight Moments'},
+  shp_highlights:{zh:'那些值得分享的瞬间',en:'Moments worth sharing'},
+  // Hero
+  days_active:{zh:'天活跃',en:'days active'},
+  sessions:{zh:'会话',en:'Sessions'},
+  turns:{zh:'轮对话',en:'Turns'},
+  tool_calls:{zh:'工具调用',en:'Tool Calls'},
+  n_sessions:{zh:'次会话',en:'sessions'},
+  // Projects
+  shipped:{zh:'已完成',en:'Shipped'},
+  in_progress:{zh:'进行中',en:'In Progress'},
+  explored:{zh:'已探索',en:'Explored'},
+  p_sessions:{zh:'次会话',en:'sessions'},
+  p_turns:{zh:'轮对话',en:'turns'},
+  p_tools:{zh:'次工具',en:'tool calls'},
+  // Style
+  style_sub_delegator_sprinter:{zh:'以简短指令驱动 AI，高频短对话，重度命令行用户',en:'Drives AI with short commands, frequent brief sessions, heavy CLI user'},
+  prompt_style:{zh:'Prompt 风格',en:'Prompt Style'},
+  prompt_desc_delegator:{zh:'简短指令，信任 AI 自主执行',en:'Short commands, trusts AI to execute autonomously'},
+  session_rhythm:{zh:'会话节奏',en:'Session Rhythm'},
+  tool_pref:{zh:'工具偏好',en:'Tool Preference'},
+  cli_calls:{zh:'命令行调用',en:'CLI calls'},
+  agent_loyalty:{zh:'Agent 忠诚度',en:'Agent Loyalty'},
+  loyalty_desc_poly:{zh:'Claude Code + Codex 双修',en:'Uses both Claude Code and Codex'},
+  tool_dist:{zh:'工具分布',en:'Tool Distribution'},
+  short:{zh:'短',en:'S'},
+  medium:{zh:'中',en:'M'},
+  long:{zh:'长',en:'L'},
+  // Evolution
+  evo_week:{zh:'周',en:'Week'},
+  evo_sessions_suffix:{zh:'次会话',en:'sessions'},
+  evo_turns_suffix:{zh:'轮对话',en:'turns'},
+  evo_avg_suffix:{zh:'轮',en:'turns'},
+  evo_legend:{zh:'每周对话轮次',en:'Weekly turns'},
+  evo_trend:{zh:'趋势洞察：',en:'Trend Insight: '},
+  // Time
+  period_deep_night:{zh:'深夜',en:'Late Night'},
+  period_morning:{zh:'上午',en:'Morning'},
+  period_afternoon:{zh:'下午',en:'Afternoon'},
+  period_evening:{zh:'晚上',en:'Evening'},
+  time_sessions:{zh:'次会话',en:'sessions'},
+  time_turns:{zh:'轮对话',en:'turns'},
+  // Agent comparison
+  cmp_sessions:{zh:'会话',en:'Sessions'},
+  cmp_turns:{zh:'对话轮次',en:'Turns'},
+  cmp_avg:{zh:'平均轮次',en:'Avg Turns'},
+  cmp_tools:{zh:'工具调用',en:'Tool Calls'},
+  cmp_top_tools:{zh:'TOP 工具',en:'Top Tools'},
+  cmp_short_session:{zh:'短',en:'S'},
+  cmp_medium_session:{zh:'中',en:'M'},
+  cmp_long_session:{zh:'长会话',en:'long'},
+  cmp_insight_label:{zh:'使用差异：',en:'Usage Insight: '},
+  // Heatmap
+  hm_turns:{zh:'轮对话',en:'turns'},
+  hm_longest:{zh:'最长连续',en:'Longest streak'},
+  hm_current:{zh:'当前连续',en:'Current streak'},
+  hm_active:{zh:'活跃',en:'Active'},
+  hm_days:{zh:'天',en:'days'},
+  hm_less:{zh:'少',en:'Less'},
+  hm_more:{zh:'多',en:'More'},
+  // Highlights
+  hl_biggest:{zh:'最大会话',en:'Biggest Session'},
+  hl_busiest:{zh:'最忙的一天',en:'Busiest Day'},
+  hl_streak:{zh:'最长连续',en:'Longest Streak'},
+  hl_number:{zh:'一个数字',en:'By the Numbers'},
+  hl_turns_suffix:{zh:'轮',en:'turns'},
+  hl_days_suffix:{zh:'天',en:'days'},
+  hl_streak_desc:{zh:'连续每天都在与 AI 一起构建',en:'Building with AI every single day'},
+  hl_book_prefix:{zh:'≈ 一本',en:'≈ a'},
+  hl_book_suffix:{zh:'页的对话录',en:'-page conversation book'},
+  hl_fav_prompt:{zh:'最有代表性的 Prompt',en:'Featured Prompt'},
+  // CTA
+  cta_title:{zh:'Show the world my taste',en:'Show the world my taste'},
+  cta_desc:{zh:'Send this to my coding agent - get my bio link',en:'Send this to my coding agent - get my bio link'},
+  // Footer
+  footer:{zh:'由 <strong>BuilderBio</strong> 生成',en:'Generated by <strong>BuilderBio</strong>'}
+};
+// UI labels always render in English; LANG only affects user-generated content
+function t(key){return(I[key]&&I[key].en)||I[key]?.zh||key}
+
+// === SECTION HEADERS ===
+['projects','tech','style','evolution','time','keywords','agentcmp','heatmap','highlights'].forEach(k=>{
+  const h=document.getElementById('sh-'+k);if(h)h.textContent=t('sh_'+k);
+  const p=document.getElementById('shp-'+k);if(p)p.textContent=t('shp_'+k);
+});
+
+// === HERO ===
+(function(){
+  const p=D.profile;
+  if(p.avatar_url){
+    const av=document.getElementById('hero-avatar');
+    av.src=p.avatar_url;
+    av.alt=p.display_name||'Avatar';
+    av.style.display='block';
+  }
+  if(p.display_name){
+    const title=esc(p.display_name)+"'s BuilderBio";
+    document.getElementById('hero-title').innerHTML=title;
+    document.title=title;
+  }
+  if(p.tagline){
+    const tl=document.getElementById('hero-tagline');
+    tl.textContent=p.tagline;
+    tl.style.display='block';
+  }
+  document.getElementById('date-range').textContent=p.date_range.start+' → '+p.date_range.end+' · '+p.active_days+' '+t('days_active');
+  document.getElementById('stats-row').innerHTML=[
+    {v:p.total_sessions,l:t('sessions'),c:'ac'},{v:p.total_turns,l:t('turns'),c:'gc'},
+    {v:p.total_tool_calls,l:t('tool_calls'),c:'yc'},{v:p.total_tokens,l:'Tokens',c:'bc'}
+  ].map(s=>`<div class="stat"><div class="num ${s.c}">${fN(s.v)}</div><div class="lbl">${s.l}</div></div>`).join('');
+  const colors={'claude-code':'var(--ac)','codex':'var(--g)'};
+  document.getElementById('agent-row').innerHTML=Object.entries(p.agents_used).map(([n,d])=>
+    `<span class="agent-chip"><span class="agent-dot" style="background:${colors[n]||'var(--o)'}"></span>${esc(n)} · ${d.sessions} ${t('n_sessions')}</span>`
+  ).join('');
+  // Social links
+  const socialIcons={
+    linkedin:'<svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>',
+    x:'<svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+    twitter:'<svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+    github:'<svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>',
+    youtube:'<svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
+    website:'<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>'
+  };
+  const sl=p.social_links||[];
+  if(sl.length){
+    document.getElementById('social-row').innerHTML=sl.map(s=>
+      `<a class="social-link" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.platform)}">${socialIcons[s.platform.toLowerCase()]||socialIcons.website}</a>`
+    ).join('');
+  }
+})();
+
+// === PROJECTS ===
+(function(){
+  const sl={'shipped':'ps-shipped','in progress':'ps-progress','explored':'ps-explored'};
+  const sn={'shipped':t('shipped'),'in progress':t('in_progress'),'explored':t('explored')};
+  document.getElementById('projects').innerHTML=(D.projects||[]).map(p=>{
+    const tags=(p.tags||[]).map(t=>`<span class="ptag">${esc(t)}</span>`).join('');
+    return`<div class="pcard"><div class="pcard-top"><div class="pname">${esc(p.name)}</div><span class="pstatus ${sl[p.status]||'ps-explored'}">${sn[p.status]||p.status}</span></div><div class="pdesc">${esc(p.description)}</div><div class="ptags">${tags}</div><div class="pmeta"><span><strong>${p.sessions?.length||0}</strong> ${t('p_sessions')}</span><span><strong>${fN(p.total_turns)}</strong> ${t('p_turns')}</span><span><strong>${fN(p.total_tool_calls)}</strong> ${t('p_tools')}</span></div></div>`;
+  }).join('');
+})();
+
+// === TECH RADAR ===
+(function(){
+  const tech=E.tech;
+  const colors=['var(--ac)','var(--g)','var(--y)','var(--b)','var(--p)','var(--o)','var(--pk)','var(--r)','#22d3ee','#2dd4bf'];
+  let h='<div class="radar-bars">';
+  Object.entries(tech).forEach(([name,val],i)=>{
+    h+=`<div class="radar-row"><div class="radar-label">${esc(name)}</div><div class="radar-bar-bg"><div class="radar-bar" style="width:${val}%;background:${colors[i%colors.length]}"></div></div><div class="radar-val">${val}%</div></div>`;
+  });
+  h+='</div>';
+  document.getElementById('tech-radar').innerHTML='<div class="radar-wrap">'+h+'</div>';
+})();
+
+// === STYLE ===
+(function(){
+  const st=D.style;const tt=st.tool_totals||{};const total=Object.values(tt).reduce((a,b)=>a+b,0)||1;
+  const sorted=Object.entries(tt).sort((a,b)=>b[1]-a[1]);
+  const bar=sorted.map(([t,c])=>{const pct=((c/total)*100).toFixed(1);return`<div class="tseg" style="width:${pct}%;background:${TC[t]||'#52525b'}" title="${t}: ${c}"></div>`;}).join('');
+  const leg=sorted.filter(([,c])=>c/total>.02).map(([t,c])=>`<span class="tleg-i"><span class="tleg-d" style="background:${TC[t]||'#52525b'}"></span>${t} ${c}</span>`).join('');
+  const sd=st.session_length_distribution||{};
+  document.getElementById('style-section').innerHTML=`
+    <div class="style-hero"><div class="style-label">${esc(st.style_label||'Delegator × Sprinter')}</div><div class="style-sub">${esc(st.style_sub||t('style_sub_delegator_sprinter'))}</div></div>
+    <div class="traits">
+      <div class="trait"><div class="tname">${t('prompt_style')}</div><div class="tval">${esc(st.prompt_type_label||'Delegator')}</div><div class="tdesc">${esc(st.prompt_type_desc||t('prompt_desc_delegator'))}</div></div>
+      <div class="trait"><div class="tname">${t('session_rhythm')}</div><div class="tval">${esc(st.rhythm_label||'Sprinter')}</div><div class="tdesc">${sd.short||0} ${t('short')} · ${sd.medium||0} ${t('medium')} · ${sd.long||0} ${t('long')}</div></div>
+      <div class="trait"><div class="tname">${t('tool_pref')}</div><div class="tval">${esc(st.tool_pref_label||'Commander')}</div><div class="tdesc">${Math.round((st.command_ratio||0)*100)}% ${t('cli_calls')}</div></div>
+      <div class="trait"><div class="tname">${t('agent_loyalty')}</div><div class="tval">${esc(st.loyalty_label||'Polygamous')}</div><div class="tdesc">${esc(st.loyalty_desc||t('loyalty_desc_poly'))}</div></div>
+    </div>
+    <div class="tbar-wrap"><div class="tbar-label">${t('tool_dist')}</div><div class="tbar">${bar}</div><div class="tleg">${leg}</div></div>`;
+})();
+
+// === EVOLUTION CHART ===
+(function(){
+  const evo=E.evolution;
+  const maxTurns=Math.max(...evo.map(e=>e.turns));
+  let h='<div style="position:relative"><div class="evo-chart">';
+  evo.forEach((e,i)=>{
+    const tH=Math.max(4,Math.round(e.turns/maxTurns*160));
+    const label=e.week.substring(5);
+    const tip=LANG==='zh'?`第${i+1}周: ${e.sessions}次会话, ${e.turns}轮对话, 平均${e.avg_turns}轮`:`Week ${i+1}: ${e.sessions} sessions, ${e.turns} turns, avg ${e.avg_turns}`;
+    h+=`<div class="evo-bar-group">
+      <div class="evo-val">${fN(e.turns)}</div>
+      <div class="evo-bar" style="height:${tH}px;background:linear-gradient(180deg,var(--ac),var(--acd))" title="${tip}"></div>
+      <div class="evo-label">${label}</div>
+    </div>`;
+  });
+  h+='</div>';
+  h+=`<div class="evo-legend"><span><span class="evo-legend-dot" style="background:var(--ac)"></span>${t('evo_legend')}</span></div>`;
+  if(E.evolution_insight){
+    h+='<div style="margin-top:16px;padding:16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;font-size:13px;color:var(--t2);line-height:1.6">';
+    h+=`<strong style="color:var(--t)">${t('evo_trend')}</strong>${esc(E.evolution_insight)}`;
+    h+='</div>';
+  }
+  h+='</div>';
+  document.getElementById('evolution').innerHTML=h;
+})();
+
+// === TIME DISTRIBUTION ===
+(function(){
+  const hd=E.time.hour_distribution;
+  const maxH=Math.max(...Object.values(hd));
+  const pd=E.time.period_data;
+  const periodNames={'deep_night':t('period_deep_night'),'morning':t('period_morning'),'afternoon':t('period_afternoon'),'evening':t('period_evening')};
+  const periodIcons={'deep_night':'🌙','morning':'☀️','afternoon':'⚡','evening':'🦉'};
+
+  let bars='';
+  for(let h=0;h<24;h++){
+    const v=hd[String(h)]||0;
+    const ht=maxH>0?Math.max(2,Math.round(v/maxH*100)):2;
+    const col=h<6?'var(--p)':h<12?'var(--y)':h<18?'var(--o)':'var(--ac)';
+    bars+=`<div class="time-bar" style="height:${ht}%;background:${col}" title="${h}:00 — ${v} ${t('time_sessions')}"><div class="time-tip">${h}:00 · ${v}</div></div>`;
+  }
+
+  let periods='';
+  Object.entries(pd).forEach(([k,v])=>{
+    periods+=`<div class="period-card"><div class="p-name">${periodIcons[k]} ${periodNames[k]}</div><div class="p-val">${v.sessions}</div><div class="p-sub">${fN(v.turns)} ${t('time_turns')}</div></div>`;
+  });
+
+  document.getElementById('time-dist').innerHTML=`
+    <div class="time-bars">${bars}</div>
+    <div class="time-labels"><span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
+    <div class="time-type"><div class="big">${esc(E.time.peak_text||'')}</div><div class="small">${esc(E.time.peak_detail||'')}</div></div>
+    <div class="period-grid">${periods}</div>`;
+})();
+
+// === KEYWORDS ===
+(function(){
+  const kw=E.keywords;
+  const maxC=Math.max(...kw.map(k=>k[1]));
+  const sizes=[14,16,18,22,26,32];
+  const colors=['var(--tm)','var(--t2)','var(--b)','var(--g)','var(--ac)','var(--y)'];
+  document.getElementById('keywords').innerHTML='<div class="kw-cloud">'+kw.map(([w,c])=>{
+    const lvl=Math.min(5,Math.floor(c/maxC*5));
+    return`<span class="kw" style="font-size:${sizes[lvl]}px;color:${colors[lvl]};background:${lvl>3?'var(--s2)':'var(--s1)'}">${esc(w)}</span>`;
+  }).join('')+'</div>';
+})();
+
+// === AGENT COMPARISON ===
+(function(){
+  const cmp=E.comparison;
+  if(!cmp)return;
+  const agentLabels={'claude-code':'Claude Code','codex':'Codex'};
+  const agentColors={'claude-code':'var(--ac)','codex':'var(--g)'};
+  let h='<div class="cmp-grid">';
+  Object.entries(cmp).forEach(([agent,data])=>{
+    const maxTool=Math.max(...data.top_tools.map(t=>t[1]));
+    const toolBars=data.top_tools.slice(0,4).map(([tl,c])=>{
+      const pct=Math.round(c/maxTool*100);
+      const col=TC[tl]||'#52525b';
+      return`<div class="cmp-tool-row"><span style="width:80px;flex-shrink:0">${tl}</span><div class="cmp-tool-bar"><div class="cmp-tool-fill" style="width:${pct}%;background:${col}"></div></div><span style="width:36px;text-align:right">${c}</span></div>`;
+    }).join('');
+    const dist=data.distribution;
+    h+=`<div class="cmp-card">
+      <div class="cmp-name"><span class="dot" style="background:${agentColors[agent]}"></span>${agentLabels[agent]||agent}</div>
+      <div class="cmp-stats">
+        <div class="cmp-stat"><div class="cv">${data.sessions}</div><div class="cl">${t('cmp_sessions')}</div></div>
+        <div class="cmp-stat"><div class="cv">${fN(data.total_turns)}</div><div class="cl">${t('cmp_turns')}</div></div>
+        <div class="cmp-stat"><div class="cv">${data.avg_turns}</div><div class="cl">${t('cmp_avg')}</div></div>
+        <div class="cmp-stat"><div class="cv">${fN(data.total_tool_calls)}</div><div class="cl">${t('cmp_tools')}</div></div>
+      </div>
+      <div class="cmp-tools"><div class="cmp-tools-label">${t('cmp_top_tools')}</div>${toolBars}</div>
+      <div style="margin-top:12px;font-size:12px;color:var(--tm)">${dist.short} ${t('cmp_short_session')} · ${dist.medium} ${t('cmp_medium_session')} · ${dist.long} ${t('cmp_long_session')}</div>
+    </div>`;
+  });
+  h+='</div>';
+  if(E.comparison_insight){
+    h+='<div style="margin-top:16px;padding:16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;font-size:13px;color:var(--t2);line-height:1.6">';
+    h+=`<strong style="color:var(--t)">${t('cmp_insight_label')}</strong>${esc(E.comparison_insight)}`;
+    h+='</div>';
+  }
+  document.getElementById('agent-cmp').innerHTML=h;
+})();
+
+// === HEATMAP ===
+(function(){
+  const hm=D.heatmap||{};const dates=Object.keys(hm).sort();if(!dates.length)return;
+  const firstDate=new Date(dates[0]+'T00:00:00');const dow=firstDate.getDay()||7;const padBefore=dow-1;
+  let cells='';for(let i=0;i<padBefore;i++)cells+='<div class="hm-cell hm-0"></div>';
+  dates.forEach(d=>{const v=hm[d]||0;const lvl=v===0?0:v<20?1:v<100?2:v<300?3:4;cells+=`<div class="hm-cell hm-${lvl}" title="${d}: ${v} ${t('hm_turns')}"></div>`;});
+  const hl=D.highlights;
+  document.getElementById('heatmap').innerHTML=`
+    <div class="hm-scroll"><div class="hm-grid">${cells}</div></div>
+    <div class="hm-meta"><span>${t('hm_longest')}: <strong>${hl.longest_streak} ${t('hm_days')}</strong></span><span>${t('hm_current')}: <strong>${hl.current_streak} ${t('hm_days')}</strong></span><span>${t('hm_active')}: <strong>${D.profile.active_days}/${dates.length} ${t('hm_days')}</strong></span></div>
+    <div class="hm-legend"><span>${t('hm_less')}</span><div class="hm-legend-cell hm-0"></div><div class="hm-legend-cell hm-1"></div><div class="hm-legend-cell hm-2"></div><div class="hm-legend-cell hm-3"></div><div class="hm-legend-cell hm-4"></div><span>${t('hm_more')}</span></div>`;
+})();
+
+// === HIGHLIGHTS ===
+(function(){
+  const hl=D.highlights;const bs=hl.biggest_session;const bd=hl.busiest_day;
+  const totalTurns=D.profile.total_turns;const pages=Math.round(totalTurns/3);
+  document.getElementById('highlights').innerHTML=`
+    <div class="hl-grid">
+      <div class="hl"><div class="hl-t">${t('hl_biggest')}</div><div class="hl-v">${fN(bs.turns)} ${t('hl_turns_suffix')}</div><div class="hl-d">${esc(bs.display)}</div></div>
+      <div class="hl"><div class="hl-t">${t('hl_busiest')}</div><div class="hl-v">${bd.date}</div><div class="hl-d">${bd.sessions} ${t('p_sessions')} · ${fN(bd.turns)} ${t('p_turns')}</div></div>
+      <div class="hl"><div class="hl-t">${t('hl_streak')}</div><div class="hl-v">${hl.longest_streak} ${t('hl_days_suffix')}</div><div class="hl-d">${t('hl_streak_desc')}</div></div>
+      <div class="hl"><div class="hl-t">${t('hl_number')}</div><div class="hl-v">${fN(totalTurns)} ${t('hl_turns_suffix')}</div><div class="hl-d">${t('hl_book_prefix')} ${fN(pages)} ${t('hl_book_suffix')}</div></div>
+    </div>
+    <div class="fav-prompt"><div class="fp-label">${t('hl_fav_prompt')}</div><div class="fp-text">${esc(hl.favorite_prompt)}</div></div>`;
+})();
+
+// === CTA ===
+document.getElementById('cta-section').innerHTML=`<div class="cta">
+  <h3>Show the world my taste</h3>
+  <p>Send this to my coding agent — get my bio link</p>
+  <div class="cta-cmd" style="display:inline-flex;align-items:center;gap:10px;padding:10px 20px;background:var(--s2);border:1px solid var(--bd);border-radius:10px;cursor:pointer" onclick="navigator.clipboard.writeText('curl -sfL https://builderbio.dev/install.sh | bash');this.querySelector('.cta-copied').style.display='inline';this.querySelector('.cta-copy-icon').style.display='none';setTimeout(()=>{this.querySelector('.cta-copied').style.display='none';this.querySelector('.cta-copy-icon').style.display='inline'},2000)">
+    <span style="color:var(--ac);font-family:'SF Mono','Fira Code',monospace;font-size:13px;user-select:all"><span style="color:var(--tm)">$ </span>curl -sfL https://builderbio.dev/install.sh | bash</span>
+    <span class="cta-copy-icon" style="color:var(--tm);display:inline;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></span>
+    <span class="cta-copied" style="color:var(--g);display:none;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+  </div>
+</div>`;
+
+// === FOOTER ===
+document.getElementById('footer-text').innerHTML='<p style="margin:0 0 8px">The bio link for builders who ship with AI</p><div style="display:flex;align-items:center;justify-content:center;gap:16px"><a href="https://x.com/builderbio_dev" target="_blank" rel="noopener noreferrer" style="color:var(--tm);transition:color .2s" title="X (Twitter)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a><a href="https://www.linkedin.com/company/builderbio" target="_blank" rel="noopener noreferrer" style="color:var(--tm);transition:color .2s" title="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a></div>';
+</script>
+</body>
+</html>

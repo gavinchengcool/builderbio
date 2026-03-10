@@ -25,18 +25,25 @@ export function proxy(req: NextRequest) {
       return NextResponse.next();
     }
 
-    // Static HTML profiles: rewrite to the static file on the main domain
+    // Static HTML profiles: rewrite to API route that serves the file
     const staticProfiles = ["gavin"];
-    if (req.nextUrl.pathname === "/" && staticProfiles.includes(subdomain)) {
-      return NextResponse.rewrite(
-        new URL(`https://${BASE_DOMAIN}/${subdomain}.html`)
-      );
+    if (staticProfiles.includes(subdomain)) {
+      if (req.nextUrl.pathname === "/" || req.nextUrl.pathname === "") {
+        return NextResponse.rewrite(
+          new URL(`/api/static-profile/${subdomain}`, req.url)
+        );
+      }
+      return NextResponse.next();
     }
 
-    // Rewrite subdomain to /u/[username]
-    const url = req.nextUrl.clone();
-    url.pathname = `/u/${subdomain}${req.nextUrl.pathname === "/" ? "" : req.nextUrl.pathname}`;
-    return NextResponse.rewrite(url);
+    // Rewrite subdomain to bio-profile API (renders BuilderBio template)
+    if (req.nextUrl.pathname === "/" || req.nextUrl.pathname === "") {
+      return NextResponse.rewrite(
+        new URL(`/api/bio-profile/${subdomain}`, req.url)
+      );
+    }
+    // For non-root paths under subdomains, pass through
+    return NextResponse.next();
   }
 
   return NextResponse.next();

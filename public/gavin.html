@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Builder Profile — AI 构建者画像</title>
+<title>Gavin's BuilderBio</title>
 <style>
 :root {
   --bg:#050507;--s1:#0c0c10;--s2:#131318;--s3:#1a1a21;
   --bd:#1e1e28;--bd2:#2a2a38;
   --t:#f0f0f5;--t2:#b8b8c8;--tm:#6b6b80;
-  --ac:#818cf8;--acd:#6366f1;--acb:rgba(99,102,241,.08);
+  --ac:#FF6B35;--acd:#E55A2B;--acb:rgba(255,107,53,.08);
   --g:#34d399;--gd:rgba(52,211,153,.1);
   --y:#fbbf24;--yd:rgba(251,191,36,.1);
   --b:#60a5fa;--bd3:rgba(96,165,250,.1);
@@ -26,8 +26,8 @@ section{padding:60px 0}
 
 /* HERO */
 .hero{padding:80px 0 60px;text-align:center;position:relative}
-.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.06)0%,rgba(52,211,153,.03)40%,transparent 70%);pointer-events:none}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:100px;font-size:12px;font-weight:600;color:var(--ac);background:var(--acb);border:1px solid rgba(99,102,241,.15);margin-bottom:24px;letter-spacing:.3px}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(255,107,53,.06)0%,rgba(52,211,153,.03)40%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:100px;font-size:12px;font-weight:600;color:var(--ac);background:var(--acb);border:1px solid rgba(255,107,53,.15);margin-bottom:24px;letter-spacing:.3px}
 .hero h1{font-size:48px;font-weight:800;letter-spacing:-.04em;background:linear-gradient(135deg,var(--t) 0%,var(--t2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
 .hero .sub{font-size:15px;color:var(--tm);margin-bottom:40px}
 .stats-row{display:flex;justify-content:center;gap:48px;flex-wrap:wrap}
@@ -37,6 +37,11 @@ section{padding:60px 0}
 .agent-row{display:flex;justify-content:center;gap:10px;margin-top:28px;flex-wrap:wrap}
 .agent-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;border-radius:100px;font-size:13px;font-weight:500;background:var(--s2);color:var(--t2);border:1px solid var(--bd)}
 .agent-dot{width:8px;height:8px;border-radius:50%}
+.hero-avatar{width:88px;height:88px;border-radius:50%;border:3px solid var(--bd2);object-fit:cover;margin-bottom:16px;box-shadow:0 0 0 4px var(--bg),0 0 24px rgba(255,107,53,.15)}
+.social-row{display:flex;justify-content:center;gap:14px;margin-top:22px}
+.social-link{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--s2);border:1px solid var(--bd);color:var(--t2);transition:all .25s;text-decoration:none}
+.social-link:hover{border-color:var(--bd2);color:var(--t);transform:translateY(-2px)}
+.social-link svg{width:20px;height:20px;fill:currentColor}
 
 /* PROJECTS */
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
@@ -53,7 +58,7 @@ section{padding:60px 0}
 
 /* STYLE */
 .style-hero{text-align:center;margin-bottom:32px;padding:28px 0}
-.style-label{font-size:32px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,var(--ac),var(--p));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.style-label{font-size:32px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,var(--ac),var(--y));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .style-sub{font-size:14px;color:var(--tm);margin-top:6px}
 .traits{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .trait{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:18px;text-align:center}
@@ -134,7 +139,7 @@ section{padding:60px 0}
 .fp-text{font-size:14px;line-height:1.8;color:var(--t2);font-family:"SF Mono","Fira Code","JetBrains Mono",monospace;white-space:pre-wrap;word-break:break-word}
 
 /* CTA */
-.cta{text-align:center;padding:48px 32px;background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(52,211,153,.04));border:1px solid var(--bd);border-radius:18px;margin-top:8px}
+.cta{text-align:center;padding:48px 32px;background:linear-gradient(135deg,rgba(255,107,53,.06),rgba(52,211,153,.04));border:1px solid var(--bd);border-radius:18px;margin-top:8px}
 .cta h3{font-size:24px;font-weight:800;margin-bottom:8px}.cta p{font-size:14px;color:var(--tm);margin-bottom:20px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.6}
 .cta code{display:inline-block;padding:10px 24px;background:var(--s2);border:1px solid var(--bd);border-radius:10px;font-family:"SF Mono","Fira Code",monospace;font-size:13px;color:var(--ac);user-select:all;cursor:pointer}
 .cta .cta-sub{font-size:11px;color:var(--tm);margin-top:12px}
@@ -151,77 +156,106 @@ section{padding:60px 0}
 </style>
 </head>
 <body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<header style="position:sticky;top:0;z-index:50;border-bottom:1px solid #333;background:rgba(26,26,26,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:'JetBrains Mono','Fira Code','SF Mono',ui-monospace,monospace">
+  <div style="max-width:72rem;margin:0 auto;display:flex;height:3rem;align-items:center;justify-content:space-between;padding:0 1rem">
+    <a href="https://builderbio.dev" style="display:flex;align-items:center;gap:0.5rem;color:#999;font-weight:700;font-size:0.875rem;line-height:1.25rem;letter-spacing:.025em;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#FF6B35'" onmouseout="this.style.color='#999'">
+      <span style="color:#555">~/</span>builderbio
+    </a>
+    <nav style="display:flex;align-items:center;gap:1rem;font-size:0.75rem;line-height:1rem;color:#999">
+      <a href="https://builderbio.dev/taste-board" style="color:inherit;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#FF6B35'" onmouseout="this.style.color='#999'">/taste-board</a>
+      <span style="color:#555">·</span>
+      <a href="https://gavin.builderbio.dev" style="color:#FF6B35;text-decoration:none">/built-by</a>
+    </nav>
+  </div>
+</header>
 <div class="c">
 
 <section class="hero">
-  <div class="hero-badge">AI BUILDER PROFILE</div>
-  <h1>Builder Profile</h1>
+  <img class="hero-avatar" src="https://media.licdn.com/dms/image/v2/D4E03AQEmAQ7ni4GKxw/profile-displayphoto-crop_800_800/B4EZnGvMYFIIAI-/0/1759975885952?e=1774483200&amp;v=beta&amp;t=fVTWuJ5ujRMinm71ze56wm9Bs7iEA3xhnwnOmVh-Pqo" alt="Gavin">
+  <h1>Gavin's BuilderBio</h1>
   <p class="sub" id="date-range"></p>
   <div class="stats-row" id="stats-row"></div>
   <div class="agent-row" id="agent-row"></div>
+  <div class="social-row">
+    <a class="social-link" href="https://www.linkedin.com/in/gavin-c-b271a492/" target="_blank" rel="noopener" title="LinkedIn"><svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+    <a class="social-link" href="https://x.com/gavin0922" target="_blank" rel="noopener" title="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+  </div>
 </section>
 <div class="divider"></div>
 
-<section><div class="sh"><h2>我构建了什么</h2><p>用 AI 编程助手一起完成的项目</p></div><div class="pgrid" id="projects"></div></section>
+<section><div class="sh"><h2>What I Built</h2><p>Projects built with AI coding agents</p></div><div class="pgrid" id="projects"></div></section>
 <div class="divider"></div>
 
-<section><div class="sh"><h2>技术栈指纹</h2><p>我最常接触的技术领域</p></div><div id="tech-radar"></div></section>
+<section><div class="sh"><h2>Tech Stack Fingerprint</h2><p>Technologies I work with most</p></div><div id="tech-radar"></div></section>
 <div class="divider"></div>
 
-<section><div class="sh"><h2>我的构建风格</h2><p>与 AI 编程助手的协作方式</p></div><div id="style-section"></div></section>
+<section><div class="sh"><h2>How I Build</h2><p>My collaboration style with AI coding agents</p></div><div id="style-section"></div></section>
 <div class="divider"></div>
 
-<section><div class="sh"><h2>协作进化曲线</h2><p>每周的构建密度与深度变化</p></div><div id="evolution"></div></section>
+<section><div class="sh"><h2>Collaboration Evolution</h2><p>Weekly building intensity and depth over time</p></div><div id="evolution"></div></section>
 <div class="divider"></div>
 
-<section><div class="sh"><h2>我是几点钟的 Builder</h2><p>24 小时活跃分布</p></div><div id="time-dist"></div></section>
+<section><div class="sh"><h2>When I Build</h2><p>24-hour activity distribution</p></div><div id="time-dist"></div></section>
 <div class="divider"></div>
 
-<section><div class="sh"><h2>脑中关键词</h2><p>从所有 Prompt 中提取的高频词</p></div><div id="keywords"></div></section>
+<section><div class="sh"><h2>Prompt Keywords</h2><p>Top keywords extracted from all prompts</p></div><div id="keywords"></div></section>
 <div class="divider"></div>
 
-<section><div class="sh"><h2>Agent 对比面板</h2><p>不同 AI Agent 的使用差异</p></div><div id="agent-cmp"></div></section>
+<section><div class="sh"><h2>Agent Comparison</h2><p>Usage differences across AI agents</p></div><div id="agent-cmp"></div></section>
 <div class="divider"></div>
 
-<section><div class="sh"><h2>活跃度</h2><p>每日构建热力图</p></div><div id="heatmap"></div></section>
+<section><div class="sh"><h2>Activity</h2><p>Daily building heatmap</p></div><div id="heatmap"></div></section>
 <div class="divider"></div>
 
-<section><div class="sh"><h2>高光时刻</h2><p>那些值得分享的瞬间</p></div><div id="highlights"></div></section>
+<section><div class="sh"><h2>Highlight Moments</h2><p>Moments worth sharing</p></div><div id="highlights"></div></section>
 <div class="divider"></div>
 
 <section><div id="cta-section"></div></section>
 
-<div class="footer">由 <strong>Coding Agent Showcase</strong> 生成 · <span id="gen-time"></span></div>
+<div class="footer" style="padding:24px 0;text-align:center;font-size:12px;color:var(--t3)">
+  <p style="margin:0 0 8px">The bio link for builders who ship with AI</p>
+  <div style="display:flex;align-items:center;justify-content:center;gap:16px">
+    <a href="https://x.com/gavin0922" target="_blank" rel="noopener noreferrer" style="color:var(--t3);transition:color .2s" title="X (Twitter)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    </a>
+    <a href="https://www.linkedin.com/in/gavin-c-b271a492/" target="_blank" rel="noopener noreferrer" style="color:var(--t3);transition:color .2s" title="LinkedIn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+    </a>
+  </div>
+</div>
 </div>
 
 <script>
 const D = {"profile": {"date_range": {"start": "2026-01-19", "end": "2026-03-10"}, "active_days": 34, "total_sessions": 230, "total_turns": 12711, "total_tool_calls": 8800, "total_tokens": 999313, "agents_used": {"claude-code": {"sessions": 51, "turns": 6413}, "codex": {"sessions": 179, "turns": 6298}}}, "projects": [{"name": "产品战略与迭代", "description": "核心 AI 产品的战略规划、产品迭代、竞品分析与团队协作", "sessions": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""], "tags": ["Product Strategy", "SaaS", "AI Agent"], "total_turns": 1635, "total_tool_calls": 1376, "date_range": {"start": "2026-01-19", "end": "2026-03-10"}, "status": "in progress"}, {"name": "Coding Agent Showcase", "description": "开发 Claude Code Skill —— 扫描本地对话记录生成可分享的 Builder Profile 页面", "sessions": ["", "", "", "", "", "", "", "", "", ""], "tags": ["Claude Code Skill", "Python", "HTML"], "total_turns": 2298, "total_tool_calls": 1085, "date_range": {"start": "2026-01-19", "end": "2026-03-10"}, "status": "in progress"}, {"name": "AI Agent 行业研究", "description": "深度研究 AI Agent 生态、行业趋势、竞品分析与技术架构", "sessions": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""], "tags": ["Research", "AI Agent", "Industry Analysis"], "total_turns": 1405, "total_tool_calls": 1264, "date_range": {"start": "2026-01-19", "end": "2026-03-09"}, "status": "shipped"}, {"name": "深度阅读与内容翻译", "description": "AI/Tech 行业文章阅读、翻译、总结与网页化，覆盖顶级 VC 与研究机构报告", "sessions": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""], "tags": ["Reading", "Translation", "Content"], "total_turns": 1161, "total_tool_calls": 1472, "date_range": {"start": "2026-01-20", "end": "2026-03-06"}, "status": "shipped"}, {"name": "开发环境与工具配置", "description": "MCP 集成、开发工具配置、VPN 网络、系统维护等基础设施", "sessions": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""], "tags": ["DevOps", "Tooling", "MCP"], "total_turns": 680, "total_tool_calls": 465, "date_range": {"start": "2026-01-19", "end": "2026-03-05"}, "status": "shipped"}, {"name": "社交媒体图片采集器", "description": "开发社交媒体图片自动下载工具，含网页端和定时抓取功能", "sessions": ["", "", "", ""], "tags": ["Python", "Web Scraping", "Automation"], "total_turns": 495, "total_tool_calls": 729, "date_range": {"start": "2026-01-26", "end": "2026-02-02"}, "status": "shipped"}, {"name": "CEO 智能助理套件", "description": "为创始人打造的 Agentic 工作流 —— 事项管理、动态追踪、内容生成", "sessions": [""], "tags": ["Productivity", "Agentic Workflow", "HTML/JS"], "total_turns": 55, "total_tool_calls": 18, "date_range": {"start": "2026-03-10", "end": "2026-03-10"}, "status": "in progress"}, {"name": "短视频下载工具", "description": "网页版短视频下载工具，输入链接即可解析下载", "sessions": [""], "tags": ["Web Tool", "Video"], "total_turns": 33, "total_tool_calls": 21, "date_range": {"start": "2026-01-27", "end": "2026-01-27"}, "status": "explored"}, {"name": "日常问答与杂项", "description": "账号验证、设备配置、翻译、社交媒体帖子撰写等日常任务", "sessions": ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""], "tags": ["Misc", "Q&A", "Daily"], "total_turns": 4937, "total_tool_calls": 2370, "date_range": {"start": "2026-01-20", "end": "2026-03-10"}, "status": "shipped"}], "heatmap": {"2026-01-09": 0, "2026-01-10": 0, "2026-01-11": 0, "2026-01-12": 0, "2026-01-13": 0, "2026-01-14": 0, "2026-01-15": 0, "2026-01-16": 0, "2026-01-17": 0, "2026-01-18": 0, "2026-01-19": 111, "2026-01-20": 144, "2026-01-21": 608, "2026-01-22": 177, "2026-01-23": 530, "2026-01-24": 14, "2026-01-25": 0, "2026-01-26": 779, "2026-01-27": 153, "2026-01-28": 248, "2026-01-29": 105, "2026-01-30": 276, "2026-01-31": 0, "2026-02-01": 117, "2026-02-02": 204, "2026-02-03": 0, "2026-02-04": 187, "2026-02-05": 40, "2026-02-06": 0, "2026-02-07": 105, "2026-02-08": 39, "2026-02-09": 50, "2026-02-10": 587, "2026-02-11": 49, "2026-02-12": 25, "2026-02-13": 401, "2026-02-14": 0, "2026-02-15": 93, "2026-02-16": 0, "2026-02-17": 0, "2026-02-18": 0, "2026-02-19": 0, "2026-02-20": 0, "2026-02-21": 0, "2026-02-22": 0, "2026-02-23": 0, "2026-02-24": 0, "2026-02-25": 64, "2026-02-26": 118, "2026-02-27": 547, "2026-02-28": 1416, "2026-03-01": 0, "2026-03-02": 503, "2026-03-03": 813, "2026-03-04": 671, "2026-03-05": 736, "2026-03-06": 1597, "2026-03-07": 0, "2026-03-08": 0, "2026-03-09": 53, "2026-03-10": 1151}, "style": {"avg_session_turns": 55, "session_length_distribution": {"short": 132, "medium": 73, "long": 25}, "exploration_ratio": 0.07, "build_ratio": 0.07, "command_ratio": 0.31, "avg_first_msg_length": 71, "avg_user_ratio": 0.27, "tool_totals": {"Bash": 6855, "Read": 485, "Edit": 429, "write_stdin": 196, "Write": 152, "TaskUpdate": 142, "Grep": 110, "TaskCreate": 71, "view_image": 61}}, "highlights": {"biggest_session": {"id": "", "turns": 1283, "tool_calls": 441, "display": "事项管理系统的完整重构 — 按日期展示、自动结转未完成任务"}, "busiest_day": {"date": "2026-03-06", "sessions": 13, "turns": 1597}, "longest_streak": 7, "current_streak": 2, "marathon_session": {"id": "", "duration_seconds": 1316463, "display": "与 AI 深度共创产品战略规划"}, "favorite_prompt": "回到事项列表里，昨日的任务出现了结转标签，这很好，但是事项的背景描述不见了 —— AI 问用户的问题、用户回复的答案、用户自行输入的补充信息、最终由 AI 进行总结的信息都需要展示。"}};
 const E = {"time": {"hour_distribution": {"0": 10, "1": 4, "2": 5, "3": 0, "4": 0, "5": 0, "6": 0, "7": 4, "8": 0, "9": 16, "10": 40, "11": 13, "12": 2, "13": 10, "14": 7, "15": 12, "16": 12, "17": 26, "18": 28, "19": 9, "20": 4, "21": 14, "22": 0, "23": 14}, "period_data": {"deep_night": {"sessions": 19, "turns": 286}, "morning": {"sessions": 73, "turns": 2832}, "afternoon": {"sessions": 69, "turns": 6271}, "evening": {"sessions": 69, "turns": 3322}}, "builder_type": "上午型 Builder", "peak_hour": 10}, "tech": {"Shell / CLI": 100, "HTML / CSS": 31, "Product Strategy": 27, "Content Processing": 19, "Claude Code Skills": 15, "AI Agent Ecosystem": 15, "Media Automation": 12, "Code Reading": 9, "Code Generation": 8, "MCP Integrations": 2}, "keywords": [["Agent", 30], ["Claude Code", 19], ["Coding", 17], ["OpenClaw", 15], ["Skills", 11], ["MCP", 16], ["Codex", 9], ["AI Native", 8], ["Manus", 5], ["产品", 12], ["战略", 8], ["工具", 7], ["sandbox", 6], ["PDF", 6], ["podcast", 4], ["Anthropic", 5], ["OpenAI", 4]], "evolution": [{"week": "2026-01-19", "sessions": 50, "turns": 1584, "avg_turns": 32}, {"week": "2026-01-26", "sessions": 57, "turns": 1678, "avg_turns": 29}, {"week": "2026-02-02", "sessions": 28, "turns": 575, "avg_turns": 21}, {"week": "2026-02-09", "sessions": 36, "turns": 1205, "avg_turns": 33}, {"week": "2026-02-23", "sessions": 14, "turns": 2145, "avg_turns": 153}, {"week": "2026-03-02", "sessions": 37, "turns": 4320, "avg_turns": 117}, {"week": "2026-03-09", "sessions": 8, "turns": 1204, "avg_turns": 150}], "comparison": {"claude-code": {"sessions": 51, "total_turns": 6413, "total_tool_calls": 2270, "avg_turns": 126, "top_tools": [["Bash", 656], ["Read", 485], ["Edit", 429], ["Write", 152], ["TaskUpdate", 142]], "distribution": {"short": 24, "medium": 16, "long": 11}}, "codex": {"sessions": 179, "total_turns": 6298, "total_tool_calls": 6530, "avg_turns": 35, "top_tools": [["Bash", 2091], ["shell_command", 4108], ["write_stdin", 196], ["view_image", 61], ["update_plan", 36]], "distribution": {"short": 108, "medium": 57, "long": 14}}}};
-const TC={"Bash":"#fb923c","Read":"#60a5fa","Write":"#34d399","Edit":"#a78bfa","Grep":"#fbbf24","Glob":"#22d3ee","Task":"#f472b6","TaskUpdate":"#818cf8","TaskCreate":"#818cf8","write_stdin":"#c084fc","WebFetch":"#2dd4bf","WebSearch":"#2dd4bf","AskUserQuestion":"#f43f5e","view_image":"#f472b6","shell_command":"#fb923c","update_plan":"#818cf8","EnterPlanMode":"#a78bfa"};
+const TC={"Bash":"#fb923c","Read":"#60a5fa","Write":"#34d399","Edit":"#a78bfa","Grep":"#fbbf24","Glob":"#22d3ee","Task":"#f472b6","TaskUpdate":"#FF6B35","TaskCreate":"#FF6B35","write_stdin":"#c084fc","WebFetch":"#2dd4bf","WebSearch":"#2dd4bf","AskUserQuestion":"#f43f5e","view_image":"#f472b6","shell_command":"#fb923c","update_plan":"#FF6B35","EnterPlanMode":"#a78bfa"};
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 function fN(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toString()}
 
 // === HERO ===
 (function(){
   const p=D.profile;
-  document.getElementById('date-range').textContent=p.date_range.start+' → '+p.date_range.end+' · '+p.active_days+' 天活跃';
+  document.getElementById('date-range').textContent=p.date_range.start+' → '+p.date_range.end+' · '+p.active_days+' days active';
   document.getElementById('stats-row').innerHTML=[
-    {v:p.total_sessions,l:'会话',c:'ac'},{v:p.total_turns,l:'轮对话',c:'gc'},
-    {v:p.total_tool_calls,l:'工具调用',c:'yc'},{v:p.total_tokens,l:'Tokens',c:'bc'}
+    {v:p.total_sessions,l:'Sessions',c:'ac'},{v:p.total_turns,l:'Turns',c:'gc'},
+    {v:p.total_tool_calls,l:'Tool Calls',c:'yc'},{v:p.total_tokens,l:'Tokens',c:'bc'}
   ].map(s=>`<div class="stat"><div class="num ${s.c}">${fN(s.v)}</div><div class="lbl">${s.l}</div></div>`).join('');
   const colors={'claude-code':'var(--ac)','codex':'var(--g)'};
   document.getElementById('agent-row').innerHTML=Object.entries(p.agents_used).map(([n,d])=>
-    `<span class="agent-chip"><span class="agent-dot" style="background:${colors[n]||'var(--o)'}"></span>${esc(n)} · ${d.sessions} 次会话</span>`
+    `<span class="agent-chip"><span class="agent-dot" style="background:${colors[n]||'var(--o)'}"></span>${esc(n)} · ${d.sessions} sessions</span>`
   ).join('');
 })();
 
 // === PROJECTS ===
 (function(){
   const sl={'shipped':'ps-shipped','in progress':'ps-progress','explored':'ps-explored'};
-  const sn={'shipped':'已完成','in progress':'进行中','explored':'已探索'};
+  const sn={'shipped':'Shipped','in progress':'In Progress','explored':'Explored'};
   document.getElementById('projects').innerHTML=(D.projects||[]).map(p=>{
     const tags=(p.tags||[]).map(t=>`<span class="ptag">${esc(t)}</span>`).join('');
-    return`<div class="pcard"><div class="pcard-top"><div class="pname">${esc(p.name)}</div><span class="pstatus ${sl[p.status]||'ps-explored'}">${sn[p.status]||p.status}</span></div><div class="pdesc">${esc(p.description)}</div><div class="ptags">${tags}</div><div class="pmeta"><span><strong>${p.sessions?.length||0}</strong> 次会话</span><span><strong>${fN(p.total_turns)}</strong> 轮对话</span><span><strong>${fN(p.total_tool_calls)}</strong> 次工具</span></div></div>`;
+    return`<div class="pcard"><div class="pcard-top"><div class="pname">${esc(p.name)}</div><span class="pstatus ${sl[p.status]||'ps-explored'}">${sn[p.status]||p.status}</span></div><div class="pdesc">${esc(p.description)}</div><div class="ptags">${tags}</div><div class="pmeta"><span><strong>${p.sessions?.length||0}</strong> sessions</span><span><strong>${fN(p.total_turns)}</strong> turns</span><span><strong>${fN(p.total_tool_calls)}</strong> tool calls</span></div></div>`;
   }).join('');
 })();
 
@@ -245,14 +279,14 @@ function fN(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)
   const leg=sorted.filter(([,c])=>c/total>.02).map(([t,c])=>`<span class="tleg-i"><span class="tleg-d" style="background:${TC[t]||'#52525b'}"></span>${t} ${c}</span>`).join('');
   const sd=st.session_length_distribution||{};
   document.getElementById('style-section').innerHTML=`
-    <div class="style-hero"><div class="style-label">Delegator × Sprinter</div><div class="style-sub">以简短指令驱动 AI，高频短对话，重度命令行用户</div></div>
+    <div class="style-hero"><div class="style-label">Delegator × Sprinter</div><div class="style-sub">Drives AI with short commands, frequent brief sessions, heavy CLI user</div></div>
     <div class="traits">
-      <div class="trait"><div class="tname">Prompt 风格</div><div class="tval">Delegator</div><div class="tdesc">简短指令，信任 AI 自主执行</div></div>
-      <div class="trait"><div class="tname">会话节奏</div><div class="tval">Sprinter</div><div class="tdesc">${sd.short||0} 短 · ${sd.medium||0} 中 · ${sd.long||0} 长</div></div>
-      <div class="trait"><div class="tname">工具偏好</div><div class="tval">Commander</div><div class="tdesc">${Math.round((st.command_ratio||0)*100)}% 命令行调用</div></div>
-      <div class="trait"><div class="tname">Agent 忠诚度</div><div class="tval">Polygamous</div><div class="tdesc">Claude Code + Codex 双修</div></div>
+      <div class="trait"><div class="tname">Prompt Style</div><div class="tval">Delegator</div><div class="tdesc">Short commands, trusts AI to execute autonomously</div></div>
+      <div class="trait"><div class="tname">Session Rhythm</div><div class="tval">Sprinter</div><div class="tdesc">${sd.short||0} S · ${sd.medium||0} M · ${sd.long||0} L</div></div>
+      <div class="trait"><div class="tname">Tool Preference</div><div class="tval">Commander</div><div class="tdesc">${Math.round((st.command_ratio||0)*100)}% CLI calls</div></div>
+      <div class="trait"><div class="tname">Agent Loyalty</div><div class="tval">Polygamous</div><div class="tdesc">Uses both Claude Code and Codex</div></div>
     </div>
-    <div class="tbar-wrap"><div class="tbar-label">工具分布</div><div class="tbar">${bar}</div><div class="tleg">${leg}</div></div>`;
+    <div class="tbar-wrap"><div class="tbar-label">Tool Distribution</div><div class="tbar">${bar}</div><div class="tleg">${leg}</div></div>`;
 })();
 
 // === EVOLUTION CHART ===
@@ -266,14 +300,14 @@ function fN(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)
     const label=e.week.substring(5);
     h+=`<div class="evo-bar-group">
       <div class="evo-val">${fN(e.turns)}</div>
-      <div class="evo-bar" style="height:${tH}px;background:linear-gradient(180deg,var(--ac),var(--acd))" title="第${i+1}周: ${e.sessions}次会话, ${e.turns}轮对话, 平均${e.avg_turns}轮"></div>
+      <div class="evo-bar" style="height:${tH}px;background:linear-gradient(180deg,var(--ac),var(--acd))" title="Week ${i+1}: ${e.sessions} sessions, ${e.turns} turns, avg ${e.avg_turns}"></div>
       <div class="evo-label">${label}</div>
     </div>`;
   });
   h+='</div>';
-  h+='<div class="evo-legend"><span><span class="evo-legend-dot" style="background:var(--ac)"></span>每周对话轮次</span></div>';
+  h+='<div class="evo-legend"><span><span class="evo-legend-dot" style="background:var(--ac)"></span>Weekly turns</span></div>';
   h+='<div style="margin-top:16px;padding:16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;font-size:13px;color:var(--t2);line-height:1.6">';
-  h+='<strong style="color:var(--t)">趋势洞察：</strong>前 4 周以高频短对话为主（平均 29 轮/次），第 5 周开始转向深度长对话（平均 150 轮/次）—— 从探索期进入了深度构建期。';
+  h+='<strong style="color:var(--t)">Trend Insight: </strong>前 4 周以高频短对话为主（平均 29 轮/次），第 5 周开始转向深度长对话（平均 150 轮/次）—— 从探索期进入了深度构建期。';
   h+='</div></div>';
   document.getElementById('evolution').innerHTML=h;
 })();
@@ -283,7 +317,7 @@ function fN(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)
   const hd=E.time.hour_distribution;
   const maxH=Math.max(...Object.values(hd));
   const pd=E.time.period_data;
-  const periodNames={'deep_night':'深夜','morning':'上午','afternoon':'下午','evening':'晚上'};
+  const periodNames={'deep_night':'Late Night','morning':'Morning','afternoon':'Afternoon','evening':'Evening'};
   const periodIcons={'deep_night':'🌙','morning':'☀️','afternoon':'⚡','evening':'🦉'};
   const periodColors={'deep_night':'var(--p)','morning':'var(--y)','afternoon':'var(--o)','evening':'var(--ac)'};
 
@@ -292,12 +326,12 @@ function fN(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)
     const v=hd[String(h)]||0;
     const ht=maxH>0?Math.max(2,Math.round(v/maxH*100)):2;
     const col=h<6?'var(--p)':h<12?'var(--y)':h<18?'var(--o)':'var(--ac)';
-    bars+=`<div class="time-bar" style="height:${ht}%;background:${col}" title="${h}:00 — ${v} 次会话"><div class="time-tip">${h}:00 · ${v}次</div></div>`;
+    bars+=`<div class="time-bar" style="height:${ht}%;background:${col}" title="${h}:00 — ${v} sessions"><div class="time-tip">${h}:00 · ${v}</div></div>`;
   }
 
   let periods='';
   Object.entries(pd).forEach(([k,v])=>{
-    periods+=`<div class="period-card"><div class="p-name">${periodIcons[k]} ${periodNames[k]}</div><div class="p-val">${v.sessions}</div><div class="p-sub">${fN(v.turns)} 轮对话</div></div>`;
+    periods+=`<div class="period-card"><div class="p-name">${periodIcons[k]} ${periodNames[k]}</div><div class="p-val">${v.sessions}</div><div class="p-sub">${fN(v.turns)} turns</div></div>`;
   });
 
   document.getElementById('time-dist').innerHTML=`
@@ -336,18 +370,18 @@ function fN(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)
     h+=`<div class="cmp-card">
       <div class="cmp-name"><span class="dot" style="background:${agentColors[agent]}"></span>${agentLabels[agent]||agent}</div>
       <div class="cmp-stats">
-        <div class="cmp-stat"><div class="cv">${data.sessions}</div><div class="cl">会话</div></div>
-        <div class="cmp-stat"><div class="cv">${fN(data.total_turns)}</div><div class="cl">对话轮次</div></div>
-        <div class="cmp-stat"><div class="cv">${data.avg_turns}</div><div class="cl">平均轮次</div></div>
-        <div class="cmp-stat"><div class="cv">${fN(data.total_tool_calls)}</div><div class="cl">工具调用</div></div>
+        <div class="cmp-stat"><div class="cv">${data.sessions}</div><div class="cl">Sessions</div></div>
+        <div class="cmp-stat"><div class="cv">${fN(data.total_turns)}</div><div class="cl">Turns</div></div>
+        <div class="cmp-stat"><div class="cv">${data.avg_turns}</div><div class="cl">Avg Turns</div></div>
+        <div class="cmp-stat"><div class="cv">${fN(data.total_tool_calls)}</div><div class="cl">Tool Calls</div></div>
       </div>
-      <div class="cmp-tools"><div class="cmp-tools-label">TOP 工具</div>${toolBars}</div>
-      <div style="margin-top:12px;font-size:12px;color:var(--tm)">${dist.short} 短 · ${dist.medium} 中 · ${dist.long} 长会话</div>
+      <div class="cmp-tools"><div class="cmp-tools-label">Top Tools</div>${toolBars}</div>
+      <div style="margin-top:12px;font-size:12px;color:var(--tm)">${dist.short} S · ${dist.medium} M · ${dist.long} long</div>
     </div>`;
   });
   h+='</div>';
   h+='<div style="margin-top:16px;padding:16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;font-size:13px;color:var(--t2);line-height:1.6">';
-  h+='<strong style="color:var(--t)">使用差异：</strong>Claude Code 用于深度构建（平均 126 轮/次），侧重代码读写；Codex 用于快速问答和信息获取（平均 35 轮/次），以命令行执行为主。';
+  h+='<strong style="color:var(--t)">Usage Insight: </strong>Claude Code 用于深度构建（平均 126 轮/次），侧重代码读写；Codex 用于快速问答和信息获取（平均 35 轮/次），以命令行执行为主。';
   h+='</div>';
   document.getElementById('agent-cmp').innerHTML=h;
 })();
@@ -357,12 +391,12 @@ function fN(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)
   const hm=D.heatmap||{};const dates=Object.keys(hm).sort();if(!dates.length)return;
   const firstDate=new Date(dates[0]+'T00:00:00');const dow=firstDate.getDay()||7;const padBefore=dow-1;
   let cells='';for(let i=0;i<padBefore;i++)cells+='<div class="hm-cell hm-0"></div>';
-  dates.forEach(d=>{const v=hm[d]||0;const lvl=v===0?0:v<20?1:v<100?2:v<300?3:4;cells+=`<div class="hm-cell hm-${lvl}" title="${d}: ${v} 轮对话"></div>`;});
+  dates.forEach(d=>{const v=hm[d]||0;const lvl=v===0?0:v<20?1:v<100?2:v<300?3:4;cells+=`<div class="hm-cell hm-${lvl}" title="${d}: ${v} turns"></div>`;});
   const hl=D.highlights;
   document.getElementById('heatmap').innerHTML=`
     <div class="hm-scroll"><div class="hm-grid">${cells}</div></div>
-    <div class="hm-meta"><span>最长连续: <strong>${hl.longest_streak} 天</strong></span><span>当前连续: <strong>${hl.current_streak} 天</strong></span><span>活跃: <strong>${D.profile.active_days}/${dates.length} 天</strong></span></div>
-    <div class="hm-legend"><span>少</span><div class="hm-legend-cell hm-0"></div><div class="hm-legend-cell hm-1"></div><div class="hm-legend-cell hm-2"></div><div class="hm-legend-cell hm-3"></div><div class="hm-legend-cell hm-4"></div><span>多</span></div>`;
+    <div class="hm-meta"><span>Longest streak: <strong>${hl.longest_streak} days</strong></span><span>Current streak: <strong>${hl.current_streak} days</strong></span><span>Active: <strong>${D.profile.active_days}/${dates.length} days</strong></span></div>
+    <div class="hm-legend"><span>Less</span><div class="hm-legend-cell hm-0"></div><div class="hm-legend-cell hm-1"></div><div class="hm-legend-cell hm-2"></div><div class="hm-legend-cell hm-3"></div><div class="hm-legend-cell hm-4"></div><span>More</span></div>`;
 })();
 
 // === HIGHLIGHTS ===
@@ -371,23 +405,27 @@ function fN(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)
   const totalTurns=D.profile.total_turns;const pages=Math.round(totalTurns/3);
   document.getElementById('highlights').innerHTML=`
     <div class="hl-grid">
-      <div class="hl"><div class="hl-t">最大会话</div><div class="hl-v">${fN(bs.turns)} 轮</div><div class="hl-d">${esc(bs.display)}</div></div>
-      <div class="hl"><div class="hl-t">最忙的一天</div><div class="hl-v">${bd.date}</div><div class="hl-d">${bd.sessions} 次会话 · ${fN(bd.turns)} 轮对话</div></div>
-      <div class="hl"><div class="hl-t">最长连续</div><div class="hl-v">${hl.longest_streak} 天</div><div class="hl-d">连续每天都在与 AI 一起构建</div></div>
-      <div class="hl"><div class="hl-t">一个数字</div><div class="hl-v">${fN(totalTurns)} 轮</div><div class="hl-d">≈ 一本 ${fN(pages)} 页的对话录</div></div>
+      <div class="hl"><div class="hl-t">Biggest Session</div><div class="hl-v">${fN(bs.turns)} turns</div><div class="hl-d">${esc(bs.display)}</div></div>
+      <div class="hl"><div class="hl-t">Busiest Day</div><div class="hl-v">${bd.date}</div><div class="hl-d">${bd.sessions} sessions · ${fN(bd.turns)} turns</div></div>
+      <div class="hl"><div class="hl-t">Longest Streak</div><div class="hl-v">${hl.longest_streak} days</div><div class="hl-d">Building with AI every single day</div></div>
+      <div class="hl"><div class="hl-t">By the Numbers</div><div class="hl-v">${fN(totalTurns)} turns</div><div class="hl-d">≈ a ${fN(pages)}-page conversation book</div></div>
     </div>
-    <div class="fav-prompt"><div class="fp-label">最有代表性的 Prompt</div><div class="fp-text">${esc(hl.favorite_prompt)}</div></div>`;
+    <div class="fav-prompt"><div class="fp-label">Featured Prompt</div><div class="fp-text">${esc(hl.favorite_prompt)}</div></div>`;
 })();
 
 // === CTA ===
 document.getElementById('cta-section').innerHTML=`<div class="cta">
-  <h3>生成你自己的 Builder Profile</h3>
-  <p>扫描你本地的 Claude Code 和 Codex 会话记录，一键生成属于你的 AI 构建者画像。</p>
-  <code>claude install-skill https://github.com/anthropics/skills/coding-agent-showcase</code>
-  <div class="cta-sub">安装后在 Claude Code 中说「帮我生成 Builder Profile」即可</div>
+  <h3>Show the world my taste</h3>
+  <p>Send this to my coding agent - get my bio link</p>
+  <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+    <code id="cta-cmd" style="cursor:pointer">$ curl -sfL https://builderbio.dev/install.sh | bash</code>
+    <button id="cta-copy" title="Copy" style="background:none;border:none;color:var(--t2);cursor:pointer;padding:4px;display:flex;align-items:center" onclick="navigator.clipboard.writeText('curl -sfL https://builderbio.dev/install.sh | bash').then(()=>{this.innerHTML='<svg width=\\'16\\' height=\\'16\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><path d=\\'M20 6L9 17l-5-5\\'/></svg>';setTimeout(()=>{this.innerHTML='<svg width=\\'16\\' height=\\'16\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'9\\' y=\\'9\\' width=\\'13\\' height=\\'13\\' rx=\\'2\\'/><path d=\\'M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1\\'/></svg>'},2000)})">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+    </button>
+  </div>
 </div>`;
 
-document.getElementById('gen-time').textContent=new Date().toLocaleString('zh-CN');
+// footer rendered in HTML
 </script>
 </body>
 </html>

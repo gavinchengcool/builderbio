@@ -40,13 +40,13 @@ export default function HeroSection({ t }: HeroSectionProps) {
 
   return (
     <section ref={sectionRef} className="pb-12 sm:pb-24 px-4 hero-glow">
-      {/* Nav */}
-      <div className="mx-auto flex h-12 max-w-5xl items-center justify-between relative z-10">
-        <a href="https://builderbio.dev" className="flex items-center gap-2 text-accent font-bold text-xs sm:text-sm tracking-wide">
+      {/* Nav — inside hero-glow so it floats on the light */}
+      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4 relative z-10">
+        <a href="https://builderbio.dev" className="flex items-center gap-2 text-accent font-bold text-sm tracking-wide">
           <span className="text-text-muted">~/</span>builderbio
         </a>
-        <nav className="flex items-center gap-3 sm:gap-4 text-xs text-text-secondary">
-          <a href="https://builderbio.dev/club" className="hover:text-accent transition-colors">
+        <nav className="flex items-center gap-4 text-xs text-text-secondary">
+          <a href="https://builderbio.dev/taste-board" className="hover:text-accent transition-colors">
             /taste-board
           </a>
           <span className="text-text-muted">·</span>

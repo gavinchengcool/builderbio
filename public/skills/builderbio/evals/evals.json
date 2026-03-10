@@ -1,0 +1,58 @@
+{
+  "skill_name": "builderbio",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我生成一个 BuilderBio，把我最近跟 AI 写代码的过程都展示出来，我要分享给朋友看",
+      "expected_output": "Scans all local Claude Code and Codex sessions, aggregates into a BuilderBio with 11 sections, generates a shareable HTML page",
+      "assertions": [
+        "Asks for display name (or uses whoami as default) and optional tagline",
+        "Runs parse_sessions.py or manually scans both ~/.claude and ~/.codex directories",
+        "Aggregates stats across ALL sessions, not just one",
+        "Clusters sessions into logical projects with names and descriptions",
+        "Generates activity heatmap data",
+        "Computes working style traits (prompt style, session rhythm, tool preference)",
+        "Identifies highlight moments (biggest session, busiest day, streaks)",
+        "Generates tech stack fingerprint from tool calls and keywords",
+        "Computes weekly evolution curve showing building trend",
+        "Extracts time-of-day distribution from session timestamps",
+        "Extracts prompt keywords as a word cloud",
+        "Produces agent comparison panel if multiple agents are used",
+        "Includes CTA section for viral sharing",
+        "Asks about privacy/redaction before generating final page",
+        "Page title shows {name}'s BuilderBio",
+        "Generates a single self-contained HTML file under 200KB",
+        "Opens the HTML file for user review"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I want to share my AI coding profile for the last 7 days, Claude Code only",
+      "expected_output": "Scans only Claude Code sessions from the last 7 days, generates a focused BuilderBio",
+      "assertions": [
+        "Respects the 7-day time range constraint",
+        "Only includes Claude Code sessions, not Codex",
+        "Still produces all eleven profile dimensions despite smaller dataset",
+        "Generated page shows correct date range in header",
+        "Page title shows {name}'s BuilderBio",
+        "Project clustering works even with fewer sessions",
+        "Agent comparison section is omitted or simplified when only one agent exists",
+        "Evolution curve shows fewer data points appropriately"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "生成我的 AI 编程画像，要脱敏处理，不能有任何项目路径和仓库名",
+      "expected_output": "Generates a BuilderBio with all file paths, project paths, and repo names redacted",
+      "assertions": [
+        "Scans all available sessions",
+        "Identifies sensitive content: file paths, cwd paths, git repo names, company names",
+        "Replaces sensitive paths with generic placeholders before page generation",
+        "Generated HTML contains no real file paths or usernames",
+        "Profile still shows meaningful project names and descriptions despite redaction",
+        "Heatmap, tech stack, evolution, time distribution, and stats remain accurate after redaction",
+        "Prompt keywords are filtered to remove sensitive terms"
+      ]
+    }
+  ]
+}

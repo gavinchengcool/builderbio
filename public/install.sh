@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# builderbio installer v0.2.0
+# builderbio installer v0.3.0
 # Usage: curl -sfL https://builderbio.dev/install.sh | bash
 set -euo pipefail
 
-VERSION="0.2.0"
+VERSION="0.3.0"
 BASE_URL="${BUILDERBIO_URL:-https://builderbio.dev}"
 INSTALL_DIR="${HOME}/.builderbio"
 SKILL_DIR="${INSTALL_DIR}/skills/builderbio"
@@ -13,36 +13,57 @@ echo "  builderbio installer v${VERSION}"
 echo "  ─────────────────────────────"
 echo ""
 
-# Create directory
-mkdir -p "${SKILL_DIR}"
+# Create directories
+mkdir -p "${SKILL_DIR}/scripts"
+mkdir -p "${SKILL_DIR}/assets"
+mkdir -p "${SKILL_DIR}/references"
+mkdir -p "${SKILL_DIR}/evals"
 
-# Download the single skill file
-echo "→ Downloading skill..."
+# Download all skill files
+echo "→ Downloading skill files..."
+
 curl -sfL "${BASE_URL}/skills/builderbio/SKILL.md" -o "${SKILL_DIR}/SKILL.md"
-echo "  ✓ Skill downloaded"
+echo "  ✓ SKILL.md"
+
+curl -sfL "${BASE_URL}/skills/builderbio/scripts/parse_sessions.py" -o "${SKILL_DIR}/scripts/parse_sessions.py"
+chmod +x "${SKILL_DIR}/scripts/parse_sessions.py"
+echo "  ✓ scripts/parse_sessions.py"
+
+curl -sfL "${BASE_URL}/skills/builderbio/assets/template.html" -o "${SKILL_DIR}/assets/template.html"
+echo "  ✓ assets/template.html"
+
+curl -sfL "${BASE_URL}/skills/builderbio/references/claude-code-format.md" -o "${SKILL_DIR}/references/claude-code-format.md"
+curl -sfL "${BASE_URL}/skills/builderbio/references/codex-format.md" -o "${SKILL_DIR}/references/codex-format.md"
+curl -sfL "${BASE_URL}/skills/builderbio/references/profile-dimensions.md" -o "${SKILL_DIR}/references/profile-dimensions.md"
+echo "  ✓ references/"
+
+curl -sfL "${BASE_URL}/skills/builderbio/evals/evals.json" -o "${SKILL_DIR}/evals/evals.json"
+echo "  ✓ evals/"
+
+echo "  ✓ All files downloaded"
 
 # Link to Claude Code
 if [ -d "${HOME}/.claude" ]; then
   mkdir -p "${HOME}/.claude/skills"
-  ln -sf "${SKILL_DIR}" "${HOME}/.claude/skills/builderbio" 2>/dev/null || true
+  ln -sfn "${SKILL_DIR}" "${HOME}/.claude/skills/builderbio" 2>/dev/null || true
   echo "  ✓ Linked to Claude Code (~/.claude/skills/builderbio/)"
 fi
 
 # Link to Cursor
 if [ -d "${HOME}/.cursor" ]; then
   mkdir -p "${HOME}/.cursor/rules"
-  ln -sf "${SKILL_DIR}/SKILL.md" "${HOME}/.cursor/rules/builderbio.md" 2>/dev/null || true
+  ln -sfn "${SKILL_DIR}/SKILL.md" "${HOME}/.cursor/rules/builderbio.md" 2>/dev/null || true
   echo "  ✓ Linked to Cursor (~/.cursor/rules/builderbio.md)"
 fi
 
 # Link to Codex
 if [ -d "${HOME}/.codex" ]; then
   mkdir -p "${HOME}/.codex/skills/builderbio"
-  ln -sf "${SKILL_DIR}/SKILL.md" "${HOME}/.codex/skills/builderbio/SKILL.md" 2>/dev/null || true
+  ln -sfn "${SKILL_DIR}/SKILL.md" "${HOME}/.codex/skills/builderbio/SKILL.md" 2>/dev/null || true
   echo "  ✓ Linked to Codex (~/.codex/skills/builderbio/)"
 fi
 
-# Clean up old skill folders from v0.1.x
+# Clean up old skill folders from v0.1.x / v0.2.x
 OLD_SKILLS=(
   "builderbio-summarize"
   "builderbio-search-people"
@@ -62,7 +83,7 @@ echo "  ┌───────────────────────
 echo "  │  builderbio installed!                           │"
 echo "  │                                                  │"
 echo "  │  Next: open Claude Code, Cursor, or Codex and    │"
-echo "  │  run /builderbio to generate your profile.       │"
+echo "  │  say \"generate my BuilderBio\" or run /builderbio │"
 echo "  │                                                  │"
 echo "  │  No login needed. No browser. Just run it.       │"
 echo "  └──────────────────────────────────────────────────┘"

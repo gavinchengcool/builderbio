@@ -31,6 +31,7 @@ const RESERVED_USERNAMES = new Set([
   "assets",
   "public",
   "u",
+  "taste-board",
 ]);
 
 const usernameSchema = z
@@ -57,6 +58,11 @@ const publishSchema = z.object({
     sessions_analyzed: z.number().int().min(0).default(0),
     total_tokens: z.number().int().min(0).default(0),
   }),
+  // Full BuilderBio data model (D + E) for rendering the rich profile page
+  builderbio: z.object({
+    D: z.record(z.string(), z.unknown()),
+    E: z.record(z.string(), z.unknown()),
+  }).optional(),
 });
 
 function buildSearchVector(profile: z.infer<typeof publishSchema>["profile"]): string {
@@ -98,7 +104,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { username, publish_token, profile } = parsed.data;
+    const { username, publish_token, profile, builderbio } = parsed.data;
     const searchVector = buildSearchVector(profile);
 
     // Check if username exists
@@ -146,6 +152,7 @@ export async function POST(req: NextRequest) {
           behavioralFingerprint: profile.behavioral_fingerprint,
           searchProfile: profile.search_profile,
           searchVector,
+          builderBioData: builderbio || undefined,
           sessionsAnalyzed: profile.sessions_analyzed,
           totalTokens: profile.total_tokens,
           updatedAt: new Date(),
@@ -184,6 +191,7 @@ export async function POST(req: NextRequest) {
       behavioralFingerprint: profile.behavioral_fingerprint,
       searchProfile: profile.search_profile,
       searchVector,
+      builderBioData: builderbio || undefined,
       sessionsAnalyzed: profile.sessions_analyzed,
       totalTokens: profile.total_tokens,
     });

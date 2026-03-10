@@ -9,6 +9,9 @@ export interface SearchResult {
   summary: string | null;
   portrait: unknown;
   frameworkSentences: unknown;
+  searchProfile: unknown;
+  sessionsAnalyzed: number | null;
+  totalTokens: number | null;
   rank?: number;
 }
 
@@ -23,6 +26,9 @@ export async function searchPeople(query: string): Promise<SearchResult[]> {
         summary: profiles.summary,
         portrait: profiles.portrait,
         frameworkSentences: profiles.frameworkSentences,
+        searchProfile: profiles.searchProfile,
+        sessionsAnalyzed: profiles.sessionsAnalyzed,
+        totalTokens: profiles.totalTokens,
       })
       .from(profiles)
       .innerJoin(users, eq(profiles.userId, users.id))
@@ -42,6 +48,9 @@ export async function searchPeople(query: string): Promise<SearchResult[]> {
       summary: profiles.summary,
       portrait: profiles.portrait,
       frameworkSentences: profiles.frameworkSentences,
+      searchProfile: profiles.searchProfile,
+      sessionsAnalyzed: profiles.sessionsAnalyzed,
+      totalTokens: profiles.totalTokens,
     })
     .from(profiles)
     .innerJoin(users, eq(profiles.userId, users.id))
@@ -74,6 +83,9 @@ export async function searchSkills(query: string): Promise<SearchResult[]> {
       summary: profiles.summary,
       portrait: profiles.portrait,
       frameworkSentences: profiles.frameworkSentences,
+      searchProfile: profiles.searchProfile,
+      sessionsAnalyzed: profiles.sessionsAnalyzed,
+      totalTokens: profiles.totalTokens,
     })
     .from(profiles)
     .innerJoin(users, eq(profiles.userId, users.id))
