@@ -156,7 +156,7 @@ Aggregate tool call distribution across all sessions.
 
 #### Agent Loyalty
 - **Monogamous**: uses one agent exclusively (> 90% of sessions)
-- **Polygamous**: uses multiple agents regularly
+- **Multi-agent**: uses multiple agents regularly
 - **Experimenter**: tried many but settled on one
 
 ### How to present
@@ -328,8 +328,8 @@ Superlatives and fun facts that are easy to share and talk about.
 
 ### What to include
 
-- Headline: "Show the world my taste"
-- Description: "Send this to my coding agent - get my bio link"
+- Headline: "Show the world your taste"
+- Description: "Send this to your coding agent — get your bio link"
 - Install command: `curl -sfL https://builderbio.dev/install.sh | bash`
 - CTA text is always in English regardless of page language
 

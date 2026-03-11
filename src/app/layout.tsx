@@ -49,7 +49,7 @@ export const metadata: Metadata = {
         url: "https://builderbio.dev/og-image.jpg?v=3",
         width: 1200,
         height: 630,
-        alt: "BuilderBio — {B}",
+        alt: "builderbio — The bio link for builders who ship with AI",
       },
     ],
   },

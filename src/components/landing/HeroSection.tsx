@@ -145,7 +145,7 @@ export default function HeroSection({ t }: HeroSectionProps) {
                 />
                 <div>
                   <p className="text-sm font-bold text-text-primary">Gavin</p>
-                  <p className="text-xs text-text-muted">builder of builderbio</p>
+                  <p className="text-xs text-text-muted">builder of BuilderBio</p>
                 </div>
               </div>
               <p className="text-xs text-text-secondary italic leading-relaxed">

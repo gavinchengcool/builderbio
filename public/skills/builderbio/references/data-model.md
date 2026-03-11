@@ -51,7 +51,7 @@ The profile consists of two data objects: **D** (primary data) and **E** (extra/
     "prompt_type_desc": "Short commands, trusts AI to execute autonomously",
     "rhythm_label": "Sprinter",
     "tool_pref_label": "Commander",
-    "loyalty_label": "Polygamous",
+    "loyalty_label": "Multi-agent",
     "loyalty_desc": "Uses both Claude Code and Codex",
     "tool_totals": { "Bash": 500, "Read": 300, "Write": 200, "Edit": 150 }
   },

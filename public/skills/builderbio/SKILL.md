@@ -115,7 +115,7 @@ The eleven sections:
 - **Prompt style**: Architect / Conversationalist / Delegator / Explorer
 - **Session rhythm**: Sprinter / Marathoner / Balanced
 - **Tool preference**: Explorer / Builder / Commander / Balanced
-- **Agent loyalty**: Monogamous / Polygamous / Experimenter
+- **Agent loyalty**: Monogamous / Multi-agent / Experimenter
 - Tool distribution bar with legend
 
 #### 5. Collaboration Evolution Curve
@@ -145,8 +145,8 @@ The eleven sections:
 - Featured prompt in a styled quote block
 
 #### 11. CTA (Call-to-Action)
-- "Show the world my taste" with install command
-- "Send this to my coding agent - get my bio link"
+- "Show the world your taste" with install command
+- "Send this to your coding agent — get your bio link"
 
 **Summary & Tags (for taste-board cards)**:
 Generate these fields in `D.profile` — they will be displayed on the taste-board listing page:
