@@ -72,6 +72,11 @@ section{padding:60px 0}
 .hero{padding:80px 0 60px;text-align:center;position:relative}
 .hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(255,107,53,.06)0%,rgba(52,211,153,.03)40%,transparent 70%);pointer-events:none}
 .hero-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:100px;font-size:12px;font-weight:600;color:var(--ac);background:var(--acb);border:1px solid rgba(255,107,53,.15);margin-bottom:24px;letter-spacing:.3px}
+.unfiltered-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;color:#34d399;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);vertical-align:middle;margin-left:8px;cursor:default;position:relative;-webkit-text-fill-color:#34d399;-webkit-background-clip:unset;background-clip:unset}
+.unfiltered-badge svg{width:12px;height:12px;fill:currentColor;flex-shrink:0}
+.unfiltered-badge .uf-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--s3);color:var(--t2);-webkit-text-fill-color:var(--t2);font-size:11px;font-weight:400;padding:6px 12px;border-radius:8px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s;border:1px solid var(--bd)}
+.unfiltered-badge:hover .uf-tip{opacity:1}
+.gen-time{font-size:11px;color:var(--tm);margin-top:6px}
 .hero h1{font-size:48px;font-weight:800;letter-spacing:-.04em;background:linear-gradient(135deg,var(--t) 0%,var(--t2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
 .hero .sub{font-size:15px;color:var(--tm);margin-bottom:40px}
 .stats-row{display:flex;justify-content:center;gap:48px;flex-wrap:wrap}
@@ -347,7 +352,8 @@ section{padding:60px 0}
 
 <section class="hero">
   <img class="hero-avatar" src="https://media.licdn.com/dms/image/v2/D4E03AQEmAQ7ni4GKxw/profile-displayphoto-crop_800_800/B4EZnGvMYFIIAI-/0/1759975885952?e=1774483200&amp;v=beta&amp;t=fVTWuJ5ujRMinm71ze56wm9Bs7iEA3xhnwnOmVh-Pqo" alt="Gavin">
-  <h1>Gavin's BuilderBio</h1>
+  <h1>Gavin's BuilderBio<span class="unfiltered-badge"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 15l-4-4 1.41-1.41L11 13.17l5.59-5.59L18 9l-7 7z"/></svg>Unfiltered<span class="uf-tip">All data is directly from agent session logs, unmodified</span></span></h1>
+  <div class="gen-time">Generated 2026-03-10</div>
   <p class="sub" id="date-range"></p>
   <div class="stats-row" id="stats-row"></div>
   <div class="agent-row" id="agent-row"></div>
