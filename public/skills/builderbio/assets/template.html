@@ -420,6 +420,13 @@ function safeRun(name,fn){try{fn()}catch(e){console.warn('BuilderBio: section "'
     });
   }
   if(!p.agents_used)p.agents_used={};
+  if(Object.keys(p.agents_used).length===0&&E.agent_share&&Array.isArray(E.agent_share)){
+    E.agent_share.forEach(function(item){
+      if(item&&item.agent){
+        p.agents_used[item.agent]={sessions:item.sessions||0,first_session:''};
+      }
+    });
+  }
   if(p.social_links&&!Array.isArray(p.social_links)&&typeof p.social_links==='object'){
     p.social_links=Object.entries(p.social_links).filter(([,url])=>typeof url==='string'&&url).map(([platform,url])=>({platform,url}));
   }
@@ -507,6 +514,7 @@ function safeRun(name,fn){try{fn()}catch(e){console.warn('BuilderBio: section "'
       if(typeof p.total_sessions!=='number'){
         if(Array.isArray(p.sessions))p.total_sessions=p.sessions.length;
         else if(typeof p.sessions==='number')p.total_sessions=p.sessions;
+        else if(typeof p.session_count==='number')p.total_sessions=p.session_count;
         else p.total_sessions=0;
       }
       if(typeof p.total_turns!=='number'&&typeof p.turns==='number')p.total_turns=p.turns;

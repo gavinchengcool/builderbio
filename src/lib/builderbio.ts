@@ -90,7 +90,9 @@ function normalizeProjects(value: unknown): JsonObject[] {
         ? sessions
         : Array.isArray(sessions)
           ? sessions.length
-          : asNumber(project.total_sessions) ?? 0;
+          : asNumber(project.total_sessions) ??
+            asNumber(project.session_count) ??
+            0;
 
     if (!Array.isArray(project.tags)) {
       if (Array.isArray(project.tech_stack)) {
@@ -289,6 +291,33 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
     }
 
     E.comparison = comparison;
+  }
+
+  if (!hasKeys(profile.agents_used)) {
+    const agentsUsed: JsonObject = {};
+    const comparison = asObject(E.comparison) ?? asObject(E.agent_comparison);
+
+    if (comparison) {
+      for (const [agent, rawStats] of Object.entries(comparison)) {
+        const stats = asObject(rawStats);
+        agentsUsed[agent] = {
+          sessions: asNumber(stats?.sessions) ?? 0,
+          first_session: asString(stats?.first_session) ?? "",
+        };
+      }
+    } else if (Array.isArray(E.agent_share)) {
+      for (const item of E.agent_share) {
+        const share = asObject(item);
+        const agent = asString(share?.agent);
+        if (!agent) continue;
+        agentsUsed[agent] = {
+          sessions: asNumber(share?.sessions) ?? 0,
+          first_session: "",
+        };
+      }
+    }
+
+    profile.agents_used = agentsUsed;
   }
 
   const style = asObject(D.style) ?? {};

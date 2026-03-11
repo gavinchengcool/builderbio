@@ -227,6 +227,8 @@ export async function POST(req: NextRequest) {
       await db
         .update(profiles)
         .set({
+          status: "published",
+          isPublic: 1,
           summary: profile.summary,
           portrait: profile.portrait,
           frameworkSentences: profile.framework_sentences,

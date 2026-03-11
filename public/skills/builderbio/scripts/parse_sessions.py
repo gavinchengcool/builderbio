@@ -33,7 +33,10 @@ from pathlib import Path
 def main():
     args = parse_args()
     days = int(args.get("days", 30))
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    if days <= 0:
+        cutoff = datetime.fromtimestamp(0, tz=timezone.utc)
+    else:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     sessions = []
 
@@ -427,7 +430,12 @@ def _parse_trae_db(db_path, cutoff, seen_ids):
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         cur.execute(
-            "SELECT key, value FROM ItemTable WHERE key LIKE '%icube-ai-chat-storage-%'"
+            """
+            SELECT key, value
+            FROM ItemTable
+            WHERE key LIKE '%icube-ai-chat-storage-%'
+               OR key LIKE '%icube-ai-ng-chat-storage-%'
+            """
         )
         for row in cur.fetchall():
             try:
@@ -1397,9 +1405,12 @@ def compute_heatmap(sessions, days):
         if s["date"]:
             daily[s["date"]] += s["turns"]
 
-    # Fill in zeros for all days in range
     end = datetime.now(timezone.utc).date()
-    start = end - timedelta(days=days)
+    if days <= 0 and daily:
+        start = min(datetime.strptime(ds, "%Y-%m-%d").date() for ds in daily)
+    else:
+        start = end - timedelta(days=max(days, 0))
+
     heatmap = {}
     current = start
     while current <= end:
