@@ -236,7 +236,7 @@ export async function GET(
     const pageDesc = `${totalSessions} sessions, ${totalTurns.toLocaleString()} turns, ${activeDays} active days of building with ${agents}. See what ${displayName} shipped with AI coding agents.`;
     const profileUrl = `https://${username}.builderbio.dev`;
 
-    const ogImageUrl = "https://builderbio.dev/og-image.png?v=2";
+    const ogImageUrl = "https://builderbio.dev/og-image.jpg?v=3";
 
     const seoMeta = `<title>${pageTitle}</title>
 <meta name="description" content="${pageDesc}">
