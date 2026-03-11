@@ -20,6 +20,19 @@ ls -lt ~/.claude/projects/*/*.jsonl 2>/dev/null | head -100
 # Codex — list all session files
 ls -lt ~/.codex/sessions/*/*/*/*.jsonl 2>/dev/null | head -100
 
+# Trae
+ls -la ~/Library/Application\ Support/Trae/User/globalStorage/state.vscdb 2>/dev/null
+ls -la ~/Library/Application\ Support/Trae\ CN/User/globalStorage/state.vscdb 2>/dev/null
+
+# Antigravity
+ls -la ~/.antigravity_tools/proxy_logs.db 2>/dev/null
+
+# Kiro
+ls -la ~/.kiro/*.db 2>/dev/null
+
+# Windsurf
+ls -lt ~/.windsurf/transcripts/*.jsonl 2>/dev/null | head -100
+
 # OpenClaw — list all session files
 ls -lt ~/.openclaw/agents/*/sessions/*.jsonl 2>/dev/null | head -100
 ```
@@ -34,11 +47,16 @@ Run the parser on ALL session files to extract session summaries:
 python <skill-path>/scripts/parse_sessions.py \
   --claude-dir ~/.claude \
   --codex-dir ~/.codex \
+  --trae-dir "~/Library/Application Support/Trae" \
+  --antigravity-dir ~/.antigravity_tools \
+  --kiro-dir ~/.kiro \
+  --windsurf-dir ~/.windsurf \
+  --openclaw-dir ~/.openclaw \
   --days 0 \
   --output /tmp/builder_profile_data.json
 ```
 
-Use `--days 0` to include ALL sessions with no time limit.
+Use `--days 0` to include ALL sessions with no time limit. Only include flags for agents with detected data. The script skips missing directories gracefully.
 
 If the script fails, fall back to manual parsing: read each JSONL file and extract the fields documented in the format references.
 
