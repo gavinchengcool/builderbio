@@ -56,7 +56,7 @@ python <skill-path>/scripts/parse_sessions.py \
   --output /tmp/builder_profile_data.json
 ```
 
-Use `--days 0` to include ALL sessions with no time limit. The parser treats `--days <= 0` as full-history scan, merges Claude sidechains by `sessionId`, prefers Codex `total_token_usage` max snapshots, and scans Trae `workspaceStorage` `state.vscdb` files in addition to global storage. Only include flags for agents with detected data. The script skips missing directories gracefully.
+Use `--days 0` to include ALL sessions with no time limit. The parser treats `--days <= 0` as full-history scan, merges Claude sidechains by `sessionId`, prefers Codex `total_token_usage` max snapshots, and scans Trae `workspaceStorage` `state.vscdb` files in addition to global storage, including `chatHistoryNeedToBeMigrated-*` fallback records. Only include flags for agents with detected data. The script skips missing directories gracefully.
 
 If the script fails, fall back to manual parsing: read each JSONL file and extract the fields documented in the format references.
 

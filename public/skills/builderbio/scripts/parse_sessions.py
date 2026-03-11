@@ -648,6 +648,7 @@ def _parse_trae_db(db_path, cutoff, seen_ids):
                OR key LIKE '%icube-ai-ng-chat-storage%'
                OR key LIKE '%icube-ai-agent-storage%'
                OR key LIKE '%icube-ai-ng-agent-storage%'
+               OR key LIKE 'chatHistoryNeedToBeMigrated-%'
             """
         )
         for row in cur.fetchall():

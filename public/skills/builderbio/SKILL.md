@@ -59,7 +59,7 @@ For parsing details, see [references/claude-code-format.md](references/claude-co
 
 **Codex format**: Prefer `event_msg.payload.info.total_token_usage` (or `token_count_info.total_token_usage`) and take the max snapshot within a session to avoid duplicate cumulative counts. If missing, fall back to `last_token_usage`, then old `token_usage` events.
 
-**Trae format**: Sessions live in both global storage and `workspaceStorage` `state.vscdb` files. Query `ItemTable` for keys matching `%icube-ai-chat-storage%`, `%icube-ai-ng-chat-storage%`, `%icube-ai-agent-storage%`, and `%icube-ai-ng-agent-storage%`. Token counts remain unstable, so count sessions/turns and leave tokens at `0`.
+**Trae format**: Sessions live in both global storage and `workspaceStorage` `state.vscdb` files. Query `ItemTable` for keys matching `%icube-ai-chat-storage%`, `%icube-ai-ng-chat-storage%`, `%icube-ai-agent-storage%`, `%icube-ai-ng-agent-storage%`, and `chatHistoryNeedToBeMigrated-%`. Token counts remain unstable, so count sessions/turns and leave tokens at `0`.
 
 **Antigravity format**: API requests in `proxy_logs.db` SQLite. Grouped into sessions by 30-min time gaps. Tokens from `input_tokens`/`output_tokens` columns.
 
