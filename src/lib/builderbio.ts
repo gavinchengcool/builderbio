@@ -27,6 +27,19 @@ function asString(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value : null;
 }
 
+function normalizeAgentId(value: unknown): string | null {
+  const raw = asString(value);
+  if (!raw) return null;
+
+  const normalized = raw
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || null;
+}
+
 function firstString(record: JsonObject | null, keys: string[]): string | null {
   if (!record) return null;
   for (const key of keys) {
@@ -73,6 +86,10 @@ function normalizeTopTools(value: unknown): [string, number][] {
 
   return value
     .map((item) => {
+      if (typeof item === "string" && item.trim() !== "") {
+        return [item, 1] as [string, number];
+      }
+
       if (
         Array.isArray(item) &&
         typeof item[0] === "string" &&
@@ -296,6 +313,28 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
           asNumber(stats.total_tool_calls) ?? asNumber(stats.tool_calls) ?? 0,
         top_tools: normalizeTopTools(stats.top_tools),
         distribution: asObject(stats.distribution) ?? asObject(stats.length_dist) ?? {},
+      };
+    }
+
+    E.comparison = comparison;
+  }
+
+  if (!hasKeys(E.comparison) && Array.isArray(D.agent_comparison)) {
+    const comparison: JsonObject = {};
+
+    for (const item of D.agent_comparison) {
+      const entry = asObject(item) ?? {};
+      const agent = normalizeAgentId(entry.name);
+      if (!agent) continue;
+
+      comparison[agent] = {
+        sessions: asNumber(entry.sessions) ?? 0,
+        total_turns: asNumber(entry.total_turns) ?? asNumber(entry.turns) ?? 0,
+        avg_turns: asNumber(entry.avg_turns) ?? 0,
+        total_tool_calls:
+          asNumber(entry.total_tool_calls) ?? asNumber(entry.tool_calls) ?? 0,
+        top_tools: normalizeTopTools(entry.top_tools),
+        distribution: asObject(entry.distribution) ?? asObject(entry.length_dist) ?? {},
       };
     }
 

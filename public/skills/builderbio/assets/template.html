@@ -477,6 +477,9 @@ function safeRun(name,fn){try{fn()}catch(e){console.warn('BuilderBio: section "'
       peak_detail:(E.time_detail&&E.time_detail.peak_detail)||D.time.peak_detail||''
     };
   }
+  const agentKey=function(name){
+    return String(name||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  };
   if((!E.comparison||typeof E.comparison!=='object'||Object.keys(E.comparison).length===0)&&E.agent_comparison){
     E.comparison={};
     Object.entries(E.agent_comparison).forEach(function([agent,stats]){
@@ -487,6 +490,27 @@ function safeRun(name,fn){try{fn()}catch(e){console.warn('BuilderBio: section "'
         avg_turns:stats.avg_turns||0,
         total_tool_calls:stats.total_tool_calls||stats.tool_calls||0,
         top_tools:(stats.top_tools||[]).map(function(t){
+          if(typeof t==='string')return[t,1];
+          if(Array.isArray(t))return t;
+          return[t.name||'',t.count||0];
+        }).filter(function(t){return t[0]}),
+        distribution:stats.distribution||stats.length_dist||{short:0,medium:0,long:0}
+      };
+    });
+  }
+  if((!E.comparison||typeof E.comparison!=='object'||Object.keys(E.comparison).length===0)&&Array.isArray(D.agent_comparison)){
+    E.comparison={};
+    D.agent_comparison.forEach(function(stats){
+      stats=stats||{};
+      const agent=agentKey(stats.name);
+      if(!agent)return;
+      E.comparison[agent]={
+        sessions:stats.sessions||0,
+        total_turns:stats.total_turns||stats.turns||0,
+        avg_turns:stats.avg_turns||0,
+        total_tool_calls:stats.total_tool_calls||stats.tool_calls||0,
+        top_tools:(stats.top_tools||[]).map(function(t){
+          if(typeof t==='string')return[t,1];
           if(Array.isArray(t))return t;
           return[t.name||'',t.count||0];
         }).filter(function(t){return t[0]}),
