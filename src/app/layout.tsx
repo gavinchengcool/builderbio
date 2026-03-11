@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "https://builderbio.dev/og-image.png",
+        url: "https://builderbio.dev/og-image.png?v=2",
         width: 1200,
         height: 630,
         alt: "BuilderBio — {B}",
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     title: "builderbio — The Bio Link for Builders Who Ship with AI",
     description:
       "One command scans your coding agent sessions and generates a shareable developer profile. Show what you shipped, your tech stack, and building style.",
-    images: ["https://builderbio.dev/og-image.png"],
+    images: ["https://builderbio.dev/og-image.png?v=2"],
   },
   robots: {
     index: true,
