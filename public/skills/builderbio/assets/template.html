@@ -615,7 +615,7 @@ safeRun('hero',function(){
     gt.textContent='Generated on '+GEN_TIME;
     gt.style.display='block';
   }
-})();
+});
 
 // === PROJECTS ===
 safeRun('projects',function(){
@@ -625,7 +625,7 @@ safeRun('projects',function(){
     const tags=(p.tags||[]).map(t=>`<span class="ptag">${esc(t)}</span>`).join('');
     return`<div class="pcard"><div class="pcard-top"><div class="pname">${esc(p.name)}</div><span class="pstatus ${sl[p.status]||'ps-explored'}">${sn[p.status]||p.status}</span></div><div class="pdesc">${esc(p.description)}</div><div class="ptags">${tags}</div><div class="pmeta"><span><strong>${p.sessions?.length||0}</strong> ${t('p_sessions')}</span><span><strong>${fN(p.total_turns)}</strong> ${t('p_turns')}</span><span><strong>${fN(p.total_tool_calls)}</strong> ${t('p_tools')}</span></div></div>`;
   }).join('');
-})();
+});
 
 // === TECH RADAR ===
 safeRun('tech-radar',function(){
@@ -637,7 +637,7 @@ safeRun('tech-radar',function(){
   });
   h+='</div>';
   document.getElementById('tech-radar').innerHTML='<div class="radar-wrap">'+h+'</div>';
-})();
+});
 
 // === STYLE ===
 safeRun('style',function(){
@@ -655,7 +655,7 @@ safeRun('style',function(){
       <div class="trait"><div class="tname">${t('agent_loyalty')}</div><div class="tval">${esc(st.loyalty_label||'Multi-agent')}</div><div class="tdesc">${esc(st.loyalty_desc||t('loyalty_desc_poly'))}</div></div>
     </div>
     <div class="tbar-wrap"><div class="tbar-label">${t('tool_dist')}</div><div class="tbar">${bar}</div><div class="tleg">${leg}</div></div>`;
-})();
+});
 
 // === EVOLUTION CHART ===
 safeRun('evolution',function(){
@@ -681,7 +681,7 @@ safeRun('evolution',function(){
   }
   h+='</div>';
   document.getElementById('evolution').innerHTML=h;
-})();
+});
 
 // === TIME DISTRIBUTION ===
 safeRun('time-dist',function(){
@@ -709,7 +709,7 @@ safeRun('time-dist',function(){
     <div class="time-labels"><span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
     <div class="time-type"><div class="big">${esc(E.time.peak_text||'')}</div><div class="small">${esc(E.time.peak_detail||'')}</div></div>
     <div class="period-grid">${periods}</div>`;
-})();
+});
 
 // === KEYWORDS ===
 safeRun('keywords',function(){
@@ -721,7 +721,7 @@ safeRun('keywords',function(){
     const lvl=Math.min(5,Math.floor(c/maxC*5));
     return`<span class="kw" style="font-size:${sizes[lvl]}px;color:${colors[lvl]};background:${lvl>3?'var(--s2)':'var(--s1)'}">${esc(w)}</span>`;
   }).join('')+'</div>';
-})();
+});
 
 // === AGENT COMPARISON ===
 safeRun('agent-cmp',function(){
@@ -757,7 +757,7 @@ safeRun('agent-cmp',function(){
     h+='</div>';
   }
   document.getElementById('agent-cmp').innerHTML=h;
-})();
+});
 
 // === HEATMAP ===
 safeRun('heatmap',function(){
@@ -770,7 +770,7 @@ safeRun('heatmap',function(){
     <div class="hm-scroll"><div class="hm-grid">${cells}</div></div>
     <div class="hm-meta"><span>${t('hm_longest')}: <strong>${hl.longest_streak} ${t('hm_days')}</strong></span><span>${t('hm_current')}: <strong>${hl.current_streak} ${t('hm_days')}</strong></span><span>${t('hm_active')}: <strong>${D.profile.active_days}/${dates.length} ${t('hm_days')}</strong></span></div>
     <div class="hm-legend"><span>${t('hm_less')}</span><div class="hm-legend-cell hm-0"></div><div class="hm-legend-cell hm-1"></div><div class="hm-legend-cell hm-2"></div><div class="hm-legend-cell hm-3"></div><div class="hm-legend-cell hm-4"></div><span>${t('hm_more')}</span></div>`;
-})();
+});
 
 // === HIGHLIGHTS ===
 safeRun('highlights',function(){
@@ -784,7 +784,7 @@ safeRun('highlights',function(){
       <div class="hl"><div class="hl-t">${t('hl_number')}</div><div class="hl-v">${fN(totalTurns)} ${t('hl_turns_suffix')}</div><div class="hl-d">${t('hl_book_prefix')} ${fN(pages)} ${t('hl_book_suffix')}</div></div>
     </div>
     <div class="fav-prompt"><div class="fp-label">${t('hl_fav_prompt')}</div><div class="fp-text">${esc(hl.favorite_prompt)}</div></div>`;
-})();
+});
 
 // === CTA ===
 document.getElementById('cta-section').innerHTML=`<div class="cta">

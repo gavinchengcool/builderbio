@@ -216,7 +216,7 @@ export async function GET(
 
     // Update the footer JS to not overwrite
     template = template.replace(
-      /document\.getElementById\('footer-text'\)\.innerHTML=.*?;/,
+      /^document\.getElementById\('footer-text'\)\.innerHTML=.*$/m,
       `// footer rendered in HTML`
     );
 
