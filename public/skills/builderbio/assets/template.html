@@ -333,7 +333,7 @@ section{padding:60px 0}
 
 <div class="c">
 
-<section class="hero">
+<section class="hero" id="section-hero">
   <img class="hero-avatar" id="hero-avatar" src="" alt="">
   <h1 id="hero-title">BuilderBio</h1>
   <div id="hero-badge-row" style="margin-top:8px;margin-bottom:4px;display:none"></div>
@@ -344,36 +344,36 @@ section{padding:60px 0}
   <div class="agent-row" id="agent-row"></div>
   <div class="social-row" id="social-row"></div>
 </section>
-<div class="divider"></div>
+<div class="divider" id="divider-after-hero"></div>
 
-<section><div class="sh"><h2 id="sh-projects"></h2><p id="shp-projects"></p></div><div class="pgrid" id="projects"></div></section>
-<div class="divider"></div>
+<section id="section-projects"><div class="sh"><h2 id="sh-projects"></h2><p id="shp-projects"></p></div><div class="pgrid" id="projects"></div></section>
+<div class="divider" id="divider-after-projects"></div>
 
-<section><div class="sh"><h2 id="sh-tech"></h2><p id="shp-tech"></p></div><div id="tech-radar"></div></section>
-<div class="divider"></div>
+<section id="section-tech"><div class="sh"><h2 id="sh-tech"></h2><p id="shp-tech"></p></div><div id="tech-radar"></div></section>
+<div class="divider" id="divider-after-tech"></div>
 
-<section><div class="sh"><h2 id="sh-style"></h2><p id="shp-style"></p></div><div id="style-section"></div></section>
-<div class="divider"></div>
+<section id="section-style"><div class="sh"><h2 id="sh-style"></h2><p id="shp-style"></p></div><div id="style-section"></div></section>
+<div class="divider" id="divider-after-style"></div>
 
-<section><div class="sh"><h2 id="sh-evolution"></h2><p id="shp-evolution"></p></div><div id="evolution"></div></section>
-<div class="divider"></div>
+<section id="section-evolution"><div class="sh"><h2 id="sh-evolution"></h2><p id="shp-evolution"></p></div><div id="evolution"></div></section>
+<div class="divider" id="divider-after-evolution"></div>
 
-<section><div class="sh"><h2 id="sh-time"></h2><p id="shp-time"></p></div><div id="time-dist"></div></section>
-<div class="divider"></div>
+<section id="section-time"><div class="sh"><h2 id="sh-time"></h2><p id="shp-time"></p></div><div id="time-dist"></div></section>
+<div class="divider" id="divider-after-time"></div>
 
-<section><div class="sh"><h2 id="sh-keywords"></h2><p id="shp-keywords"></p></div><div id="keywords"></div></section>
-<div class="divider"></div>
+<section id="section-keywords"><div class="sh"><h2 id="sh-keywords"></h2><p id="shp-keywords"></p></div><div id="keywords"></div></section>
+<div class="divider" id="divider-after-keywords"></div>
 
-<section><div class="sh"><h2 id="sh-agentcmp"></h2><p id="shp-agentcmp"></p></div><div id="agent-cmp"></div></section>
-<div class="divider"></div>
+<section id="section-agentcmp"><div class="sh"><h2 id="sh-agentcmp"></h2><p id="shp-agentcmp"></p></div><div id="agent-cmp"></div></section>
+<div class="divider" id="divider-after-agentcmp"></div>
 
-<section><div class="sh"><h2 id="sh-heatmap"></h2><p id="shp-heatmap"></p></div><div id="heatmap"></div></section>
-<div class="divider"></div>
+<section id="section-heatmap"><div class="sh"><h2 id="sh-heatmap"></h2><p id="shp-heatmap"></p></div><div id="heatmap"></div></section>
+<div class="divider" id="divider-after-heatmap"></div>
 
-<section><div class="sh"><h2 id="sh-highlights"></h2><p id="shp-highlights"></p></div><div id="highlights"></div></section>
-<div class="divider"></div>
+<section id="section-highlights"><div class="sh"><h2 id="sh-highlights"></h2><p id="shp-highlights"></p></div><div id="highlights"></div></section>
+<div class="divider" id="divider-after-highlights"></div>
 
-<section><div id="cta-section"></div></section>
+<section id="section-cta"><div id="cta-section"></div></section>
 
 <div class="footer" id="footer-text" style="padding:24px 0;text-align:center;font-size:12px;color:var(--tm)"></div>
 </div>
@@ -386,6 +386,17 @@ const GEN_TIME = "__GEN_TIME__";
 const TC={"Bash":"#fb923c","Read":"#60a5fa","Write":"#34d399","Edit":"#a78bfa","Grep":"#fbbf24","Glob":"#22d3ee","Task":"#f472b6","TaskUpdate":"#818cf8","TaskCreate":"#818cf8","write_stdin":"#c084fc","WebFetch":"#2dd4bf","WebSearch":"#2dd4bf","AskUserQuestion":"#f43f5e","view_image":"#f472b6","shell_command":"#fb923c","update_plan":"#818cf8","EnterPlanMode":"#a78bfa"};
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 function fN(n){if(!n)return'0';if(n>=1e9)return(n/1e9).toFixed(2)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toString()}
+function hideSection(name){
+  const section=document.getElementById('section-'+name);
+  const divider=document.getElementById('divider-after-'+name);
+  if(section)section.style.display='none';
+  if(divider)divider.style.display='none';
+}
+function hasEntries(v){
+  if(Array.isArray(v))return v.length>0;
+  if(v&&typeof v==='object')return Object.keys(v).length>0;
+  return !!v;
+}
 
 // === SAFE SECTION RUNNER ===
 function safeRun(name,fn){try{fn()}catch(e){console.warn('BuilderBio: section "'+name+'" skipped:',e.message)}}
@@ -608,6 +619,8 @@ safeRun('hero',function(){
     document.getElementById('social-row').innerHTML=sl.map(s=>
       `<a class="social-link" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.platform)}">${socialIcons[s.platform.toLowerCase()]||socialIcons.website}</a>`
     ).join('');
+  }else{
+    document.getElementById('social-row').style.display='none';
   }
   // Generate time
   if(GEN_TIME && GEN_TIME!=='__GEN_TIME__'){
@@ -619,6 +632,7 @@ safeRun('hero',function(){
 
 // === PROJECTS ===
 safeRun('projects',function(){
+  if(!Array.isArray(D.projects)||D.projects.length===0){hideSection('projects');return}
   const sl={'shipped':'ps-shipped','in progress':'ps-progress','explored':'ps-explored'};
   const sn={'shipped':t('shipped'),'in progress':t('in_progress'),'explored':t('explored')};
   document.getElementById('projects').innerHTML=(D.projects||[]).map(p=>{
@@ -630,6 +644,7 @@ safeRun('projects',function(){
 // === TECH RADAR ===
 safeRun('tech-radar',function(){
   const tech=E.tech;
+  if(!hasEntries(tech)){hideSection('tech');return}
   const colors=['var(--ac)','var(--g)','var(--y)','var(--b)','var(--p)','var(--o)','var(--pk)','var(--r)','#22d3ee','#2dd4bf'];
   let h='<div class="radar-bars">';
   Object.entries(tech).forEach(([name,val],i)=>{
@@ -642,6 +657,7 @@ safeRun('tech-radar',function(){
 // === STYLE ===
 safeRun('style',function(){
   const st=D.style;const tt=st.tool_totals||{};const total=Object.values(tt).reduce((a,b)=>a+b,0)||1;
+  if(!hasEntries(st)&&!hasEntries(tt)){hideSection('style');return}
   const sorted=Object.entries(tt).sort((a,b)=>b[1]-a[1]);
   const bar=sorted.map(([t,c])=>{const pct=((c/total)*100).toFixed(1);return`<div class="tseg" style="width:${pct}%;background:${TC[t]||'#52525b'}" title="${t}: ${c}"></div>`;}).join('');
   const leg=sorted.filter(([,c])=>c/total>.02).map(([t,c])=>`<span class="tleg-i"><span class="tleg-d" style="background:${TC[t]||'#52525b'}"></span>${t} ${c}</span>`).join('');
@@ -660,6 +676,7 @@ safeRun('style',function(){
 // === EVOLUTION CHART ===
 safeRun('evolution',function(){
   const evo=E.evolution;
+  if(!Array.isArray(evo)||evo.length===0){hideSection('evolution');return}
   const maxTurns=Math.max(...evo.map(e=>e.turns));
   let h='<div style="position:relative"><div class="evo-chart">';
   evo.forEach((e,i)=>{
@@ -685,6 +702,7 @@ safeRun('evolution',function(){
 
 // === TIME DISTRIBUTION ===
 safeRun('time-dist',function(){
+  if(!E.time||!hasEntries(E.time.hour_distribution)||!hasEntries(E.time.period_data)){hideSection('time');return}
   const hd=E.time.hour_distribution;
   const maxH=Math.max(...Object.values(hd));
   const pd=E.time.period_data;
@@ -714,6 +732,7 @@ safeRun('time-dist',function(){
 // === KEYWORDS ===
 safeRun('keywords',function(){
   const kw=E.keywords;
+  if(!Array.isArray(kw)||kw.length===0){hideSection('keywords');return}
   const maxC=Math.max(...kw.map(k=>k[1]));
   const sizes=[14,16,18,22,26,32];
   const colors=['var(--tm)','var(--t2)','var(--b)','var(--g)','var(--ac)','var(--y)'];
@@ -726,7 +745,7 @@ safeRun('keywords',function(){
 // === AGENT COMPARISON ===
 safeRun('agent-cmp',function(){
   const cmp=E.comparison;
-  if(!cmp)return;
+  if(!cmp||Object.keys(cmp).length<2){hideSection('agentcmp');return}
   const agentLabels={'claude-code':'Claude Code','codex':'Codex'};
   const agentColors={'claude-code':'var(--ac)','codex':'var(--g)'};
   let h='<div class="cmp-grid">';
@@ -761,7 +780,7 @@ safeRun('agent-cmp',function(){
 
 // === HEATMAP ===
 safeRun('heatmap',function(){
-  const hm=D.heatmap||{};const dates=Object.keys(hm).sort();if(!dates.length)return;
+  const hm=D.heatmap||{};const dates=Object.keys(hm).sort();if(!dates.length){hideSection('heatmap');return}
   const firstDate=new Date(dates[0]+'T00:00:00');const dow=firstDate.getDay()||7;const padBefore=dow-1;
   let cells='';for(let i=0;i<padBefore;i++)cells+='<div class="hm-cell hm-0"></div>';
   dates.forEach(d=>{const v=hm[d]||0;const lvl=v===0?0:v<20?1:v<100?2:v<300?3:4;cells+=`<div class="hm-cell hm-${lvl}" title="${d}: ${v} ${t('hm_turns')}"></div>`;});
@@ -775,6 +794,7 @@ safeRun('heatmap',function(){
 // === HIGHLIGHTS ===
 safeRun('highlights',function(){
   const hl=D.highlights;const bs=hl.biggest_session;const bd=hl.busiest_day;
+  if(!hl||!bs||!bd){hideSection('highlights');return}
   const totalTurns=D.profile.total_turns;const pages=Math.round(totalTurns/3);
   document.getElementById('highlights').innerHTML=`
     <div class="hl-grid">
