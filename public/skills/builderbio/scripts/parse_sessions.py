@@ -23,8 +23,11 @@ from pathlib import Path
 
 def main():
     args = parse_args()
-    days = int(args.get("days", 30))
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    days = int(args.get("days", 0))
+    if days > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    else:
+        cutoff = datetime.min.replace(tzinfo=timezone.utc)  # no cutoff — include all
 
     sessions = []
 
@@ -387,7 +390,14 @@ def compute_heatmap(sessions, days):
 
     # Fill in zeros for all days in range
     end = datetime.now(timezone.utc).date()
-    start = end - timedelta(days=days)
+    if days > 0:
+        start = end - timedelta(days=days)
+    elif daily:
+        start = min(datetime.strptime(d, "%Y-%m-%d").date() for d in daily)
+        # Extend to start of that week (Monday-aligned for heatmap)
+        start = start - timedelta(days=start.weekday())
+    else:
+        start = end - timedelta(days=30)
     heatmap = {}
     current = start
     while current <= end:
