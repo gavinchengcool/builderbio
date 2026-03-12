@@ -11,21 +11,21 @@ export default function Titlebar({ forceBuiltByActive = false }: { forceBuiltByA
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-bg-secondary/80 backdrop-blur-sm">
       <div style={{position:'absolute',bottom:0,left:0,right:0,height:'1px',background:'linear-gradient(90deg, transparent, var(--border), transparent)'}} />
-      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-3 sm:px-4">
         <a
           href="https://builderbio.dev"
-          className={`flex items-center font-bold text-sm tracking-wide transition-colors ${isHome ? "text-accent" : "text-text-secondary hover:text-accent"}`}
+          className={`flex items-center font-bold text-xs tracking-wide transition-colors sm:text-sm ${isHome ? "text-accent" : "text-text-secondary hover:text-accent"}`}
         >
           ~/builderbio
         </a>
-        <nav className="flex items-center gap-4 text-xs text-text-secondary">
+        <nav className="flex items-center gap-2 text-[10px] text-text-secondary sm:gap-4 sm:text-xs">
           <a
             href="https://builderbio.dev/taste-board"
             className={isTasteBoard ? "text-accent" : "hover:text-accent transition-colors"}
           >
             /taste-board
           </a>
-          <span className="text-text-muted">·</span>
+          <span className="hidden text-text-muted sm:inline">·</span>
           <a
             href="https://gavin.builderbio.dev"
             className={isBuiltBy ? "text-accent" : "hover:text-accent transition-colors"}

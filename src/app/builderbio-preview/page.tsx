@@ -504,9 +504,9 @@ export default async function BuilderBioPreviewPage() {
       <div className="relative overflow-hidden pt-12">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,107,53,0.18),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(52,211,153,0.12),transparent_30%)]" />
 
-        <main className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-          <section className="mb-10 rounded-3xl border border-accent/20 bg-bg-secondary/70 p-6 shadow-[0_0_0_1px_rgba(255,107,53,0.06)] backdrop-blur sm:p-8">
-            <div className="mb-6 flex flex-wrap items-center gap-3">
+        <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-12">
+          <section className="mb-8 rounded-3xl border border-accent/20 bg-bg-secondary/70 p-5 shadow-[0_0_0_1px_rgba(255,107,53,0.06)] backdrop-blur sm:mb-10 sm:p-8">
+            <div className="mb-5 flex flex-wrap items-center gap-2 sm:mb-6 sm:gap-3">
               <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
                 {preview.label}
               </span>
@@ -515,11 +515,11 @@ export default async function BuilderBioPreviewPage() {
               </span>
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.2fr_0.8fr]">
               <div>
-                <div className="mb-6 flex flex-wrap items-center gap-4">
+                <div className="mb-5 flex flex-col items-start gap-4 sm:mb-6 sm:flex-row sm:items-center">
                   <div
-                    className="flex h-20 w-20 items-center justify-center rounded-3xl border border-accent/25 bg-accent/10 text-3xl font-black text-accent shadow-[0_12px_40px_rgba(255,107,53,0.12)]"
+                    className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-3xl border border-accent/25 bg-accent/10 text-3xl font-black text-accent shadow-[0_12px_40px_rgba(255,107,53,0.12)] sm:h-20 sm:w-20"
                     style={{
                       backgroundImage: `linear-gradient(rgba(17,17,17,0.04), rgba(17,17,17,0.04)), url(${preview.avatarUrl})`,
                       backgroundSize: "cover",
@@ -528,7 +528,7 @@ export default async function BuilderBioPreviewPage() {
                   >
                     <span className="sr-only">{preview.avatarLetter}</span>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs uppercase tracking-[0.24em] text-text-muted">{preview.slug}</p>
                     <h1 className="mt-2 text-3xl font-black text-text-primary sm:text-4xl">
                       {preview.name}
@@ -541,7 +541,7 @@ export default async function BuilderBioPreviewPage() {
                           href={item.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary transition-colors hover:border-accent/40 hover:text-accent"
+                          className="rounded-full border border-border px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-text-secondary transition-colors hover:border-accent/40 hover:text-accent sm:px-3 sm:text-[11px]"
                         >
                           {item.label}
                         </a>
@@ -571,7 +571,7 @@ export default async function BuilderBioPreviewPage() {
                   </span>
                 </div>
 
-                <h2 className="max-w-4xl text-4xl font-black leading-[0.95] text-text-primary sm:text-6xl">
+                <h2 className="max-w-4xl text-[2rem] font-black leading-[0.98] text-text-primary sm:text-6xl">
                   {preview.thesis}
                 </h2>
                 <p className="mt-5 max-w-3xl text-sm leading-7 text-text-secondary sm:text-base">
@@ -581,36 +581,36 @@ export default async function BuilderBioPreviewPage() {
                   {preview.trust.note}
                 </p>
 
-                <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-text-secondary">
+                <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] text-text-secondary sm:gap-3 sm:text-xs">
                   <span className="rounded-full border border-border px-3 py-1.5 text-text-primary">
                     {preview.dateRange}
                   </span>
                   {preview.keywordSignals.map((keyword) => (
                     <span
                       key={keyword}
-                      className="rounded-full border border-border px-3 py-1.5 text-text-secondary"
-                    >
-                      {keyword}
-                    </span>
+                        className="rounded-full border border-border px-2.5 py-1.5 text-text-secondary sm:px-3"
+                      >
+                        {keyword}
+                      </span>
                   ))}
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-2">
+                <div className="mt-5 flex flex-wrap gap-2 sm:mt-6">
                   {preview.tasteSignals.map((signal) => (
                     <span
                       key={signal}
-                      className="rounded-full border border-accent/20 bg-accent/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-primary"
+                      className="rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-text-primary sm:px-3 sm:text-[11px]"
                     >
                       {signal}
                     </span>
                   ))}
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-center gap-3 text-xs text-text-secondary">
+                <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] text-text-secondary sm:mt-6 sm:gap-3 sm:text-xs">
                   {preview.agents.map((agent) => (
                     <span
                       key={agent.name}
-                      className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5"
+                      className="inline-flex items-center gap-2 rounded-full border border-border px-2.5 py-1.5 sm:px-3"
                     >
                       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: agent.color }} />
                       <span className="text-text-primary">{agent.name}</span>
@@ -621,7 +621,7 @@ export default async function BuilderBioPreviewPage() {
               </div>
 
               <div className="grid gap-4">
-                <div className="rounded-3xl border border-border bg-bg-primary/55 p-5">
+                <div className="rounded-3xl border border-border bg-bg-primary/55 p-4 sm:p-5">
                   <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
                     {preview.managementStyle.label}
                   </p>
@@ -647,7 +647,7 @@ export default async function BuilderBioPreviewPage() {
                       <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
                         {preview.socialCurrency.title}
                       </p>
-                      <div className="mt-2 text-4xl font-black leading-none text-text-primary sm:text-5xl">
+                      <div className="mt-2 text-3xl font-black leading-none text-text-primary sm:text-5xl">
                         {formatCompact(preview.totalTokens)}
                       </div>
                       <p className="mt-2 text-sm font-semibold text-text-primary/90">与 AI 协作产生的 tokens</p>
@@ -659,7 +659,7 @@ export default async function BuilderBioPreviewPage() {
                   <p className="mt-4 text-sm leading-6 text-text-secondary">
                     {preview.socialCurrency.summary}
                   </p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {preview.socialCurrency.facts.map((fact) => (
                       <div
                         key={fact.label}
@@ -674,13 +674,13 @@ export default async function BuilderBioPreviewPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-3">
                   {preview.stats.map((stat) => (
                     <div
                       key={stat.label}
                       className="rounded-2xl border border-border bg-bg-primary/55 p-4"
                     >
-                      <div className="text-3xl font-black text-accent sm:text-4xl">{stat.value}</div>
+                      <div className="text-2xl font-black text-accent sm:text-4xl">{stat.value}</div>
                       <div className="mt-2 text-[11px] uppercase tracking-[0.22em] text-text-muted">
                         {stat.label}
                       </div>
@@ -691,8 +691,8 @@ export default async function BuilderBioPreviewPage() {
             </div>
           </section>
 
-          <section className="mb-10 grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+          <section className="mb-8 grid gap-5 lg:grid-cols-[1.08fr_0.92fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <div className="mb-5 flex flex-wrap items-center gap-3">
                 <span className="rounded-full border border-accent/25 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
                   {preview.signatureBuild.stage}
@@ -727,7 +727,7 @@ export default async function BuilderBioPreviewPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
                 High moments
               </p>
@@ -754,8 +754,8 @@ export default async function BuilderBioPreviewPage() {
             </div>
           </section>
 
-          <section className="mb-10 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+          <section className="mb-8 grid gap-5 lg:grid-cols-[0.92fr_1.08fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
                 Signature moves
               </p>
@@ -776,7 +776,7 @@ export default async function BuilderBioPreviewPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
@@ -822,8 +822,8 @@ export default async function BuilderBioPreviewPage() {
             </div>
           </section>
 
-          <section className="mb-10 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+          <section className="mb-8 grid gap-5 lg:grid-cols-[0.92fr_1.08fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
                 How I Build
               </p>
@@ -922,7 +922,7 @@ export default async function BuilderBioPreviewPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
                 Agent Comparison
               </p>
@@ -950,7 +950,7 @@ export default async function BuilderBioPreviewPage() {
                         </span>
                       </div>
 
-                      <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <div className="rounded-xl border border-border bg-bg-secondary px-3 py-3 text-center">
                           <div className="text-xl font-black text-text-primary">{agent.sessions}</div>
                           <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-text-muted">
@@ -1007,7 +1007,7 @@ export default async function BuilderBioPreviewPage() {
             </div>
           </section>
 
-          <section className="mb-10 rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+          <section className="mb-8 rounded-3xl border border-border bg-bg-secondary p-5 sm:mb-10 sm:p-8">
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
               Agent roles
             </p>
@@ -1046,8 +1046,8 @@ export default async function BuilderBioPreviewPage() {
             </div>
           </section>
 
-          <section className="mb-10 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+          <section className="mb-8 grid gap-5 lg:grid-cols-[1.05fr_0.95fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
@@ -1091,7 +1091,7 @@ export default async function BuilderBioPreviewPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
@@ -1130,8 +1130,8 @@ export default async function BuilderBioPreviewPage() {
             </div>
           </section>
 
-          <section className="mb-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+          <section className="mb-8 grid gap-5 lg:grid-cols-2 sm:mb-10 sm:gap-6">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
                 Tech fingerprint
               </p>
@@ -1153,7 +1153,7 @@ export default async function BuilderBioPreviewPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
                 When I Build
               </p>
@@ -1161,26 +1161,30 @@ export default async function BuilderBioPreviewPage() {
                 {preview.whenIbuild.builderType}
               </h2>
               <div className="mt-6">
-                <div className="flex h-36 items-end gap-1 rounded-2xl border border-border bg-bg-primary/60 px-3 py-3">
-                  {hourEntries.map((entry) => (
-                    <div key={entry.hour} className="flex h-full min-w-0 flex-1 items-end">
-                      <div
-                        className="w-full rounded-t-[4px]"
-                        style={{
-                          height: `${Math.max(2, Math.round((entry.sessions / maxHourSessions) * 100))}%`,
-                          background: hourColor(entry.hour),
-                        }}
-                        title={`${entry.hour}:00 — ${entry.sessions} sessions`}
-                      />
+                <div className="overflow-x-auto pb-2">
+                  <div className="min-w-[420px]">
+                    <div className="flex h-36 items-end gap-1 rounded-2xl border border-border bg-bg-primary/60 px-3 py-3">
+                      {hourEntries.map((entry) => (
+                        <div key={entry.hour} className="flex h-full min-w-0 flex-1 items-end">
+                          <div
+                            className="w-full rounded-t-[4px]"
+                            style={{
+                              height: `${Math.max(2, Math.round((entry.sessions / maxHourSessions) * 100))}%`,
+                              background: hourColor(entry.hour),
+                            }}
+                            title={`${entry.hour}:00 — ${entry.sessions} sessions`}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-text-muted">
-                  <span>0:00</span>
-                  <span>6:00</span>
-                  <span>12:00</span>
-                  <span>18:00</span>
-                  <span>23:00</span>
+                    <div className="mt-3 flex items-center justify-between text-[11px] text-text-muted">
+                      <span>0:00</span>
+                      <span>6:00</span>
+                      <span>12:00</span>
+                      <span>18:00</span>
+                      <span>23:00</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="mt-5 rounded-2xl border border-border bg-bg-primary/60 p-4">
                   <div className="text-xl font-black text-text-primary">
@@ -1191,7 +1195,7 @@ export default async function BuilderBioPreviewPage() {
                     {preview.whenIbuild.peakWindowSessions} 个 sessions。
                   </p>
                 </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-4 grid grid-cols-2 gap-3">
                   {preview.whenIbuild.periods.map((period) => (
                     <div
                       key={period.label}
@@ -1212,8 +1216,8 @@ export default async function BuilderBioPreviewPage() {
             </div>
           </section>
 
-          <section className="mb-10 grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+          <section className="mb-8 grid gap-5 lg:grid-cols-[1.08fr_0.92fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
                 Activity
               </p>
@@ -1256,7 +1260,7 @@ export default async function BuilderBioPreviewPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
                 Log receipts
               </p>
@@ -1321,7 +1325,7 @@ export default async function BuilderBioPreviewPage() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-border bg-bg-secondary p-6 sm:p-8">
+          <section className="rounded-3xl border border-border bg-bg-secondary p-5 sm:p-8">
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">

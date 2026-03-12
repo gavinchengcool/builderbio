@@ -237,29 +237,39 @@ section{padding:60px 0}
   /* === MODULE-PER-SCREEN MOBILE LAYOUT ===
      Each section fills ~one screen with generous spacing.
      Optimized for easy screenshots and reduced info density. */
-  section{padding:64px 0;min-height:80vh;display:flex;flex-direction:column;justify-content:center}
-  .c{padding:0 24px}
+  section{padding:48px 0;min-height:auto;display:flex;flex-direction:column;justify-content:center}
+  .c{padding:0 18px}
   .hero-avatar{align-self:center}
   .divider{margin:16px 0}
 
   /* Hero — full screen intro */
-  .hero{padding:48px 0 40px;min-height:90vh}
-  .hero h1{font-size:32px;letter-spacing:-.03em}
-  .hero .sub{font-size:14px;margin-bottom:32px;line-height:1.6}
-  .stats-row{gap:28px}
-  .stat .num{font-size:32px}
+  .hero{padding:40px 0 32px;min-height:auto}
+  .hero h1{font-size:30px;letter-spacing:-.03em}
+  .hero .sub{font-size:13px;margin-bottom:24px;line-height:1.6}
+  .stats-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px;width:100%}
+  .stat .num{font-size:28px}
   .stat .lbl{font-size:10px;letter-spacing:.8px;margin-top:8px}
-  .agent-row{gap:8px;margin-top:24px}
-  .agent-chip{font-size:12px;padding:6px 14px}
+  .agent-row{gap:8px;margin-top:18px}
+  .agent-chip{font-size:11px;padding:6px 12px;max-width:100%}
   .agent-since{font-size:10px}
+  .scan-note{font-size:11px}
+  .tagline{font-size:13px!important}
 
-  .recap-card,.spotlight-card,.role-card,.move-card{padding:20px}
-  .recap-title{font-size:28px;line-height:1.08}
-  .scale-value{font-size:34px}
-  .scale-grid{grid-template-columns:1fr 1fr}
-  .spotlight-title{font-size:21px}
+  .recap-grid,.spotlight-grid,.role-grid,.move-grid{gap:12px}
+  .recap-card,.spotlight-card,.role-card,.move-card{padding:18px}
+  .recap-title{font-size:24px;line-height:1.08}
+  .recap-body,.spotlight-text,.role-text,.move-text{font-size:13px;line-height:1.65}
+  .scale-value{font-size:30px}
+  .scale-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .scale-stat{padding:12px}
+  .scale-stat .sv{font-size:18px}
+  .spotlight-title{font-size:20px}
+  .spotlight-proof{gap:8px}
+  .proof-pill{font-size:11px;padding:9px 10px}
   .role-name{font-size:18px}
+  .role-tag{font-size:9px}
   .move-title{font-size:17px}
+  .move-proof{font-size:10px}
   .signal-row{gap:6px}
   .signal-chip{font-size:10px;padding:6px 10px}
 
@@ -269,7 +279,7 @@ section{padding:60px 0}
   .pname{font-size:15px}
   .pdesc{font-size:13px;line-height:1.6}
   .ptags{gap:6px}
-  .pmeta{font-size:12px}
+  .pmeta{font-size:12px;flex-wrap:wrap;row-gap:6px}
 
   /* Style — module feel */
   .style-hero{padding:20px 0;margin-bottom:24px}
@@ -298,6 +308,7 @@ section{padding:60px 0}
 
   /* Time — dedicated screen */
   .time-bars{height:100px;gap:2px}
+  .time-labels{font-size:9px}
   .time-type{margin-bottom:20px}
   .time-type .big{font-size:24px}
   .time-type .small{font-size:13px}
@@ -345,7 +356,7 @@ section{padding:60px 0}
   .sh p{font-size:12px;line-height:1.5}
 
   /* Share bar */
-  .share-bar{bottom:16px;right:16px}
+  .share-bar{bottom:12px;right:12px}
   .share-btn{width:36px;height:36px;border-radius:10px}
   .share-btn svg{width:16px;height:16px}
 
@@ -353,6 +364,7 @@ section{padding:60px 0}
   .site-nav-inner{padding:0 .75rem}
   .site-nav-logo{font-size:.75rem}
   .site-nav-links{gap:.75rem;font-size:.625rem}
+  .site-nav-links .sep{display:none}
 
   /* Footer */
   .footer{padding:40px 0 32px!important}
