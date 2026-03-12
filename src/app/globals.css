@@ -14,6 +14,9 @@
   --danger: #FF4444;
   --warning: #FF6600;
   --info: #42A5F5;
+  --font-builderbio-recap: "SF Mono", "Cascadia Mono", "Cascadia Code",
+    "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono",
+    "DejaVu Sans Mono", ui-monospace, monospace;
 }
 
 @theme inline {
@@ -169,4 +172,9 @@ body {
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.builderbio-recap-shell {
+  --font-mono: var(--font-builderbio-recap);
+  font-family: var(--font-builderbio-recap);
 }
