@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users, profiles } from "@/lib/db/schema";
 import {
+  extractBuilderBioAvatarUrl,
+  extractPortraitAvatarUrl,
   injectBuilderBioScannerMetadata,
   normalizeBuilderBioData,
 } from "@/lib/builderbio";
@@ -184,7 +186,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const normalizedBuilderBio = injectBuilderBioScannerMetadata(
+    let normalizedBuilderBio = injectBuilderBioScannerMetadata(
       normalizeBuilderBioData(builderbio),
       scanner_version,
       scan_audit
@@ -242,20 +244,72 @@ export async function POST(req: NextRequest) {
 
     // --- Update existing user ---
     if (existingUser) {
+      const existingProfiles = await db
+        .select({
+          summary: profiles.summary,
+          portrait: profiles.portrait,
+          frameworkSentences: profiles.frameworkSentences,
+          activityMap: profiles.activityMap,
+          behavioralFingerprint: profiles.behavioralFingerprint,
+          searchProfile: profiles.searchProfile,
+          searchVector: profiles.searchVector,
+          dataHash: profiles.dataHash,
+          builderBioData: profiles.builderBioData,
+        })
+        .from(profiles)
+        .where(eq(profiles.userId, existingUser.id))
+        .limit(1);
+
+      const existingProfile = existingProfiles[0] ?? null;
+      const preservedPortrait =
+        profile.portrait ?? existingProfile?.portrait ?? null;
+      const existingAvatarUrl =
+        extractBuilderBioAvatarUrl(existingProfile?.builderBioData) ??
+        extractPortraitAvatarUrl(existingProfile?.portrait) ??
+        extractPortraitAvatarUrl(profile.portrait);
+
+      if (
+        existingAvatarUrl &&
+        !extractBuilderBioAvatarUrl(normalizedBuilderBio)
+      ) {
+        const mergedProfile =
+          (normalizedBuilderBio.D.profile as Record<string, unknown> | undefined) ??
+          {};
+        mergedProfile.avatar_url = existingAvatarUrl;
+        if (!mergedProfile.avatar) {
+          mergedProfile.avatar = existingAvatarUrl;
+        }
+        normalizedBuilderBio = {
+          ...normalizedBuilderBio,
+          D: {
+            ...normalizedBuilderBio.D,
+            profile: mergedProfile,
+          },
+        };
+      }
+
       await db
         .update(profiles)
         .set({
           status: "published",
           isPublic: 1,
-          summary: profile.summary,
-          portrait: profile.portrait,
-          frameworkSentences: profile.framework_sentences,
-          activityMap: profile.activity_map,
-          behavioralFingerprint: profile.behavioral_fingerprint,
-          searchProfile: profile.search_profile,
-          searchVector,
+          summary: profile.summary ?? existingProfile?.summary ?? null,
+          portrait: preservedPortrait,
+          frameworkSentences:
+            profile.framework_sentences ??
+            existingProfile?.frameworkSentences ??
+            null,
+          activityMap:
+            profile.activity_map ?? existingProfile?.activityMap ?? null,
+          behavioralFingerprint:
+            profile.behavioral_fingerprint ??
+            existingProfile?.behavioralFingerprint ??
+            null,
+          searchProfile:
+            profile.search_profile ?? existingProfile?.searchProfile ?? null,
+          searchVector: searchVector || existingProfile?.searchVector || "",
           builderBioData: normalizedBuilderBio,
-          dataHash: data_hash || null,
+          dataHash: data_hash ?? existingProfile?.dataHash ?? null,
           styleTheme: style_theme,
           sessionsAnalyzed: profile.sessions_analyzed,
           totalTokens: profile.total_tokens,

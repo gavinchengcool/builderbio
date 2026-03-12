@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { profiles, users } from "@/lib/db/schema";
-import { normalizeBuilderBioData } from "@/lib/builderbio";
+import {
+  extractPortraitAvatarUrl,
+  normalizeBuilderBioData,
+} from "@/lib/builderbio";
 import { eq, and } from "drizzle-orm";
 import { sha256 } from "@/lib/auth";
 import { readFile } from "fs/promises";
@@ -97,6 +100,7 @@ export async function GET(
         username: users.username,
         displayName: users.displayName,
         builderBioData: profiles.builderBioData,
+        portrait: profiles.portrait,
         dataHash: profiles.dataHash,
         styleTheme: profiles.styleTheme,
         updatedAt: profiles.updatedAt,
@@ -127,6 +131,19 @@ export async function GET(
     }
 
     const bioData = normalizeBuilderBioData(rawBioData);
+    const portraitAvatarUrl = extractPortraitAvatarUrl(result.portrait);
+    const profileData =
+      (bioData.D.profile as Record<string, unknown> | undefined) ?? {};
+
+    if (
+      portraitAvatarUrl &&
+      typeof profileData.avatar_url !== "string" &&
+      typeof profileData.avatar !== "string"
+    ) {
+      profileData.avatar_url = portraitAvatarUrl;
+      profileData.avatar = portraitAvatarUrl;
+      bioData.D.profile = profileData;
+    }
 
     // Verify Unfiltered status
     let isUnfiltered = false;

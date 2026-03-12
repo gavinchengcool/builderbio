@@ -15,7 +15,7 @@ The profile consists of two data objects: **D** (primary data) and **E** (extra/
     "total_turns": 4200,
     "total_tool_calls": 2100,
     "total_tokens": 850000,
-    "scanner_version": "0.6.0",
+    "scanner_version": "0.6.1",
     "scan_status": "partial",
     "scan_recommendation": "Re-run BuilderBio with the latest skill if you used agents that are missing from the badges.",
     "agent_sources_found": {
@@ -119,7 +119,7 @@ The profile consists of two data objects: **D** (primary data) and **E** (extra/
   },
   "comparison_insight": "Uses Claude Code for deep building, Codex for quick explorations.",
   "scan_audit": {
-    "scanner_version": "0.6.0",
+    "scanner_version": "0.6.1",
     "summary": {
       "status": "partial",
       "confidence": 0.83,

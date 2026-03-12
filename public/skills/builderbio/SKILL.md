@@ -1,6 +1,6 @@
 ---
 name: builderbio
-version: 0.6.0
+version: 0.6.1
 description: |
   This skill should be used when the user wants to generate a shareable "BuilderBio" — a profile page showcasing everything they built with AI coding agents (Claude Code, Codex, Trae, Antigravity, Kiro, Windsurf, OpenClaw, Cursor-like fallbacks, and more). It scans all local agent sessions, emits an audit report showing scan completeness, clusters projects, and publishes a personal portfolio. This skill should be used when the user mentions "BuilderBio", "builder bio", "builder profile", "share my builds", "coding history", "AI portfolio", "showcase", "分享", "画像", "展示", "导出", or "profile".
 allowed-tools:
@@ -282,7 +282,7 @@ curl -s -X POST https://builderbio.dev/api/profile/publish \
     "publish_token": "TOKEN_OR_EMPTY_STRING",
     "data_hash": "SHA256_HASH_FROM_PHASE_3_6",
     "style_theme": "default",
-    "scanner_version": "0.6.0",
+    "scanner_version": "0.6.1",
     "scan_audit": { ... parsed scan_audit object ... },
     "profile": {
       "summary": "ONE_LINE_SUMMARY",

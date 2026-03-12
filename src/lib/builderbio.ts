@@ -254,6 +254,71 @@ function normalizeProjects(value: unknown): JsonObject[] {
   });
 }
 
+function normalizeDistribution(value: unknown): JsonObject {
+  const distribution = asObject(value) ?? {};
+  return {
+    short: asNumber(distribution.short) ?? 0,
+    medium: asNumber(distribution.medium) ?? 0,
+    long: asNumber(distribution.long) ?? 0,
+  };
+}
+
+function normalizeLegacyAgentComparison(value: unknown): JsonObject {
+  const comparison: JsonObject = {};
+
+  for (const item of asArray(value)) {
+    const entry = asObject(item) ?? {};
+    const agent =
+      normalizeAgentId(entry.agent) ??
+      normalizeAgentId(entry.name) ??
+      normalizeAgentId(entry.display_name);
+    if (!agent) continue;
+
+    comparison[agent] = {
+      sessions: asNumber(entry.sessions) ?? 0,
+      total_turns: asNumber(entry.total_turns) ?? asNumber(entry.turns) ?? 0,
+      avg_turns: asNumber(entry.avg_turns) ?? 0,
+      total_tool_calls:
+        asNumber(entry.total_tool_calls) ?? asNumber(entry.tool_calls) ?? 0,
+      top_tools: normalizeTopTools(entry.top_tools),
+      distribution: normalizeDistribution(entry.distribution ?? entry.length_dist),
+      first_session: asString(entry.first_session) ?? "",
+      display_name:
+        asString(entry.display_name) ?? asString(entry.name) ?? agent,
+    };
+  }
+
+  return comparison;
+}
+
+function aggregateToolTotalsFromComparison(value: unknown): JsonObject {
+  const totals: Record<string, number> = {};
+  const comparison = asObject(value) ?? {};
+
+  for (const rawStats of Object.values(comparison)) {
+    const stats = asObject(rawStats) ?? {};
+    for (const [tool, count] of normalizeTopTools(stats.top_tools)) {
+      totals[tool] = (totals[tool] ?? 0) + count;
+    }
+  }
+
+  return totals;
+}
+
+function aggregateSessionDistributionFromComparison(value: unknown): JsonObject {
+  const totals = { short: 0, medium: 0, long: 0 };
+  const comparison = asObject(value) ?? {};
+
+  for (const rawStats of Object.values(comparison)) {
+    const distribution = normalizeDistribution(asObject(rawStats)?.distribution);
+    totals.short += asNumber(distribution.short) ?? 0;
+    totals.medium += asNumber(distribution.medium) ?? 0;
+    totals.long += asNumber(distribution.long) ?? 0;
+  }
+
+  return totals;
+}
+
 export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
   const normalized = structuredClone(data) as BuilderBioData;
   const D = asObject(normalized.D) ?? {};
@@ -263,6 +328,8 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
 
   const profile = asObject(D.profile) ?? {};
   D.profile = profile;
+  const insights = asObject(E.insights) ?? {};
+  const legacyAgentComparison = normalizeLegacyAgentComparison(D.agents);
 
   if (!hasKeys(profile.agents_used)) {
     const agentsUsed: JsonObject = {};
@@ -284,6 +351,14 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
         agentsUsed[agent] = {
           sessions: asNumber(item?.sessions) ?? 0,
           first_session: asString(item?.first_session) ?? "",
+        };
+      }
+    } else if (hasKeys(legacyAgentComparison)) {
+      for (const [agent, rawStats] of Object.entries(legacyAgentComparison)) {
+        const stats = asObject(rawStats);
+        agentsUsed[agent] = {
+          sessions: asNumber(stats?.sessions) ?? 0,
+          first_session: asString(stats?.first_session) ?? "",
         };
       }
     }
@@ -333,21 +408,21 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
       for (const item of techStack) {
         const entry = asObject(item);
         const name = asString(entry?.name);
-        const score = asNumber(entry?.score);
+        const score = asNumber(entry?.score) ?? asNumber(entry?.value);
         if (name && score !== null) tech[name] = score;
       }
       E.tech = tech;
     } else {
       const techRecord = asObject(techStack);
       if (Array.isArray(techRecord?.areas)) {
-        const tech: Record<string, number> = {};
-        for (const item of techRecord.areas) {
-          const entry = asObject(item);
-          const name = asString(entry?.name);
-          const score = asNumber(entry?.score);
-          if (name && score !== null) tech[name] = score;
-        }
-        E.tech = tech;
+      const tech: Record<string, number> = {};
+      for (const item of techRecord.areas) {
+        const entry = asObject(item);
+        const name = asString(entry?.name);
+        const score = asNumber(entry?.score) ?? asNumber(entry?.value);
+        if (name && score !== null) tech[name] = score;
+      }
+      E.tech = tech;
       } else if (techRecord) {
         const tech: Record<string, number> = {};
         for (const [name, score] of Object.entries(techRecord)) {
@@ -399,17 +474,30 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
     });
   }
 
-  const time = asObject(D.time);
+  const time = asObject(D.time) ?? asObject(D.time_distribution);
   const timeDetail = asObject(E.time_detail);
   if (!hasKeys(E.time) && time) {
+    const peakHour = asNumber(time.peak_hour) ?? 0;
+    const peakPattern = asString(insights.time_pattern);
     E.time = {
       hour_distribution: normalizeHourDistribution(time.hour_distribution),
       period_data: asObject(time.period_data) ?? asObject(time.periods) ?? {},
       builder_type: asString(time.builder_type) ?? "",
-      peak_hour: asNumber(time.peak_hour) ?? 0,
-      peak_text: asString(time.peak_text) ?? asString(timeDetail?.peak_text) ?? "",
+      peak_hour: peakHour,
+      peak_text:
+        asString(time.peak_text) ??
+        asString(timeDetail?.peak_text) ??
+        asString(time.builder_type) ??
+        peakPattern ??
+        "",
       peak_detail:
-        asString(time.peak_detail) ?? asString(timeDetail?.peak_detail) ?? "",
+        asString(time.peak_detail) ??
+        asString(timeDetail?.peak_detail) ??
+        (peakPattern && peakPattern !== asString(time.builder_type)
+          ? peakPattern
+          : peakHour > 0
+            ? `Peak around ${peakHour}:00`
+            : ""),
     };
   } else {
     const normalizedTime = asObject(E.time);
@@ -429,6 +517,18 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
         asString(timeDetail?.peak_detail)
       ) {
         normalizedTime.peak_detail = timeDetail?.peak_detail;
+      }
+      if (
+        !asString(normalizedTime.peak_text) &&
+        asString(time?.builder_type)
+      ) {
+        normalizedTime.peak_text = time?.builder_type;
+      }
+      if (
+        !asString(normalizedTime.peak_detail) &&
+        asString(insights.time_pattern)
+      ) {
+        normalizedTime.peak_detail = insights.time_pattern;
       }
     }
   }
@@ -451,6 +551,10 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
     }
 
     E.comparison = comparison;
+  }
+
+  if (!hasKeys(E.comparison) && hasKeys(legacyAgentComparison)) {
+    E.comparison = legacyAgentComparison;
   }
 
   if (!hasKeys(E.comparison) && Array.isArray(D.agent_comparison)) {
@@ -502,8 +606,44 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
     profile.agents_used = agentsUsed;
   }
 
+  if (!asString(E.comparison_insight) && asString(insights.agent_comparison)) {
+    E.comparison_insight = insights.agent_comparison;
+  }
+
+  if (
+    !asString(E.evolution_insight) &&
+    asString(asObject(D.collaboration_curve)?.description)
+  ) {
+    E.evolution_insight = asObject(D.collaboration_curve)?.description;
+  }
+  if (!asString(E.evolution_insight) && asString(insights.rhythm)) {
+    E.evolution_insight = insights.rhythm;
+  }
+
   const style = asObject(D.style) ?? {};
   D.style = style;
+  const legacyStyle = asObject(D.working_style) ?? {};
+  if (!hasKeys(style) && hasKeys(legacyStyle)) {
+    Object.assign(style, legacyStyle);
+  }
+  if (!asString(style.prompt_type) && asString(legacyStyle.prompt_style)) {
+    style.prompt_type = legacyStyle.prompt_style;
+  }
+  if (
+    !asString(style.session_rhythm) &&
+    asString(legacyStyle.session_rhythm)
+  ) {
+    style.session_rhythm = legacyStyle.session_rhythm;
+  }
+  if (
+    !asString(style.tool_preference) &&
+    asString(legacyStyle.tool_preference)
+  ) {
+    style.tool_preference = legacyStyle.tool_preference;
+  }
+  if (!asString(style.agent_loyalty) && asString(legacyStyle.agent_loyalty)) {
+    style.agent_loyalty = legacyStyle.agent_loyalty;
+  }
   if (!asString(style.style_label)) {
     const promptType = asString(style.prompt_type);
     const rhythm = asString(style.session_rhythm);
@@ -513,7 +653,11 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
   }
   if (!asString(style.style_sub)) {
     style.style_sub =
-      asString(style.rhythm_desc) ?? asString(style.tool_pref_desc) ?? "";
+      asString(style.rhythm_desc) ??
+      asString(style.tool_pref_desc) ??
+      asString(insights.prompt_style) ??
+      asString(insights.rhythm) ??
+      "";
   }
   if (!asString(style.prompt_type_label) && asString(style.prompt_type)) {
     style.prompt_type_label = style.prompt_type;
@@ -527,9 +671,54 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
   if (!asString(style.loyalty_label) && asString(style.agent_loyalty)) {
     style.loyalty_label = style.agent_loyalty;
   }
+  if (!asString(style.loyalty_desc) && asString(insights.agent_comparison)) {
+    style.loyalty_desc = insights.agent_comparison;
+  }
+  if (!hasKeys(style.tool_totals) && hasKeys(E.comparison)) {
+    style.tool_totals = aggregateToolTotalsFromComparison(E.comparison);
+  }
+  if (
+    !hasKeys(style.session_length_distribution) &&
+    hasKeys(E.comparison)
+  ) {
+    style.session_length_distribution =
+      aggregateSessionDistributionFromComparison(E.comparison);
+  }
+  if (asNumber(style.command_ratio) === null && hasKeys(style.tool_totals)) {
+    const toolTotals = asObject(style.tool_totals) ?? {};
+    const totalToolCalls = Object.values(toolTotals).reduce<number>((sum, value) => {
+      return sum + (asNumber(value) ?? 0);
+    }, 0);
+    const shellToolCalls =
+      (asNumber(toolTotals.Bash) ?? 0) +
+      (asNumber(toolTotals.shell_command) ?? 0) +
+      (asNumber(toolTotals.write_stdin) ?? 0);
+
+    style.command_ratio =
+      totalToolCalls > 0 ? shellToolCalls / totalToolCalls : 0;
+  }
 
   const highlights = asObject(D.highlights) ?? {};
   D.highlights = highlights;
+  const legacyHighlights = asObject(E.highlights) ?? {};
+  if (Object.keys(highlights).length === 0 && hasKeys(legacyHighlights)) {
+    if (asObject(legacyHighlights.biggest_session)) {
+      highlights.biggest_session = structuredClone(
+        asObject(legacyHighlights.biggest_session)
+      );
+    }
+    if (asObject(legacyHighlights.busiest_day)) {
+      highlights.busiest_day = structuredClone(
+        asObject(legacyHighlights.busiest_day)
+      );
+    }
+    if (asNumber(legacyHighlights.longest_streak) !== null) {
+      highlights.longest_streak = asNumber(legacyHighlights.longest_streak);
+    }
+    if (asNumber(legacyHighlights.current_streak) !== null) {
+      highlights.current_streak = asNumber(legacyHighlights.current_streak);
+    }
+  }
   const biggestSession = asObject(highlights.biggest_session);
   if (
     biggestSession &&
@@ -548,9 +737,24 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
   }
   if (
     !asString(highlights.favorite_prompt) &&
-    asString(asObject(E.featured_prompt)?.content)
+    (asString(asObject(E.featured_prompt)?.content) ||
+      asString(legacyHighlights.featured_prompt))
   ) {
-    highlights.favorite_prompt = asObject(E.featured_prompt)?.content;
+    highlights.favorite_prompt =
+      asString(asObject(E.featured_prompt)?.content) ??
+      asString(legacyHighlights.featured_prompt) ??
+      "";
+  }
+  if (
+    biggestSession &&
+    !asString(biggestSession.display) &&
+    asString(biggestSession.date)
+  ) {
+    const durationHours = asNumber(biggestSession.duration_hours);
+    biggestSession.display =
+      durationHours !== null
+        ? `${biggestSession.date} · ${durationHours}h session`
+        : `Session on ${biggestSession.date}`;
   }
 
   return normalized;

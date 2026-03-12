@@ -217,7 +217,7 @@ curl -s -X POST https://builderbio.dev/api/profile/publish \
     "publish_token": "TOKEN_OR_EMPTY_STRING",
     "data_hash": "SHA256_HASH_FROM_PHASE_3_6",
     "style_theme": "default",
-    "scanner_version": "0.6.0",
+    "scanner_version": "0.6.1",
     "scan_audit": { ... parsed scan_audit object ... },
     "profile": {
       "summary": "ONE_LINE_SUMMARY",
