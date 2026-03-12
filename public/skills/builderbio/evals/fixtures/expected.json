@@ -1,9 +1,9 @@
 {
   "scanner_version": "0.6.1",
-  "sessions_parsed": 4,
-  "sources_discovered": 5,
-  "sources_parsed": 5,
-  "partial_sessions": 2,
+  "sessions_parsed": 7,
+  "sources_discovered": 8,
+  "sources_parsed": 8,
+  "partial_sessions": 5,
   "unknown_sources": 0,
   "agents": {
     "claude-code": {
@@ -19,7 +19,7 @@
       "sessions": 1
     },
     "cursor": {
-      "sessions": 1
+      "sessions": 4
     }
   }
 }

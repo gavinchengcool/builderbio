@@ -38,6 +38,83 @@ def build_trae_db(rows_path, db_path):
     conn.close()
 
 
+def build_cursor_fixtures(home):
+    """Build Cursor multi-layer test fixtures."""
+    # Layer 2: workspace state.vscdb with composer.composerData
+    ws_dir = home / "Library" / "Application Support" / "Cursor" / "User" / "workspaceStorage" / "abc123"
+    ws_dir.mkdir(parents=True, exist_ok=True)
+    workspace_json = {"folder": "file:///tmp/test-project"}
+    (ws_dir / "workspace.json").write_text(json.dumps(workspace_json))
+
+    conn = sqlite3.connect(ws_dir / "state.vscdb")
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)")
+    composer_data = {
+        "allComposers": [
+            {
+                "type": "head",
+                "composerId": "ws-comp-001",
+                "createdAt": 1741000000000,
+                "unifiedMode": "agent",
+                "totalLinesAdded": 42,
+                "totalLinesRemoved": 7,
+            },
+        ],
+        "selectedComposerIds": [],
+        "lastFocusedComposerIds": [],
+    }
+    cur.execute(
+        "INSERT INTO ItemTable (key, value) VALUES (?, ?)",
+        ("composer.composerData", json.dumps(composer_data)),
+    )
+    conn.commit()
+    conn.close()
+
+    # Layer 3: global state.vscdb with cursorDiskKV composerData + dailyStats
+    global_dir = home / "Library" / "Application Support" / "Cursor" / "User" / "globalStorage"
+    global_dir.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(global_dir / "state.vscdb")
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)")
+    cur.execute("CREATE TABLE cursorDiskKV (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)")
+    kv_composer = {
+        "composerId": "kv-comp-001",
+        "createdAt": 1740500000000,
+        "conversation": [
+            {"type": 1, "text": "Fix the login bug", "bubbleId": "b001"},
+            {"type": 2, "text": "I'll fix the auth flow", "bubbleId": "b002"},
+            {"type": 1, "text": "Also add tests", "bubbleId": "b003"},
+            {"type": 2, "text": "Added unit tests", "bubbleId": "b004"},
+        ],
+    }
+    cur.execute(
+        "INSERT INTO cursorDiskKV (key, value) VALUES (?, ?)",
+        ("composerData:kv-comp-001", json.dumps(kv_composer)),
+    )
+    daily_stats = {"date": "2026-03-01", "tabSuggestedLines": 100, "tabAcceptedLines": 30, "composerSuggestedLines": 50, "composerAcceptedLines": 20}
+    cur.execute(
+        "INSERT INTO ItemTable (key, value) VALUES (?, ?)",
+        ("aiCodeTracking.dailyStats.v1.5.2026-03-01", json.dumps(daily_stats)),
+    )
+    conn.commit()
+    conn.close()
+
+    # Layer 6: agent-transcript JSONL
+    project_name = f"Users-{os.environ.get('USER', 'test')}-tmp-test-project"
+    transcript_dir = home / ".cursor" / "projects" / project_name / "agent-transcripts" / "transcript-001"
+    transcript_dir.mkdir(parents=True, exist_ok=True)
+    transcript_file = transcript_dir / "transcript-001.jsonl"
+    lines = [
+        json.dumps({"role": "user", "message": {"content": [{"type": "text", "text": "<user_query>\nRefactor auth module\n</user_query>"}]}}),
+        json.dumps({"role": "assistant", "message": {"content": [{"type": "text", "text": "I'll refactor the auth module."}]}}),
+        json.dumps({"role": "assistant", "message": {"content": [{"type": "tool_use", "name": "Read"}]}}),
+        json.dumps({"role": "assistant", "message": {"content": [{"type": "text", "text": "Done with refactoring."}]}}),
+    ]
+    transcript_file.write_text("\n".join(lines) + "\n")
+    mtime = 1741100000
+    os.utime(transcript_file, (mtime, mtime))
+
+
 def main():
     script_dir = Path(__file__).resolve().parent
     skill_dir = script_dir.parent
@@ -60,6 +137,7 @@ def main():
             / "demo"
             / "state.vscdb",
         )
+        build_cursor_fixtures(home)
 
         output_path = home / "builder_profile_data.json"
         env = os.environ.copy()
@@ -72,6 +150,10 @@ def main():
             str(home / ".claude"),
             "--codex-dir",
             str(home / ".codex"),
+            "--cursor-dir",
+            str(home / "Library" / "Application Support" / "Cursor"),
+            "--cursor-config-dir",
+            str(home / ".cursor"),
             "--trae-dir",
             str(home / "Library" / "Application Support" / "Trae"),
             "--days",
@@ -123,8 +205,13 @@ def main():
         assert_equal(trae_sessions[0]["parse_mode"], "partial", "trae parse mode")
 
         assert_equal(len(cursor_sessions), expected["agents"]["cursor"]["sessions"], "cursor sessions")
-        assert_equal(cursor_sessions[0]["parse_mode"], "partial", "cursor parse mode")
-        assert_equal(audit["agent_sources_found"]["cursor"], 1, "cursor source discovery")
+        cursor_parsers = {s["parser"] for s in cursor_sessions}
+        assert_equal("cursor-agent-transcript" in cursor_parsers, True, "cursor has transcript parser")
+        assert_equal("cursor-kv-conversation" in cursor_parsers, True, "cursor has kv-conversation parser")
+        assert_equal("cursor-workspace-composer" in cursor_parsers, True, "cursor has workspace-composer parser")
+        for cs in cursor_sessions:
+            assert_equal(cs["parse_mode"], "partial", f"cursor parse mode ({cs['parser']})")
+        assert_equal(audit["agent_sources_found"]["cursor"] >= 3, True, "cursor multi-layer source discovery")
 
         print("Fixture evals passed")
         print(completed.stdout.strip())
