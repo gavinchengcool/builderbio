@@ -46,6 +46,11 @@ function getFallbackAvatarStyle(avatarColor: string | null): CSSProperties {
   };
 }
 
+function getFallbackAvatarInitial(profile: ProfileCard): string {
+  const source = (profile.displayName || profile.username || "?").trim();
+  return source.charAt(0).toUpperCase() || "?";
+}
+
 export default function TasteBoardPage() {
   const { t } = useI18n();
   const [results, setResults] = useState<ProfileCard[]>([]);
@@ -145,7 +150,7 @@ export default function TasteBoardPage() {
                       className="hidden h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
                       style={getFallbackAvatarStyle(profile.avatarColor)}
                     >
-                      {(profile.username || "?")[0].toUpperCase()}
+                      {getFallbackAvatarInitial(profile)}
                     </div>
                     <div>
                       <p className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors">
