@@ -3,13 +3,6 @@
 import { useState, useEffect } from "react";
 import { useI18n } from "@/hooks/useI18n";
 
-interface SearchProfile {
-  skills?: string[];
-  languages?: string[];
-  frameworks?: string[];
-  domains?: string[];
-}
-
 interface ProfileCard {
   username: string;
   displayName: string | null;
@@ -18,12 +11,10 @@ interface ProfileCard {
   summary: string | null;
   portrait: Record<string, unknown> | null;
   frameworkSentences: string[] | null;
-  searchProfile: SearchProfile | null;
   sessionsAnalyzed: number | null;
   totalTokens: number | null;
-  scanStatus: string | null;
-  scannerVersion: string | null;
-  scanNeedsRescan: boolean;
+  tags: string[];
+  subtitle: string | null;
 }
 
 function getCardSummary(profile: ProfileCard): string | null {
@@ -60,19 +51,6 @@ export default function TasteBoardPage() {
     load();
   }, []);
 
-  // Collect tags from searchProfile
-  function getTags(profile: ProfileCard): string[] {
-    const sp = profile.searchProfile;
-    if (!sp) return [];
-    const all = [
-      ...(sp.skills || []),
-      ...(sp.frameworks || []),
-      ...(sp.languages || []),
-      ...(sp.domains || []),
-    ];
-    return all.slice(0, 5);
-  }
-
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <h1 className="text-xl font-bold text-accent mb-8">
@@ -90,8 +68,8 @@ export default function TasteBoardPage() {
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {results.map((profile) => {
-            const tags = getTags(profile);
             const cardSummary = getCardSummary(profile);
+            const subtitle = profile.subtitle?.trim();
             return (
               <a
                 key={profile.username}
@@ -142,18 +120,11 @@ export default function TasteBoardPage() {
                       <p className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors">
                         {profile.displayName || profile.username}
                       </p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-xs text-text-muted">builder of things</p>
-                        {profile.scanNeedsRescan ? (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-warning/40 text-warning">
-                            rescan recommended
-                          </span>
-                        ) : profile.scannerVersion ? (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-border text-text-muted">
-                            scanner {profile.scannerVersion}
-                          </span>
-                        ) : null}
-                      </div>
+                      {subtitle && (
+                        <p className="text-xs text-text-muted line-clamp-1">
+                          {subtitle}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -191,9 +162,9 @@ export default function TasteBoardPage() {
                   )}
 
                   {/* Tags */}
-                  {tags.length > 0 && (
+                  {profile.tags.length > 0 && (
                     <div className="flex gap-2 flex-wrap">
-                      {tags.map((tag) => (
+                      {profile.tags.map((tag) => (
                         <span
                           key={tag}
                           className="text-[10px] px-2 py-0.5 rounded-full border border-border text-text-secondary"

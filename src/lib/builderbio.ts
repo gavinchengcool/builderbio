@@ -305,6 +305,58 @@ function aggregateToolTotalsFromComparison(value: unknown): JsonObject {
   return totals;
 }
 
+function humanizeTag(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/[A-Z]/.test(trimmed) || trimmed.includes(" ")) return trimmed;
+
+  const specialTokens: Record<string, string> = {
+    ai: "AI",
+    api: "API",
+    cli: "CLI",
+    ui: "UI",
+    ux: "UX",
+    saas: "SaaS",
+    devops: "DevOps",
+    rbac: "RBAC",
+    sql: "SQL",
+    css: "CSS",
+    html: "HTML",
+    nodejs: "Node.js",
+    postgresql: "PostgreSQL",
+    nextjs: "Next.js",
+    tailwindcss: "Tailwind CSS",
+    typescript: "TypeScript",
+    javascript: "JavaScript",
+    openclaw: "OpenClaw",
+  };
+
+  return trimmed
+    .split(/[-_/]+/)
+    .map((token) => {
+      const normalized = token.toLowerCase();
+      if (specialTokens[normalized]) return specialTokens[normalized];
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    })
+    .join(" ");
+}
+
+function dedupeTags(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const value of values) {
+    const clean = humanizeTag(value);
+    if (!clean) continue;
+    const key = clean.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(clean);
+  }
+
+  return result;
+}
+
 function aggregateSessionDistributionFromComparison(value: unknown): JsonObject {
   const totals = { short: 0, medium: 0, long: 0 };
   const comparison = asObject(value) ?? {};
@@ -780,6 +832,44 @@ export function extractPortraitAvatarUrl(portrait: unknown): string | null {
     "photo",
     "url",
   ]);
+}
+
+export function extractBuilderBioTags(data: unknown): string[] {
+  const bioData = asObject(data) as BuilderBioData | null;
+  if (!bioData?.D) return [];
+
+  const normalized = normalizeBuilderBioData(bioData);
+  const D = asObject(normalized.D) ?? {};
+  const E = asObject(normalized.E) ?? {};
+  const profile = asObject(D.profile);
+  const tags: string[] = [];
+
+  tags.push(...normalizeStringArray(profile?.tags));
+
+  for (const rawProject of asArray(D.projects)) {
+    const project = asObject(rawProject);
+    tags.push(...normalizeStringArray(project?.tags));
+  }
+
+  if (tags.length < 3) {
+    tags.push(...Object.keys(asObject(E.tech) ?? {}));
+  }
+
+  if (tags.length < 3) {
+    tags.push(...Object.keys(asObject(profile?.agents_used) ?? {}));
+  }
+
+  return dedupeTags(tags).slice(0, 6);
+}
+
+export function extractBuilderBioAgentLabels(data: unknown): string[] {
+  const bioData = asObject(data) as BuilderBioData | null;
+  if (!bioData?.D) return [];
+
+  const normalized = normalizeBuilderBioData(bioData);
+  const profile = asObject(asObject(normalized.D)?.profile);
+
+  return dedupeTags(Object.keys(asObject(profile?.agents_used) ?? {})).slice(0, 4);
 }
 
 export function injectBuilderBioScannerMetadata(
