@@ -470,8 +470,45 @@ function hourColor(hour: number) {
   return "#FF6B35";
 }
 
+function buildPageCopy(liveGavin: boolean) {
+  const busiestDay = preview.highlights.busiestDay;
+  const biggestSession = preview.highlights.biggestSession;
+  const firstEra = preview.eras[0];
+  const transitionEra = preview.eras[1];
+  const latestEra = preview.eras[2];
+  const fastAgent = preview.agentRoles.find((agent) => agent.role.includes("快")) || preview.agentRoles[1];
+  const deepAgent = preview.agentRoles.find((agent) => agent.role.includes("深")) || preview.agentRoles[0];
+
+  return {
+    badgeLabel: liveGavin ? "Built from real session logs" : preview.label,
+    sectionLabel: liveGavin ? "Gavin annual recap" : preview.sectionLabel,
+    recap: `${preview.dateRange} 这段时间里，Gavin 把 Agent 研究、产品策略和真实交付放进了同一条工作流：一边高频推进，一边把结果做成别人也能看见、也能使用的产品。`,
+    trustNote:
+      "顶部统计和 Unfiltered 标记都对应原始 session 日志校验结果。这页展示的是 Gavin 真实的协作轨迹，不是演示稿。",
+    socialCurrencySummary: `${formatCompact(preview.totalTokens)} tokens、${preview.stats[0].value} 个会话和 ${preview.stats[1].value} turns 说明，这已经不是偶尔试用 AI，而是把多 Agent 协作真正变成了日常工作流。`,
+    socialCurrencyBadge: "真实协作规模",
+    highMomentsHeading: `${busiestDay.date} 那天连开 ${busiestDay.sessions} 个 sessions，这些就是 Gavin 这段时间最容易被人记住的高光。`,
+    signatureMovesHeading: "研究、策略、执行和表达，经常被他压进同一条连续工作流里。",
+    projectsHeading: `从 ${preview.signatureBuild.name} 到产品策略与研究，这 ${preview.projects.length} 个项目就是 Gavin 最近这段 Builder 主线。`,
+    agentComparisonHeading: `${fastAgent.name} 扛速度，${deepAgent.name} 扛深度，这个分工已经非常稳定。`,
+    agentRolesHeading: "不同的 Agent 在 Gavin 这里不是替代关系，而是明确分工的不同工位。",
+    agentRolesSummary: "真正重要的不是谁占比更高，而是 Gavin 会把不同 agent 放到不同的任务类型里。",
+    erasHeading: `${firstEra.title}、${transitionEra.title}、${latestEra.title} 连在一起，能清楚看见 Gavin 这段时间的轨迹怎么一步步变化。`,
+    evidenceHeading: "这页里的判断都应该能回到具体日志，而不是靠包装撑起来。",
+    evidenceStatus: liveGavin ? "Unfiltered log receipts" : preview.evidence.coverage.status,
+    evidenceSummary: `从 ${preview.whenIbuild.peakHour} 的时间高峰，到 ${busiestDay.date} 的忙碌峰值，再到 ${fastAgent.name} / ${deepAgent.name} 的角色分工，这些结论都能在原始日志里找到对应证据。`,
+    evidenceNote: `最大单次会话达到 ${formatNumber(biggestSession.turns)} turns，最长连续协作 ${preview.highlights.longestStreak} 天；只要这一页展示出来的内容，就应该能在真实 sessions 里被追溯到。`,
+    activityHeading: `${preview.activity.activeDays} 个活跃日把 Gavin 的 build 节奏完整留了下来。`,
+    receiptsHeading: "这些高光不是包装出来的，而是可以直接回到真实历史里的事实。",
+    ctaHeading: "也做一页属于你自己的 BuilderBio。",
+    ctaSummary:
+      "把你本地 coding agent 的历史交给 BuilderBio，它会把项目主线、协作方式和高光时刻整理成一页能分享的 Builder 画像。",
+  };
+}
+
 export default async function BuilderBioPreviewPage() {
   const liveGavin = await isLiveGavinHost();
+  const pageCopy = buildPageCopy(liveGavin);
   const hourEntries = Array.from({ length: 24 }, (_, hour) => ({
     hour,
     sessions:
@@ -508,10 +545,10 @@ export default async function BuilderBioPreviewPage() {
           <section className="mb-8 rounded-3xl border border-accent/20 bg-bg-secondary/70 p-5 shadow-[0_0_0_1px_rgba(255,107,53,0.06)] backdrop-blur sm:mb-10 sm:p-8">
             <div className="mb-5 flex flex-wrap items-center gap-2 sm:mb-6 sm:gap-3">
               <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
-                {preview.label}
+                {pageCopy.badgeLabel}
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
-                {preview.sectionLabel}
+                {pageCopy.sectionLabel}
               </span>
             </div>
 
@@ -575,10 +612,10 @@ export default async function BuilderBioPreviewPage() {
                   {preview.thesis}
                 </h2>
                 <p className="mt-5 max-w-3xl text-sm leading-7 text-text-secondary sm:text-base">
-                  {preview.recap}
+                  {pageCopy.recap}
                 </p>
                 <p className="mt-3 max-w-3xl text-xs leading-6 text-text-muted">
-                  {preview.trust.note}
+                  {pageCopy.trustNote}
                 </p>
 
                 <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] text-text-secondary sm:gap-3 sm:text-xs">
@@ -653,11 +690,11 @@ export default async function BuilderBioPreviewPage() {
                       <p className="mt-2 text-sm font-semibold text-text-primary/90">与 AI 协作产生的 tokens</p>
                     </div>
                     <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-accent">
-                      社交货币
+                      {pageCopy.socialCurrencyBadge}
                     </span>
                   </div>
                   <p className="mt-4 text-sm leading-6 text-text-secondary">
-                    {preview.socialCurrency.summary}
+                    {pageCopy.socialCurrencySummary}
                   </p>
                   <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {preview.socialCurrency.facts.map((fact) => (
@@ -732,7 +769,7 @@ export default async function BuilderBioPreviewPage() {
                 High moments
               </p>
               <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
-                这些才是别人真的会记住、会转述的部分。
+                {pageCopy.highMomentsHeading}
               </h2>
 
               <div className="mt-6 space-y-4">
@@ -760,7 +797,7 @@ export default async function BuilderBioPreviewPage() {
                 Signature moves
               </p>
               <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
-                这些行为习惯，才会让这个 Builder 被别人一眼认出来。
+                {pageCopy.signatureMovesHeading}
               </h2>
 
               <div className="mt-6 space-y-4">
@@ -783,7 +820,7 @@ export default async function BuilderBioPreviewPage() {
                     What actually got built
                   </p>
                   <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
-                    作品应该去证明他的 taste，而不是打断它。
+                    {pageCopy.projectsHeading}
                   </h2>
                 </div>
               </div>
@@ -927,7 +964,7 @@ export default async function BuilderBioPreviewPage() {
                 Agent Comparison
               </p>
               <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
-                速度和深度之间的分工，应该一直被明确看见。
+                {pageCopy.agentComparisonHeading}
               </h2>
               <div className="mt-6 grid gap-4">
                 {preview.comparison.map((agent) => {
@@ -1013,10 +1050,10 @@ export default async function BuilderBioPreviewPage() {
             </p>
             <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
               <h2 className="text-2xl font-black text-text-primary sm:text-3xl">
-                不同的 Agent 应该像不同的乐器，而不是同一把锤子。
+                {pageCopy.agentRolesHeading}
               </h2>
               <p className="max-w-xl text-sm leading-6 text-text-secondary">
-                这里要解释的是“这个 Builder 怎么和 AI 协作”，而不只是“谁的占比更高”。
+                {pageCopy.agentRolesSummary}
               </p>
             </div>
 
@@ -1054,7 +1091,7 @@ export default async function BuilderBioPreviewPage() {
                     Builder eras
                   </p>
                   <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
-                    这份回顾仍然要看得出：这条轨迹是怎么一步步变化过来的。
+                    {pageCopy.erasHeading}
                   </h2>
                 </div>
               </div>
@@ -1098,19 +1135,19 @@ export default async function BuilderBioPreviewPage() {
                     Evidence layer
                   </p>
                   <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
-                    信任感要能被看见，但不需要大声嚷出来。
+                    {pageCopy.evidenceHeading}
                   </h2>
                 </div>
                 <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-bold text-accent">
-                  {preview.evidence.coverage.status}
+                  {pageCopy.evidenceStatus}
                 </span>
               </div>
 
               <p className="mt-4 text-sm leading-6 text-text-secondary">
-                {preview.evidence.coverage.summary}
+                {pageCopy.evidenceSummary}
               </p>
               <p className="mt-2 text-sm leading-6 text-text-primary/85">
-                {preview.evidence.coverage.note}
+                {pageCopy.evidenceNote}
               </p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -1222,7 +1259,7 @@ export default async function BuilderBioPreviewPage() {
                 Activity
               </p>
               <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
-                热力图依然是这张页面里最强的“努力痕迹”之一。
+                {pageCopy.activityHeading}
               </h2>
               <div className="mt-6 overflow-x-auto pb-2">
                 <div className="grid min-w-max grid-flow-col grid-rows-7 gap-1">
@@ -1265,7 +1302,7 @@ export default async function BuilderBioPreviewPage() {
                 Log receipts
               </p>
               <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
-                最值得被截图传播的事实，应该直接来自真实历史。
+                {pageCopy.receiptsHeading}
               </h2>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border bg-bg-primary/55 p-4">
@@ -1332,11 +1369,11 @@ export default async function BuilderBioPreviewPage() {
                   Make your own
                 </p>
                 <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
-                  这页最后应该像一个邀请，而不只是一个报告。
+                  {pageCopy.ctaHeading}
                 </h2>
               </div>
               <p className="max-w-xl text-sm leading-6 text-text-secondary">
-                可分享的页面当然重要，但更大的产品价值，其实是有人看完之后，第一次清楚地看见自己的 Builder 轨迹，并且也想拥有一页。
+                {pageCopy.ctaSummary}
               </p>
             </div>
 
