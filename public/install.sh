@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# builderbio installer v0.7.0
+# builderbio installer v0.7.1
 # Usage: curl -sfL https://builderbio.dev/install.sh | bash
 set -euo pipefail
 
-VERSION="0.7.0"
+VERSION="0.7.1"
 BASE_URL="${BUILDERBIO_URL:-https://builderbio.dev}"
 INSTALL_DIR="${HOME}/.builderbio"
 SKILL_DIR="${INSTALL_DIR}/skills/builderbio"

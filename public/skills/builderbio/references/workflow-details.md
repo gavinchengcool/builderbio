@@ -175,6 +175,9 @@ Rules:
 - If evidence is thin, reduce confidence and say less
 - Do not turn weak data into a fake personality test
 - Good copy should feel like "that is exactly me"
+- Narrative sentences must point at the builder, not at the page
+- Never write meta-product copy such as "this page should..." or "people will remember..."
+- If a sentence can replace the builder's name with any other name and still read the same, it is probably too generic
 
 The page should create both:
 

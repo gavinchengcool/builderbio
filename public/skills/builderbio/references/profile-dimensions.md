@@ -109,12 +109,15 @@ Good thesis lines:
 - feel human
 - are evidence-backed
 - avoid stat dumping
+- talk about the builder, not about the page or product
 
 Bad thesis lines:
 
 - "Used 230 sessions and 12.7K turns"
 - "Full-stack AI developer"
 - generic motivational fluff
+- "This page should feel like..."
+- "These are the moments people will remember"
 
 ## 2. Signature Build
 

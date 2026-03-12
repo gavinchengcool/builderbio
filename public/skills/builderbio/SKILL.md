@@ -1,6 +1,6 @@
 ---
 name: builderbio
-version: 0.7.0
+version: 0.7.1
 description: |
   Use this skill when the user wants a BuilderBio, builder recap, builder profile, AI build history, annual-review style coding recap, or a shareable page about how they build with AI agents. It scans local coding-agent logs across Claude Code, Codex, Trae, Cursor-like fallbacks, OpenClaw, Antigravity, Kiro, Windsurf, and other discovered sources; produces a scan audit; derives evidence-backed builder narratives; and publishes a shareable BuilderBio.
 allowed-tools:
@@ -78,6 +78,17 @@ Build in this order:
 
 Every interesting sentence on the page should be explainable from the evidence.
 
+Do not write meta-copy about the page itself.
+
+Avoid lines that talk about:
+
+- what "this page" should feel like
+- what people "should remember" in the abstract
+- product philosophy or design intent
+- narrative instructions that are not about the user
+
+Write about the builder, their work, their agent usage, and their trajectory.
+
 ### 4. Build for aha, not for dashboard completeness
 
 A good BuilderBio is not "11 equal charts."
@@ -150,6 +161,13 @@ Use the rubric in [references/profile-dimensions.md](references/profile-dimensio
 - **Evidence layer**: receipts that make the recap feel trustworthy
 
 If the scan data is thin, say less and stay specific. Do not inflate weak evidence into a confident persona.
+
+Narrative copy must read like a user recap, not a product deck:
+
+- good: "On 2026-03-06 they opened 13 sessions and pushed the work into a visible new phase"
+- bad: "These are the moments people will remember"
+- good: "Claude Code handles the deep sessions while Codex handles fast execution"
+- bad: "The speed-depth split should be visible"
 
 ## Scan Audit Contract
 

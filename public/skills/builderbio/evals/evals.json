@@ -1,6 +1,6 @@
 {
   "skill_name": "builderbio",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "benchmark_axes": {
     "coverage": "Discover strong-path logs plus weak-path candidates, never silently dropping unknown sources.",
     "truth": "Produce evidence-backed facts and carry scan transparency through publish.",
@@ -45,7 +45,8 @@
         "Selects a signature build based on representativeness, not only raw session count",
         "Produces taste signals or equivalent compact identity cues",
         "Describes an evolution arc or builder eras instead of only raw weekly bars",
-        "Keeps the claims grounded in facts rather than generic praise"
+        "Keeps the claims grounded in facts rather than generic praise",
+        "Does not generate meta-copy about what the page should feel like or what people should remember"
       ]
     },
     {

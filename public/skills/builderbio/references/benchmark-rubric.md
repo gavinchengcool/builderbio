@@ -52,6 +52,7 @@ Produce a recap that is defensible from evidence.
 ### Failure Signals
 
 - Confident personality copy with thin evidence
+- Meta-copy about the page, product philosophy, or design intent instead of the builder
 - Project arrays are empty or nonsense while session volume is large
 - Metrics are obviously inconsistent across sections
 - Paths or secrets leak into the output
@@ -80,6 +81,7 @@ Make the user feel seen and make the page worth sharing.
 
 - The page reads like a dashboard with no identity
 - Summary text is generic ("full-stack builder", "AI developer")
+- Summary text talks about "the page" instead of the builder
 - All charts are equally weighted and nothing stands out
 - A stranger cannot tell why the builder is interesting
 
