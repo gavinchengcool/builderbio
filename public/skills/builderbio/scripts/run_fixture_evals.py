@@ -103,6 +103,7 @@ def main():
         assert_equal(audit["summary"]["sources_parsed"], expected["sources_parsed"], "sources parsed")
         assert_equal(audit["summary"]["partial_sessions"], expected["partial_sessions"], "partial sessions")
         assert_equal(audit["summary"]["unknown_sources"], expected["unknown_sources"], "unknown sources")
+        assert_equal(audit["summary"]["status"], "partial", "audit status")
         assert_equal(profile["scanner_version"], expected["scanner_version"], "profile scanner version")
         assert_equal(profile["scan_status"], "partial", "profile scan status")
 
@@ -127,6 +128,8 @@ def main():
         assert_equal(audit["agent_sources_found"]["cursor"], 1, "cursor source discovery")
 
         print("Fixture evals passed")
+        print("Coverage floor passed")
+        print("Truth floor passed")
         print(completed.stdout.strip())
 
 

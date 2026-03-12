@@ -1,372 +1,388 @@
-# BuilderBio Dimensions
+# BuilderBio Profile Dimensions
 
-This document defines how to analyze a user's complete Coding Agent history into a shareable BuilderBio. The profile is about the PERSON, not any single session.
+BuilderBio should feel closer to a great annual recap than a traditional dashboard.
 
-## Contents
+This rubric defines the information architecture for the next-generation BuilderBio page.
 
-- Dimension 1: Builder Identity
-- Dimension 2: What I Built
-- Dimension 3: Tech Stack Fingerprint
-- Dimension 4: How I Build
-- Dimension 5: Collaboration Evolution
-- Dimension 6: Time-of-Day Distribution
-- Dimension 7: Prompt Keywords
-- Dimension 8: Agent Comparison
-- Dimension 9: Activity Heatmap
-- Dimension 10: Highlight Moments
-- Dimension 11: CTA (Call-to-Action)
+## Core Outcome
 
----
+The finished profile should create:
 
-## Dimension 1: Builder Identity
-
-**Social currency:** "Look how much this person builds with AI"
+1. **Aha**: "I didn’t realize this is what my AI-building arc looks like."
+2. **Identity**: "This actually sounds like me."
+3. **Share impulse**: "This is interesting enough to post."
 
-The hero section. Big numbers that immediately convey scale.
+## Section Priority
 
-### What to compute
+Not every section has equal importance.
 
-- **Display name**: from user input or `whoami` as fallback. Page title becomes `{name}'s BuilderBio`
-- **Tagline** (optional): short subtitle like "@handle" or a one-liner
-- **Avatar** (optional): profile image URL or local file path. Rendered as a circular 88px image above the title
-- **Total sessions** across all agents
-- **Active days** (days with at least one session)
-- **Total turns** (sum of all user + assistant exchanges)
-- **Total tool calls** (sum of all tool invocations)
-- **Total tokens** (if available)
-- **Agents used**: which agents, how many sessions each, relative proportion
-- **Models used**: which models, how often
-- **Date range**: first session date to last session date
-- **Social links**: user-provided social media profile URLs (LinkedIn, X/Twitter, GitHub, etc.)
+### Layer 1: Identity & Taste
 
-### How to present
+This is the "who is this builder?" layer.
 
-- Circular avatar (88px) above title if provided — with subtle border and glow shadow
-- Page title: `{display_name}'s BuilderBio` — large h1, gradient text
-- Tagline below title if provided (smaller, muted color)
-- 3-4 large stat numbers in the hero area (sessions, turns, tool calls, active days)
-- Agent badges showing which tools the person uses
-- Social media icon row below agent badges — each platform rendered as a clickable icon (inline SVG) linking to the user's profile URL. Supported platforms and their SVG icons:
-  - **LinkedIn**: LinkedIn logo SVG, links to `linkedin.com/in/...`
-  - **X / Twitter**: X logo SVG, links to `x.com/...`
-  - **GitHub**: GitHub logo SVG, links to `github.com/...`
-  - **YouTube**: YouTube logo SVG
-  - **Website**: Globe icon SVG for personal sites
-  - Display only the platforms the user provides — skip any without a URL
-- Date range as subtitle
+1. Avatar, display name, and social links
+2. Trust badges such as `Unfiltered`
+3. Builder Thesis
+4. Taste Signals
+5. Agent lineup
+6. AI Management Style
 
----
+### Layer 2: What Makes Them Interesting
 
-## Dimension 2: What I Built
+This is the shareable middle of the page.
 
-**Social currency:** "Look what this person shipped with AI"
+6. Signature Build
+7. Signature Moves
+8. High Moments
+9. What Actually Got Built
+10. Agent Roles
 
-This is the most important section. It answers: what did you actually make?
+### Layer 3: Evidence & Trust
 
-### How to cluster sessions into projects
+These back up the recap and make it feel trustworthy.
 
-Sessions need to be grouped into logical "projects." Use these heuristics:
+11. Builder Eras
+12. Evidence & Coverage
+13. Tech Fingerprint
+14. Time Rhythm
+15. Activity / Heat / Volume
 
-1. **Same working directory (cwd)**: sessions in the same project folder are likely the same project
-2. **Temporal proximity**: sessions on the same day or consecutive days about similar topics
-3. **Keyword overlap**: sessions whose first user messages share key terms (file names, tech stack, feature names)
-4. **Display text similarity**: the `display` field from history.jsonl often captures the essence
+This order matters:
 
-For each project, extract:
-- **Name**: infer from the cwd directory name, or from the dominant topic
-- **Description**: one sentence summarizing what was built, derived from the user's first prompts
-- **Tech stack tags**: inferred from tool calls (e.g., if Write targets .tsx files → React; if Bash runs `npm` → Node.js)
-- **Session count**: how many sessions contributed
-- **Scale**: total turns + tool calls across all sessions in this project
-- **Date range**: first to last session date
-- **Status**: infer from context — "shipped" if deployment commands ran, "in progress" if recent, "explored" if short
+- top: identity and taste
+- middle: what people would retell or learn from
+- bottom: proof
 
-### How to present
+The page should read like a person first, a story second, and analytics last.
 
-- Card grid, each card = one project
-- Sort by recency (most recent first)
-- Each card shows: name, description, tags, date range, scale indicator
-- Highlight the largest project visually
+## 0. Avatar and Social Identity
 
----
+**Question answered:** Who is this, and where can I learn more?
 
-## Dimension 3: Tech Stack Fingerprint
+BuilderBio should support user-supplied identity fields that are not inferred from logs:
 
-**Social currency:** "One glance at what technologies this person works with"
+- avatar
+- display name
+- X
+- GitHub
+- personal site
 
-### What to compute
+These do not replace scan-derived facts. They complete the personhood of the page.
 
-Infer the user's technology footprint from two sources:
+They should appear near the top, not buried below the fold.
 
-1. **Tool calls & file types**: analyze Write/Edit targets for file extensions (.tsx → React, .py → Python, .html → Web)
-2. **Display text keywords**: scan first prompts for technology mentions (npm, python, MCP, supabase, etc.)
+## 0.5 Trust Badges
 
-Score each tech area on a 0-100 scale (relative to the most-used one). Recommended categories:
-- Shell / CLI
-- HTML / CSS
-- Python
-- Claude Code Skills
-- MCP Integrations
-- Product Strategy (if non-code discussions are significant)
-- Content Processing (if reading/translating articles is significant)
-- AI Agent Ecosystem (if researching/discussing agents is significant)
-- Media Automation (if downloading/processing media)
-- Code Reading vs Code Generation
+**Question answered:** Why should people trust this page enough to care?
 
-### How to present
+Badges such as `Unfiltered` are not decoration. They are social currency plus trust currency.
 
-- Horizontal bar chart, sorted by score descending
-- Each bar uses a distinct color
-- Maximum 10 items to keep it clean
-- Show percentage value at the right of each bar
+`Unfiltered` should only appear when the page can honestly claim:
 
----
+- the core BuilderBio payload came directly from raw logs
+- the published payload still matches the verification hash expected by the server
+- no silent editing or schema drift has broken integrity
 
-## Dimension 4: How I Build
+This badge belongs near the top because:
 
-**Social currency:** "This is my AI working style"
+- it is screenshot-friendly
+- it signals legitimacy instantly
+- it makes the page feel more like a receipt than a vibe board
 
-Think of this as a personality profile for how someone uses AI. It should feel like a fun assessment, not a metrics dashboard.
+Do not overproduce badges. One strong integrity badge is better than five weak ones.
 
-### Traits to analyze
+## 1. Builder Thesis
 
-#### Prompt Style
-Classify based on the user's first message patterns across sessions:
-- **Architect**: provides detailed plans, structured requirements, specs upfront
-- **Conversationalist**: iterates through dialogue, refines through back-and-forth
-- **Delegator**: short one-line instructions, trusts the agent to figure it out
-- **Explorer**: asks questions first, reads code, then decides what to do
+**Question answered:** Who is this builder?
 
-Look at the average length of the user's first message per session and the ratio of user messages to total messages.
+This is the most important line on the page.
 
-#### Session Rhythm
-- **Sprinter**: short intense sessions (< 20 turns), many per day
-- **Marathoner**: long deep sessions (100+ turns), few per day
-- **Balanced**: mix of both
+It should sound like identity, not like analytics. Examples:
 
-Compute from session turn counts and sessions-per-day distribution.
+- "The builder who ships the product before writing the pitch."
+- "A CLI-first tinkerer who uses AI to compress weeks of iteration into a night."
+- "A multi-agent operator who treats different models like different instruments."
 
-#### Tool Preference
-- **Explorer**: high Read/Search/Glob ratio (> 40% of tool calls)
-- **Builder**: high Write/Edit ratio (> 40% of tool calls)
-- **Commander**: high Bash ratio (> 30% of tool calls)
-- **Balanced**: no single category dominates
+Good thesis lines:
 
-Aggregate tool call distribution across all sessions.
+- are specific
+- feel human
+- are evidence-backed
+- avoid stat dumping
 
-#### Agent Loyalty
-- **Monogamous**: uses one agent exclusively (> 90% of sessions)
-- **Multi-agent**: uses multiple agents regularly
-- **Experimenter**: tried many but settled on one
+Bad thesis lines:
 
-### How to present
+- "Used 230 sessions and 12.7K turns"
+- "Full-stack AI developer"
+- generic motivational fluff
 
-- A primary style label (e.g., "Architect × Marathoner")
-- 3-4 trait cards showing each dimension with a short description
-- Keep it light and shareable — this is the part people screenshot
+## 2. Signature Build
 
----
+**Question answered:** What best represents this builder?
 
-## Dimension 5: Collaboration Evolution
+Do not simply choose the biggest project by count.
 
-**Social currency:** "My AI collaboration is evolving"
+The signature build should be the project or arc that best captures:
 
-### What to compute
+- recurrence
+- depth
+- distinct taste
+- actual output
 
-Group sessions by **week** (Monday-aligned) and compute per week:
-- **Session count**: how many sessions that week
-- **Total turns**: volume of conversation
-- **Average turns per session**: depth indicator
-- **Total tool calls**: execution volume
+Use a combination of:
 
-The evolution curve reveals whether the user is:
-- Getting more efficient (same output, fewer turns)
-- Going deeper (longer sessions over time)
-- Ramping up (more sessions per week)
-- Transitioning from exploration to deep building
+- total turns
+- total sessions
+- recency
+- uniqueness of topic
+- narrative centrality
 
-### How to present
+What to show:
 
-- Vertical bar chart, one bar per week, height = total turns
-- Display turn count above each bar
-- Week label (MM-DD format) below
-- Include a **trend insight** text block below the chart summarizing the pattern in natural language (e.g., "前 4 周以高频短对话为主，第 5 周开始转向深度长对话 —— 从探索期进入了深度构建期")
+- project name
+- short description
+- why it matters
+- proof points (sessions, turns, timespan, pivotal moments)
 
----
+## 3. Taste Signals
 
-## Dimension 6: Time-of-Day Distribution
+**Question answered:** What makes this builder recognizable?
 
-**Social currency:** "I'm a 2am builder" — immediate personality signal
+These are compact cues, almost like personality tells.
 
-### What to compute
+Examples:
 
-From session file timestamps (first entry in each JSONL file, or file mtime as fallback):
-- **Hour distribution**: count sessions starting in each hour (0-23)
-- **Period aggregation**: group into 4 periods:
-  - Deep night: 0:00-5:59
-  - Morning: 6:00-11:59
-  - Afternoon: 12:00-17:59
-  - Evening: 18:00-23:59
-- **Peak hour**: the single hour with the most sessions
-- **Builder type label**: based on the period with most sessions
-  - zh: "深夜型 Builder" / "早起型 Builder" / "下午型 Builder" / "夜猫子型 Builder"
-  - en: "Late Night Builder" / "Early Bird Builder" / "Afternoon Builder" / "Night Owl Builder"
+- CLI first
+- Night-owl finisher
+- Research before build
+- UI polish obsessive
+- Single-project deep diver
+- Multi-agent orchestrator
 
-### How to present
+A good taste signal combines:
 
-- 24-column bar chart, each column = one hour, colored by period
-  - Deep night: purple, Morning: yellow, Afternoon: orange, Evening: indigo
-- Hover/tooltip showing exact count
-- Large text: peak text from data (zh: "上午 10 点是我的巅峰时刻", en: "10 AM is my peak hour")
-- 4 period summary cards showing session count and turn count per period
+- behavior pattern
+- stylistic implication
+- short memorable label
 
----
+Each signal should be supportable from facts such as:
 
-## Dimension 7: Prompt Keywords
+- command ratio
+- time-of-day concentration
+- tool preference
+- project revisitation
+- agent mix
 
-**Social currency:** "What's always on my mind"
+## 4. Builder Eras
 
-### What to compute
+**Question answered:** How did this builder evolve?
 
-Extract keywords from the `display` / `first_msg` field of all sessions:
-- **Chinese phrases**: extract 2-6 character sequences using regex `[\u4e00-\u9fff]{2,6}`
-- **English words**: extract 3+ character words using regex `[a-zA-Z]{3,}`
-- Filter out stop words (common Chinese particles, English articles, generic verbs)
-- Filter out noise words (filesystem terms, generic UI text)
-- Count occurrences, keep words with count >= 3
-- Take top 20-30 keywords
+The evolution section should not be a raw weekly histogram only.
 
-### How to present
+It should identify 2-4 eras such as:
 
-- Word cloud / tag cloud layout
-- Font size proportional to frequency (6 size levels)
-- Color intensity proportional to frequency
-- Centered, wrapped layout with rounded pill-shaped tags
-- Should feel like a personality snapshot
+- Exploration
+- Compounding
+- Shipping
+- Refinement
+- Expansion
 
----
+For each era:
 
-## Dimension 8: Agent Comparison
+- title
+- date range
+- what changed
+- supporting stats
 
-**Social currency:** "I use different agents for different things"
+This should feel like a mini story of the builder’s relationship with AI.
 
-Only relevant if the user uses 2+ agents.
+## 5. AI Management Style
 
-### What to compute
+**Question answered:** How does this builder run AI?
 
-Per agent, compute:
-- **Session count**
-- **Total turns** and **average turns per session**
-- **Total tool calls**
-- **Top 4 tools** (with counts)
-- **Session length distribution**: short / medium / long
+This deserves explicit treatment near the top of the page.
 
-Derive a **usage insight**: e.g., "Claude Code 用于深度构建（平均 126 轮/次），Codex 用于快速问答（平均 35 轮/次）"
+Examples:
 
-### How to present
+- Director
+- Editor
+- Foreman
+- Explorer
+- Closer
+- Multi-agent operator
 
-- Side-by-side card layout, one card per agent
-- Each card shows: 4 stat boxes (sessions, turns, avg turns, tool calls)
-- Tool usage mini-bar chart within each card
-- Session length distribution text
-- Summary insight text block below the cards
+This is not a personality test. It should come from facts such as:
 
----
+- agent-role split
+- session depth
+- task handoff patterns
+- editing vs execution balance
+- project concentration
 
-## Dimension 9: Activity Heatmap
+The page should be able to say something like:
 
-**Social currency:** "I build every day" — the streak and consistency story
+- "Uses Codex to cut fast, Claude Code to stay with ambiguity, and Trae to stay in flow."
 
-### What to compute
+## 6. Signature Moves
 
-- **Daily activity**: for each day in the range, count total turns (or tool calls)
-- **Intensity levels**: bucket into 0 (no activity), 1 (light: 1-20), 2 (medium: 21-100), 3 (heavy: 101-300), 4 (intense: 300+)
-- **Streaks**: consecutive days with activity
-  - Current streak
-  - Longest streak
-- **Day-of-week pattern**: which days are most active
-- **Time-of-day pattern**: morning / afternoon / evening / night (from session timestamps)
+**Question answered:** What does this builder do that feels characteristic?
 
-### How to present
+These are the "stealable" behaviors.
 
-- GitHub-style contribution grid (7 rows × N weeks)
-- Color intensity from transparent to bright
-- Streak counter displayed prominently
-- Small bar chart for day-of-week distribution
+Examples:
 
----
+- Ship before polish
+- Use the product on itself
+- Explore wide, then close hard
+- Split agents by intent
+- Keep one flagship project compounding in the background
 
-## Dimension 10: Highlight Moments
+Each move should be:
 
-**Social currency:** "Here's my most impressive AI moment"
+- short
+- memorable
+- evidence-backed
+- useful to a reader
 
-Superlatives and fun facts that are easy to share and talk about.
+## 7. High Moments
 
-### What to extract
+**Question answered:** What parts of the story would people retell?
 
-- **Biggest session**: the session with the most turns or tool calls — name the project and the scale
-- **Most productive day**: the day with the most total activity
-- **Longest streak**: consecutive days of building
-- **Marathon session**: longest duration (wall clock time)
-- **Favorite prompt**: select the most interesting or effective user prompt across all sessions — something that would make other builders say "I should try that"
-- **Fun comparisons**: put numbers in human context
-  - "N turns this month = a N-page book of conversation"
-  - "N tool calls = you had your AI read/write N files"
-  - "Active N out of 30 days = busier than most developers"
+Examples:
 
-### How to present
+- Craziest session
+- Biggest shipping day
+- Longest streak
+- Turning point
+- Most unexpected build
 
-- Highlight cards with large values and fun descriptions
-- The favorite prompt in a styled quote block
-- Tone: celebratory, shareable, slightly playful
+These should feel like recap moments, not just superlatives.
 
----
+## 8. What Actually Got Built
 
-## Dimension 11: CTA (Call-to-Action)
+**Question answered:** What shipped, or almost shipped?
 
-**Social currency:** Viral loop — make viewers want to generate their own profile
+This remains critical, but it should come after identity and signature build.
 
-### What to include
+Project cards should emphasize:
 
-- Headline: "Show the world your taste"
-- Description: "Send this to your coding agent — get your bio link"
-- Install command: `curl -sfL https://builderbio.dev/install.sh | bash`
-- CTA text is always in English regardless of page language
+- what the project is
+- why it mattered
+- where it sits in the builder’s arc
 
-### How to present
+Project clustering should not stop at cwd alone. Use:
 
-- Centered card with subtle gradient background
-- Code block for the install command (user-selectable text)
-- Clean, inviting, non-aggressive tone
+- cwd/workspace
+- temporal proximity
+- topic overlap
+- repeated nouns/entities
+- deployment/shipping hints
 
----
+## 9. Agent Roles
 
-## Language Detection
+**Question answered:** What is each agent for?
 
-Detect the user's primary language from their session history:
-1. Scan `display` text of all sessions
-2. Compute ratio of Chinese characters (`[\u4e00-\u9fff]`) to total characters
-3. If ratio > 0.3, set `D.profile.lang` to `"zh"`; otherwise `"en"`
-4. Alternatively, match the language of the current conversation with the user
+This is better than showing raw side-by-side usage metrics first.
 
-**Important**: All UI chrome — section headers, stat labels, status badges, period names, tooltips, highlights, heatmap labels, CTA, and footer — is always rendered in American English, regardless of the `lang` setting. The `lang` value only determines the language for user-generated content.
+For each agent, derive a role such as:
 
-All text strings generated by the agent (style descriptions, evolution insights, comparison insights, time-of-day peak text) should be written in the detected language and injected into the data model fields (`E.evolution_insight`, `E.comparison_insight`, `E.time.peak_text`, `E.time.peak_detail`, `D.style.style_sub`, `D.style.prompt_type_desc`, `D.style.loyalty_desc`).
+- deep workbench
+- fast scalpel
+- research copilot
+- IDE cockpit
+- execution engine
 
----
+Agent-role statements should come from:
 
-## Analysis Process
+- average session depth
+- top tools
+- project distribution
+- time distribution
+- prompt style differences
 
-1. Run the batch parser to get all session summaries (including timestamps for time-of-day)
-2. Compute Dimension 1 (Builder Identity) from raw aggregates
-3. Cluster sessions into projects for Dimension 2 (What I Built)
-4. Infer tech stack from tool calls and keywords for Dimension 3 (Tech Stack)
-5. Analyze working patterns for Dimension 4 (How I Build)
-6. Group sessions by week for Dimension 5 (Evolution Curve)
-7. Extract hour-of-day from timestamps for Dimension 6 (Time Distribution)
-8. Extract keywords from display text for Dimension 7 (Keywords)
-9. Compute per-agent stats for Dimension 8 (Agent Comparison) — skip if single agent
-10. Build the daily activity grid for Dimension 9 (Heatmap)
-11. Extract superlatives for Dimension 10 (Highlights)
-12. Append CTA section for Dimension 11
-13. Package everything into the profile data model for the HTML generator
+Metrics still matter, but they should support the role statement.
+
+## 10. Evidence & Coverage
+
+**Question answered:** Why should I trust this page?
+
+Do not hide scan completeness. Do not lead with scanner internals either.
+
+This section should present evidence gently:
+
+- coverage status
+- sources found
+- unknown/partial count
+- confidence
+- rescan recommendation if needed
+
+The tone should be:
+
+- transparent
+- calm
+- non-alarming
+
+This is the receipt layer, not the headline layer.
+
+## 11. Tech Fingerprint
+
+Show the top technologies and domains, but keep it concise.
+
+This is useful proof, not the emotional hook.
+
+Preferred framing:
+
+- "What this builder keeps coming back to"
+- "Where their energy goes"
+
+## 12. Time Rhythm
+
+Time-of-day remains useful because it quickly adds personality.
+
+But frame it as rhythm, not just charting:
+
+- peak hour
+- dominant window
+- builder type
+- supporting evidence bars/cards
+
+Examples:
+
+- Morning Builder
+- Late-night closer
+- Weekend marathoner
+
+## 13. Activity / Volume
+
+Heatmaps and totals are supporting evidence.
+
+They help the user feel scale and consistency, but should not overshadow the thesis or signature build.
+
+## Listing Card System
+
+Taste-board cards should prioritize:
+
+1. summary / thesis
+2. subtitle (agent mix or strongest identity cue)
+3. tags that mix domain + taste
+4. real or branded fallback avatar
+
+Avoid internal scanner jargon on public cards.
+
+## CTA
+
+The CTA should invite imitation:
+
+- "Like what you see?"
+- "Paste into your coding agent"
+
+It should feel like an invitation into the same recap ritual.
+
+## Quality Checks
+
+Before publishing, ask:
+
+- If I remove the charts, does the builder still feel distinct?
+- Does the page say what they built, not only how much they used AI?
+- Would the user screenshot at least one section?
+- Would a stranger understand why this builder is interesting?

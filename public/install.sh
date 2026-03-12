@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# builderbio installer v0.6.1
+# builderbio installer v0.7.0
 # Usage: curl -sfL https://builderbio.dev/install.sh | bash
 set -euo pipefail
 
-VERSION="0.6.1"
+VERSION="0.7.0"
 BASE_URL="${BUILDERBIO_URL:-https://builderbio.dev}"
 INSTALL_DIR="${HOME}/.builderbio"
 SKILL_DIR="${INSTALL_DIR}/skills/builderbio"
@@ -43,6 +43,7 @@ echo "  ✓ assets/template.html"
 
 curl -sfL "${BASE_URL}/skills/builderbio/references/claude-code-format.md" -o "${SKILL_DIR}/references/claude-code-format.md"
 curl -sfL "${BASE_URL}/skills/builderbio/references/codex-format.md" -o "${SKILL_DIR}/references/codex-format.md"
+curl -sfL "${BASE_URL}/skills/builderbio/references/benchmark-rubric.md" -o "${SKILL_DIR}/references/benchmark-rubric.md"
 curl -sfL "${BASE_URL}/skills/builderbio/references/data-model.md" -o "${SKILL_DIR}/references/data-model.md"
 curl -sfL "${BASE_URL}/skills/builderbio/references/profile-dimensions.md" -o "${SKILL_DIR}/references/profile-dimensions.md"
 curl -sfL "${BASE_URL}/skills/builderbio/references/workflow-details.md" -o "${SKILL_DIR}/references/workflow-details.md"

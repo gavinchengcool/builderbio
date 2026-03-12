@@ -1,54 +1,76 @@
 {
   "skill_name": "builderbio",
+  "version": "0.7.0",
+  "benchmark_axes": {
+    "coverage": "Discover strong-path logs plus weak-path candidates, never silently dropping unknown sources.",
+    "truth": "Produce evidence-backed facts and carry scan transparency through publish.",
+    "delight": "Generate an annual-review style builder recap with a distinct identity, signature build, and shareable taste signals."
+  },
   "evals": [
     {
       "id": 1,
-      "prompt": "帮我生成一个 BuilderBio，把我本地所有 AI coding agent 的使用痕迹都扫出来并发布",
-      "expected_output": "Runs a full-history BuilderBio scan, emits an audit report, builds D/E, and publishes a live BuilderBio page",
+      "axis": ["coverage", "truth"],
+      "prompt": "帮我生成一个 BuilderBio，把我本地所有 AI coding agent 的使用痕迹都扫出来并发布，不要漏。",
+      "expected_output": "Runs a full-history BuilderBio scan, emits an audit report, verifies coverage, builds evidence-backed D/E, and publishes a live BuilderBio page.",
       "assertions": [
         "Runs parse_sessions.py with --days 0 for a full-history scan",
         "Scans all known local agent roots instead of stopping at a single agent",
-        "Produces scanner_version and scan_audit metadata in the parsed result",
+        "Performs weak discovery and surfaces unsupported candidates in the audit rather than silently skipping them",
         "Carries scanner_version into D.profile and scan_audit into E.scan_audit before publish",
-        "Publishes directly to builderbio.dev instead of relying on a local HTML preview",
-        "Prints an audit summary that shows parsed sources, unknown sources, and partial sessions"
+        "Shows the user an audit summary before or alongside the publish result",
+        "Does not describe the profile as complete if audit evidence is still partial"
       ]
     },
     {
       "id": 2,
-      "prompt": "我本地用了 Claude Code、Codex、Trae 和 Cursor，你要尽量别漏掉任何日志",
-      "expected_output": "Discovers strong-path logs plus weak-path candidates, parses what it can, and marks the profile partial when coverage is incomplete",
+      "axis": ["coverage"],
+      "prompt": "我本地用了 Claude Code、Codex、Trae、Cursor，还有一些你可能不认识的 IDE 插件日志，你要尽量别漏掉任何日志。",
+      "expected_output": "Discovers strong-path logs plus weak-path candidates, parses what it can, attempts recovery, and records the rest explicitly in scan_audit.",
       "assertions": [
         "Recursively scans ~/.claude/projects and merges subagent logs by sessionId",
         "Uses Codex cumulative token snapshots instead of double-counting turn-level token events",
         "Scans Trae state.vscdb ItemTable keys across supported key families",
         "Performs weak discovery across common roots to detect additional chat/session logs such as Cursor-like JSONL files",
         "Uses a generic fallback parser for chat-like JSON/JSONL sources when no dedicated parser exists",
-        "If fallback parsing or unknown sources remain, records rescan guidance in the audit metadata instead of silently ignoring them"
+        "If unsupported or partial sources remain, records them in the audit with a recommended action"
       ]
     },
     {
       "id": 3,
-      "prompt": "只看最近 7 天，重新更新我的 BuilderBio，并告诉我这次扫描是否完整",
-      "expected_output": "Runs a 7-day scan, updates the same published profile, and reports scan completeness alongside the refreshed stats",
+      "axis": ["delight", "truth"],
+      "prompt": "不要只给我做数据面板，我想看到一种像年度回顾一样的 BuilderBio，让我知道我到底是哪种 builder。",
+      "expected_output": "Builds a builder recap that includes identity, signature build, taste signals, builder eras, and evidence-backed highlights instead of only flat charts.",
+      "assertions": [
+        "Generates a builder thesis that reads like identity rather than a metric summary",
+        "Selects a signature build based on representativeness, not only raw session count",
+        "Produces taste signals or equivalent compact identity cues",
+        "Describes an evolution arc or builder eras instead of only raw weekly bars",
+        "Keeps the claims grounded in facts rather than generic praise"
+      ]
+    },
+    {
+      "id": 4,
+      "axis": ["truth"],
+      "prompt": "生成我的 AI 编程画像，要脱敏，不能暴露任何项目路径和仓库名。",
+      "expected_output": "Generates a redacted BuilderBio while preserving aggregate behavior, projects, and scan transparency.",
+      "assertions": [
+        "Redacts cwd paths, repo names, and other sensitive path-like strings before publish",
+        "Preserves aggregate stats, evolution, time distribution, and highlights after redaction",
+        "Keeps scan_audit metadata so the user can still see what was scanned and whether anything was partial",
+        "Does not leak local absolute paths into the published profile"
+      ]
+    },
+    {
+      "id": 5,
+      "axis": ["coverage", "truth", "delight"],
+      "prompt": "只看最近 7 天，重新更新我的 BuilderBio，并告诉我这次扫描是否完整，另外页面要看起来像是最近一周发生了什么。",
+      "expected_output": "Runs a 7-day scan, updates the same profile URL, explains completeness, and reframes the recap around the requested window instead of pretending to be full history.",
       "assertions": [
         "Respects the requested 7-day cutoff",
         "Reuses the same device identity and publish token flow for profile updates",
         "Keeps scanner_version and scan_audit metadata on republish",
         "Explains whether the scan is complete or partial using the audit summary",
-        "Does not claim missing-agent coverage if the audit still shows unknown sources"
-      ]
-    },
-    {
-      "id": 4,
-      "prompt": "生成我的 AI 编程画像，要脱敏，不能暴露任何项目路径和仓库名",
-      "expected_output": "Generates a redacted BuilderBio while preserving aggregate behavior and scan transparency",
-      "assertions": [
-        "Scans all supported logs before analysis",
-        "Redacts cwd paths, repo names, and other sensitive path-like strings before publish",
-        "Preserves aggregate stats, evolution, time distribution, and highlights after redaction",
-        "Keeps scan_audit metadata so the user can still see what was scanned and whether anything was partial",
-        "Does not leak local absolute paths into the published profile"
+        "Rebuilds the narrative around the requested time window rather than stale full-history claims"
       ]
     }
   ]

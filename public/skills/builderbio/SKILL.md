@@ -1,8 +1,8 @@
 ---
 name: builderbio
-version: 0.6.1
+version: 0.7.0
 description: |
-  This skill should be used when the user wants to generate a shareable "BuilderBio" — a profile page showcasing everything they built with AI coding agents (Claude Code, Codex, Trae, Antigravity, Kiro, Windsurf, OpenClaw, Cursor-like fallbacks, and more). It scans all local agent sessions, emits an audit report showing scan completeness, clusters projects, and publishes a personal portfolio. This skill should be used when the user mentions "BuilderBio", "builder bio", "builder profile", "share my builds", "coding history", "AI portfolio", "showcase", "分享", "画像", "展示", "导出", or "profile".
+  Use this skill when the user wants a BuilderBio, builder recap, builder profile, AI build history, annual-review style coding recap, or a shareable page about how they build with AI agents. It scans local coding-agent logs across Claude Code, Codex, Trae, Cursor-like fallbacks, OpenClaw, Antigravity, Kiro, Windsurf, and other discovered sources; produces a scan audit; derives evidence-backed builder narratives; and publishes a shareable BuilderBio.
 allowed-tools:
   - Read
   - Write
@@ -15,340 +15,194 @@ allowed-tools:
 
 # BuilderBio
 
-Generate and publish a shareable **BuilderBio** — a profile page at `<shortcode>.builderbio.dev` that shows everything a person built with AI coding agents.
+BuilderBio is not a single-session summary.
 
-This is not a single-session report. It aggregates ALL sessions into a personal BuilderBio that answers: "What has this person been building with AI, and how?"
+It is a local-first **builder recap system** that should help the user say two things:
 
-## Execution Mode
+1. "I didn’t realize I had already built this much with AI."
+2. "This actually sounds like me. I want to share it."
 
-**Run autonomously.** When this skill is triggered (either by the install script or by the user), execute all phases in sequence without stopping for confirmation. The system generates a unique short code for each user automatically.
+Treat the skill as a product with three benchmark axes:
 
-**When triggered by the install script output, execute immediately without waiting for additional user input. Run all phases straight through.**
+- **Coverage**: discover as many relevant agent logs as possible
+- **Truth**: never make unsupported claims; never silently drop missing coverage
+- **Delight**: turn the evidence into a memorable, screenshotable recap
 
-The only user input is **choosing a visual style theme** (Phase 3.5). Everything else is automatic.
+Before doing anything else, read:
 
-## Quick Start
+- [references/workflow-details.md](references/workflow-details.md) for the exact execution flow
+- [references/profile-dimensions.md](references/profile-dimensions.md) for the recap information architecture
+- [references/data-model.md](references/data-model.md) for the layered evidence/facts/narrative model
+- [references/benchmark-rubric.md](references/benchmark-rubric.md) for pass/fail criteria
 
-1. Scan ALL local agent sessions (no time range limit)
-2. Parse each session into lightweight summary data and emit a scan audit
-3. Analyze and build the full profile data model (D + E), carrying scanner metadata through
-4. Ask user to choose a visual style theme
-5. Auto-publish to `<shortcode>.builderbio.dev`
-6. Print the live URL
+Only read format-specific references when needed:
 
-## Supported Agents & Log Locations
+- [references/claude-code-format.md](references/claude-code-format.md)
+- [references/codex-format.md](references/codex-format.md)
 
-| Agent | Log Location | Format |
-|-------|-------------|--------|
-| Claude Code | `~/.claude/projects/**/*.jsonl` | JSONL |
-| Claude Code history | `~/.claude/history.jsonl` | JSONL (summaries) |
-| Codex (OpenAI) | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | JSONL |
-| Trae (ByteDance) | `~/Library/Application Support/Trae/User/**/state.vscdb` | SQLite |
-| Trae CN | `~/Library/Application Support/Trae CN/User/**/state.vscdb` | SQLite |
-| Antigravity (Gemini) | `~/.antigravity_tools/proxy_logs.db` | SQLite |
-| Kiro (AWS) | `~/.kiro/` | SQLite / JSON |
-| Windsurf (Codeium) | `~/.windsurf/transcripts/*.jsonl` | JSONL |
-| OpenClaw | `~/.openclaw/agents/<agentId>/sessions/<session-id>.jsonl` | JSONL |
-| Generic import | `--import-dir` path | JSON/JSONL |
-| Weak discovery fallback | Common config/app-support roots | JSON/JSONL/SQLite candidates |
+## Product Standard
 
-For parsing details, see [references/claude-code-format.md](references/claude-code-format.md) and [references/codex-format.md](references/codex-format.md).
+These rules are non-negotiable.
 
-**OpenClaw format**: Each `.jsonl` file contains messages with `type` (session/message), `timestamp`, `message.role` (user/assistant/toolResult), and `message.content[]` (filter `type=="text"` for human-readable content). Session metadata is in `sessions.json` in the same directory.
+### 1. Never silently drop data
 
-**Claude Code format**: Recursively scan `~/.claude/projects/**/*.jsonl`, including `subagents/agent-*.jsonl` and top-level `agent-*.jsonl`. Merge all files sharing the same `sessionId` into one logical session. Count Claude tokens as `input_tokens + cache_read_input_tokens + cache_creation_input_tokens + cached_input_tokens + output_tokens + reasoning_output_tokens` when present.
+If a source is found but not fully parsed:
 
-**Codex format**: Prefer `event_msg.payload.info.total_token_usage` (or `token_count_info.total_token_usage`) and take the max snapshot within a session to avoid duplicate cumulative counts. If missing, fall back to `last_token_usage`, then old `token_usage` events.
+- include it in the audit
+- mark the profile `partial` if needed
+- explain what was found vs. what was recovered
 
-**Trae format**: Sessions live in both global storage and `workspaceStorage` `state.vscdb` files. Query `ItemTable` for keys matching `%icube-ai-chat-storage%`, `%icube-ai-ng-chat-storage%`, `%icube-ai-agent-storage%`, `%icube-ai-ng-agent-storage%`, and `chatHistoryNeedToBeMigrated-%`. Token counts remain unstable, so count sessions/turns and leave tokens at `0`.
+The failure mode is not "miss a source." The failure mode is "miss a source and pretend the recap is complete."
 
-**Antigravity format**: API requests in `proxy_logs.db` SQLite. Grouped into sessions by 30-min time gaps. Tokens from `input_tokens`/`output_tokens` columns.
+### 2. Coverage beats convenience
 
-**Kiro format**: Schema discovery on `.db` files under `~/.kiro/`. Also parses JSON exports from `/chat save`.
+Always attempt:
 
-**Windsurf format**: JSONL transcripts with event types: `user_input`, `planner_response`, `code_action`, `command_action`, `search_action`.
+- strong-path discovery for supported agents
+- weak discovery for additional chat/session logs
+- generic fallback parsing for chat-like JSON/JSONL when a dedicated parser is absent
 
-**Generic import**: Place `.json` (pre-formatted session dicts) or `.jsonl` (role-based messages) in a directory and pass via `--import-dir`.
+If the user says they used an agent and the scan does not show it, run a second-pass discovery before publishing.
 
-**Weak discovery**: The parser also probes common config roots such as `~/.config`, `~/Library/Application Support`, and editor-specific folders like `~/.cursor`. If it finds chat-like logs without a dedicated parser, it will either parse them with a generic fallback or report them in `scan_audit` instead of silently dropping them.
+### 3. Evidence before narrative
 
-## Workflow
+Do not jump directly from raw sessions to catchy copy.
 
-### Phase 1: Discover & Scan
+Build in this order:
 
-**Do not ask the user about time range. Default to ALL available sessions.**
+1. scan evidence
+2. canonical sessions
+3. derived facts
+4. narrative claims
+5. render data
 
-Auto-detect:
-- **Which agents**: Scan all known paths. Use whatever exists.
-- **Display name**: Run `whoami` as default. Do NOT prompt the user — use the system username.
-- **Language**: Detect from session history. Scan `display` text — if Chinese character ratio > 0.3, set `lang` to `"zh"`, otherwise `"en"`. **Important**: All UI chrome (section headers, stat labels, status badges, tooltips, CTA, footer) is always rendered in English regardless of `lang`. The `lang` setting only affects user-generated content.
+Every interesting sentence on the page should be explainable from the evidence.
 
-Scan for sessions:
+### 4. Build for aha, not for dashboard completeness
 
-```bash
-# Claude Code — recursively list root sessions and sidechains
-find ~/.claude/projects -name '*.jsonl' 2>/dev/null | head -200
+A good BuilderBio is not "11 equal charts."
 
-# Codex — list all session files
-ls -lt ~/.codex/sessions/*/*/*/*.jsonl 2>/dev/null | head -100
+Prioritize:
 
-# Trae
-find ~/Library/Application\ Support/Trae/User -name state.vscdb 2>/dev/null | head -50
-find ~/Library/Application\ Support/Trae\ CN/User -name state.vscdb 2>/dev/null | head -50
+- who this builder is
+- what defines their taste
+- what they actually shipped
+- how their relationship with AI changed over time
 
-# Antigravity
-ls -la ~/.antigravity_tools/proxy_logs.db 2>/dev/null
+Charts are supporting evidence, not the main character.
 
-# Kiro
-ls -la ~/.kiro/*.db 2>/dev/null
+### 5. Publish with honesty
 
-# Windsurf
-ls -lt ~/.windsurf/transcripts/*.jsonl 2>/dev/null | head -100
+Before publish, show the user a concise audit summary:
 
-# OpenClaw — list all session files
-ls -lt ~/.openclaw/agents/*/sessions/*.jsonl 2>/dev/null | head -100
-```
+- agents found
+- sources discovered
+- unknown or partial sources
+- confidence / rescan recommendation
 
-Read `~/.claude/history.jsonl` to get human-readable display text per session.
+If the audit is partial, do not hide that fact.
 
-Also note: the parser prints an audit summary at the end. Treat that summary as part of the product output, not debugging noise.
+## Default Execution Mode
 
-### Phase 2: Parse All Sessions
+Run autonomously from scan through publish.
 
-Run the parser on ALL session files to extract session summaries:
+The only user input that should normally be required is **visual theme choice**. Everything else should be discovered, inferred, or recovered automatically.
 
-```bash
-python <skill-path>/scripts/parse_sessions.py \
-  --claude-dir ~/.claude \
-  --codex-dir ~/.codex \
-  --trae-dir "~/Library/Application Support/Trae" \
-  --antigravity-dir ~/.antigravity_tools \
-  --kiro-dir ~/.kiro \
-  --windsurf-dir ~/.windsurf \
-  --openclaw-dir ~/.openclaw \
-  --days 0 \
-  --output /tmp/builder_profile_data.json
-```
+If the user explicitly asks to stop before publish, stop.
 
-Use `--days 0` to include ALL sessions with no time limit. The parser treats `--days <= 0` as full-history scan, merges Claude sidechains by `sessionId`, and prefers Codex cumulative token snapshots over duplicate per-turn additions. Only include flags for agents with detected data. The script skips missing directories gracefully.
+## Workflow Overview
 
-The parser now emits:
+Follow the detailed procedure in [references/workflow-details.md](references/workflow-details.md).
+
+High-level flow:
+
+1. **Discover** all strong-path and weak-path sources
+2. **Parse** and emit a scan audit
+3. **Verify** coverage against what the machine and user reality imply
+4. **Recover** partial/unknown sources where possible
+5. **Derive facts** from canonical sessions
+6. **Narrate** the builder recap
+7. **Ask for theme**
+8. **Publish** with scan metadata attached
+
+## What the Final BuilderBio Must Communicate
+
+The finished profile should answer these questions quickly:
+
+- What kind of builder is this person?
+- What did they actually build?
+- Which agents do they use, and for what roles?
+- What changed from early exploration to later shipping?
+- What makes their taste distinct?
+
+The page should feel closer to a great annual recap than a control panel.
+
+## Required Narrative Outputs
+
+Use the rubric in [references/profile-dimensions.md](references/profile-dimensions.md). The final recap must contain, either explicitly or through derived fields:
+
+- **Builder thesis**: one sentence that feels like identity, not statistics
+- **Trust badge handling**: preserve verification integrity so badges such as `Unfiltered` remain meaningful
+- **Signature build**: the project or arc that best represents this builder
+- **Taste signals**: compact, memorable cues about habits and preferences
+- **Builder eras**: stages such as exploration, compounding, shipping, refinement
+- **Agent roles**: what each agent is actually used for
+- **Evidence layer**: receipts that make the recap feel trustworthy
+
+If the scan data is thin, say less and stay specific. Do not inflate weak evidence into a confident persona.
+
+## Scan Audit Contract
+
+The parser output must flow through to the published profile.
+
+Carry through:
+
 - `scanner_version`
 - `scan_audit.summary`
 - `scan_audit.agent_sources_found`
-- per-session provenance (`source_refs`, `parse_mode`, `partial_reasons`)
+- per-session provenance fields such as `source_refs`, `parse_mode`, `partial_reasons`
+- stable top-line counts required for verification hashes
 
-If `scan_audit.summary.status != "complete"`, explicitly tell the user a re-scan may still be needed.
+If the parser returns `partial`, the final BuilderBio should still be useful and shareable, but the agent must mention the limitation before publish.
 
-If the script fails, fall back to manual parsing: read each JSONL file and extract the fields documented in the format references.
+## Theme Choice
 
-### Phase 3: Analyze & Build Profile
+Ask the user to choose a visual theme after the recap has been built.
 
-This is the core intellectual work. Read the parsed data and produce the full BuilderBio analysis. Build both the **D** (primary data) and **E** (extra data) objects. Refer to [references/profile-dimensions.md](references/profile-dimensions.md) for the full rubric.
+Supported themes:
 
-Copy scan metadata through to the publishable profile:
-- Set `D.profile.scanner_version = parsed.scanner_version`
-- Set `D.profile.scan_status = parsed.scan_audit.summary.status`
-- Set `D.profile.scan_recommendation = parsed.scan_audit.summary.recommended_action`
-- Set `D.profile.agent_sources_found = parsed.scan_audit.agent_sources_found`
-- Set `E.scan_audit = parsed.scan_audit`
+- `default`
+- `yc-orange`
+- `terminal-green`
+- `minimal-light`
+- `cyberpunk`
 
-The eleven sections:
+If the user has no preference, default to `yc-orange`.
 
-#### 1. Builder Identity (hero stats)
-- Total sessions, active days, total turns, total tool calls, tokens
-- Agent badges showing which tools the person uses, including `first_session` date (earliest session date per agent)
-- Date range covered
+## Publish Contract
 
-#### 2. What I Built (project gallery)
-- Cluster sessions into **projects** by cwd, keyword overlap, temporal proximity
-- Each project card: name, one-line description, tech stack tags, session count, total turns, status
-- This is the most important section — it answers "what did you ship?"
+Required payload keys:
 
-#### 3. Tech Stack Fingerprint
-- Infer technologies from tool calls (file types) and prompt keywords
-- Horizontal bar chart, 0-100 scale, top 10 tech areas
+- `style_theme`
+- `scanner_version`
+- `scan_audit`
+- `builderbio: { D, E }`
 
-#### 4. How I Build (working style)
-- **Prompt style**: Architect / Conversationalist / Delegator / Explorer
-- **Session rhythm**: Sprinter / Marathoner / Balanced
-- **Tool preference**: Explorer / Builder / Commander / Balanced
-- **Agent loyalty**: Monogamous / Multi-agent / Experimenter
-- Tool distribution bar with legend
+Use the same device identity and publish token flow so republishing updates the same URL.
 
-#### 5. Collaboration Evolution Curve
-- Weekly bar chart showing turns volume over time
-- Trend insight text describing the pattern (exploration → deep building)
+If the publish response succeeds but the audit is still partial, say both things:
 
-#### 6. Time-of-Day Distribution
-- 24-column bar chart, colored by time period
-- Period summary cards (deep night / morning / afternoon / evening)
-- Builder type label (e.g., "Morning Builder")
+- publish succeeded
+- coverage may still be incomplete
 
-#### 7. Prompt Keywords
-- Word cloud extracted from all session first messages
-- Font size proportional to frequency, top 20-30 keywords
+## Regression Safety
 
-#### 8. Agent Comparison Panel
-- Side-by-side cards for each agent used (skip if single agent)
-- Stats: sessions, turns, avg turns, tool calls, top tools, session length distribution
-- Usage insight text summarizing differences
-
-#### 9. Activity Heatmap
-- GitHub-style contribution grid
-- Streak data: longest streak, current streak, active days ratio
-
-#### 10. Highlight Moments
-- Biggest session, busiest day, longest streak, fun fact comparison
-- Featured prompt in a styled quote block
-
-#### 11. CTA (Call-to-Action)
-- "Show the world your taste" with install command
-- "Send this to your coding agent — get your bio link"
-
-**Summary & Tags (for taste-board cards)**:
-Generate these fields in `D.profile` — they will be displayed on the taste-board listing page:
-- `summary`: A one-line description of the builder (e.g., "Full-stack builder shipping AI tools and dev infrastructure"). Should read like a bio tagline, not a stat dump.
-- `tags`: An array of 3-6 short tags that describe this builder (e.g., `["AI Tooling", "Full-Stack", "Open Source", "Night Builder"]`). Mix technical domains with personality/style traits.
-
-**Privacy**: Automatically redact all file paths to generic placeholders. Strip any credentials or API keys found in session content. Do NOT ask the user about privacy — just redact by default.
-
-### Phase 3.5: Choose Visual Style
-
-**This is the only step that requires user input.**
-
-Ask the user to choose a visual theme for their BuilderBio page. Present these 5 options:
-
-| Theme | Description |
-|-------|-------------|
-| `default` | Dark mode with purple-blue accent — clean and professional |
-| `yc-orange` | Dark mode with YC orange (#FF6B35) — for builders and founders |
-| `terminal-green` | Black background, green text, monospace font — hacker aesthetic |
-| `minimal-light` | Light mode, black and white, lots of whitespace — minimalist |
-| `cyberpunk` | Dark mode with neon pink-blue gradients and glow effects — futuristic |
-
-If the user doesn't have a preference or wants to skip, default to `default`.
-
-Store the chosen theme name as `style_theme` for the publish API call.
-
-### Phase 3.6: Compute Data Hash (for Unfiltered badge)
-
-After building D and E data, compute a verification hash. This hash allows the server to verify that the data was not manually modified. Profiles with a valid hash get an "Unfiltered" badge displayed next to the name — a mark of authenticity.
-
-**IMPORTANT: Compute this hash BEFORE any user modifications. Do NOT recompute after the user makes changes.**
+Before calling the work done, run:
 
 ```bash
-# The hash is SHA-256 of: total_sessions|total_turns|total_tokens|active_days|project_count
-DATA_HASH=$(echo -n "${TOTAL_SESSIONS}|${TOTAL_TURNS}|${TOTAL_TOKENS}|${ACTIVE_DAYS}|${PROJECT_COUNT}" | shasum -a 256 | cut -c1-64)
+python <skill-path>/scripts/run_fixture_evals.py
 ```
 
-The hash covers these exact fields from D.profile and D.projects:
-- `D.profile.total_sessions`
-- `D.profile.total_turns`
-- `D.profile.total_tokens`
-- `D.profile.active_days`
-- Length of `D.projects` array
+That fixture suite is the minimum regression bar for scan coverage and provenance handling.
 
-Send the hash as `data_hash` in the publish API call.
-
-### Phase 4: Publish to builderbio.dev
-
-**This step is fully automatic. No user input needed.**
-
-The system uses a **device_id** (a stable local machine identifier) to tie each machine to a unique short code. The same device always gets the same `<shortcode>.builderbio.dev` URL, even across reinstalls.
-
-1. **Read or generate device_id**: Check `~/.builderbio/config.json` for an existing `device_id` and `publish_token`. If no config exists, generate a new device_id:
-
-```bash
-# Generate a stable device_id from machine identity
-DEVICE_ID=$(echo "$(hostname)-$(whoami)-$(uname -m)" | shasum -a 256 | cut -c1-64)
-
-# Check for existing config
-CONFIG_FILE=~/.builderbio/config.json
-PUBLISH_TOKEN=""
-if [ -f "$CONFIG_FILE" ]; then
-  DEVICE_ID=$(python3 -c "import json; c=json.load(open('$CONFIG_FILE')); print(c.get('device_id',''))" 2>/dev/null || echo "$DEVICE_ID")
-  PUBLISH_TOKEN=$(python3 -c "import json; c=json.load(open('$CONFIG_FILE')); print(c.get('publish_token',''))" 2>/dev/null || echo "")
-fi
-```
-
-2. **Publish**: Send the profile data with device_id to the publish endpoint. The server generates a unique 8-character short code automatically:
-
-```bash
-curl -s -X POST https://builderbio.dev/api/profile/publish \
-  -H "Content-Type: application/json" \
-  -d '{
-    "device_id": "DEVICE_ID_VALUE",
-    "publish_token": "TOKEN_OR_EMPTY_STRING",
-    "data_hash": "SHA256_HASH_FROM_PHASE_3_6",
-    "style_theme": "default",
-    "scanner_version": "0.6.1",
-    "scan_audit": { ... parsed scan_audit object ... },
-    "profile": {
-      "summary": "ONE_LINE_SUMMARY",
-      "display_name": "DISPLAY_NAME",
-      "sessions_analyzed": N,
-      "total_tokens": N
-    },
-    "builderbio": {
-      "D": { ... full D data object ... },
-      "E": { ... full E data object ... }
-    }
-  }'
-```
-
-The response will contain:
-```json
-{
-  "success": true,
-  "url": "https://abc12xyz.builderbio.dev",
-  "slug": "abc12xyz",
-  "publish_token": "TOKEN (only on first publish or token refresh)"
-}
-```
-
-3. **Save config**: On success, save the device_id, slug, and publish_token to `~/.builderbio/config.json`:
-```bash
-mkdir -p ~/.builderbio
-cat > ~/.builderbio/config.json << 'ENDCONFIG'
-{"device_id":"DEVICE_ID","slug":"SLUG_FROM_RESPONSE","publish_token":"TOKEN_FROM_RESPONSE"}
-ENDCONFIG
-```
-
-4. **Handle errors**: If the API returns an error, show it and retry once.
-
-5. **Done!** Print the live URL clearly:
-```
-Your BuilderBio is live at: https://abc12xyz.builderbio.dev
-```
-
-The user can re-run this skill anytime to update their profile. The same device always publishes to the same URL (tied to the device_id).
-
-### Phase 5: Review (Optional)
-
-After publishing, briefly mention:
-- "Your BuilderBio is live. You can re-run this anytime to update it."
-- "To change your profile, just say 'update my builderbio' and I'll re-scan and re-publish."
-
-Do NOT prompt for feedback unprompted. Keep it clean — the aha moment is the published URL.
-
-## Data Model & Page Structure
-
-For the full D (primary data) and E (extra data) JSON schemas, and the 11-section page structure table, see [references/data-model.md](references/data-model.md).
-
-Build both D and E data objects and inject into the publish API call.
-
-## Important Notes
-
-- The profile page is about the PERSON, not individual sessions
-- Project clustering requires judgment — sessions about the same topic should be grouped
-- The "How I Build" section should feel like a personality assessment, not a dry report
-- Highlight moments should be written in a way that's fun to share ("You talked to AI more than most people talk to their coworkers")
-- The tone should be celebratory — this is something people share on social media
-- **Run autonomously** — only user interaction is choosing a visual theme
-- **Default to ALL data** — never ask about time ranges
-- **Publish directly** — no local HTML file needed, go straight to `<shortcode>.builderbio.dev`
-- **Compute data_hash BEFORE showing data to user** — this preserves the Unfiltered badge
-- **Generate good summary and tags** — these show up on the taste-board listing page
-- **Never hide scan uncertainty** — if the parser reports `partial` or `unknown_sources > 0`, tell the user and carry that metadata into the published profile
-- **Regression-test parser changes** — run `python <skill-path>/scripts/run_fixture_evals.py` after changing scan logic
+Also review [evals/evals.json](evals/evals.json) before changing the skill contract so the benchmark assertions still match the behavior you expect from the local agent.
