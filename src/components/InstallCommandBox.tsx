@@ -57,17 +57,17 @@ export default function InstallCommandBox({
           isCentered ? "sm:mx-auto sm:max-w-[46rem]" : ""
         } ${glow ? "glow-breathe" : ""}`}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_3rem] items-stretch sm:grid-cols-[minmax(0,1fr)_3.5rem]">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3 px-3 py-3 sm:px-4 sm:py-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_2.75rem] items-stretch sm:grid-cols-[minmax(0,1fr)_3rem]">
+          <div className="no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto px-2.5 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
             <span className="text-accent shrink-0">$</span>
-            <code className="text-[10px] sm:text-sm text-text-primary break-all sm:break-normal min-w-0">
+            <code className="min-w-max whitespace-nowrap text-[9px] leading-none text-text-primary sm:text-sm sm:leading-normal">
               {INSTALL_CMD}
             </code>
           </div>
           <button
             onClick={handleCopy}
             type="button"
-            className="flex items-center justify-center border-l border-border text-text-muted transition-colors hover:text-accent"
+            className="flex items-center justify-end border-l border-border pr-2.5 text-text-muted transition-colors hover:text-accent sm:pr-3"
             title="Copy to clipboard"
             aria-label="Copy to clipboard"
           >
