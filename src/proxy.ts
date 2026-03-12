@@ -25,20 +25,16 @@ export function proxy(req: NextRequest) {
       return NextResponse.next();
     }
 
-    // Special built-by profile
-    const staticProfiles = ["gavin"];
-    if (staticProfiles.includes(subdomain)) {
-      if (req.nextUrl.pathname === "/" || req.nextUrl.pathname === "") {
-        return NextResponse.rewrite(new URL("/builderbio-preview", req.url));
-      }
-      return NextResponse.next();
-    }
-
-    // Rewrite subdomain to bio-profile API (renders BuilderBio template)
+    // Rewrite public BuilderBio subdomains to the shared React recap page
     if (req.nextUrl.pathname === "/" || req.nextUrl.pathname === "") {
-      return NextResponse.rewrite(
-        new URL(`/api/bio-profile/${subdomain}`, req.url)
-      );
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set("x-builderbio-subdomain", subdomain);
+      requestHeaders.set("x-builderbio-host", hostname);
+      return NextResponse.rewrite(new URL("/builderbio-preview", req.url), {
+        request: {
+          headers: requestHeaders,
+        },
+      });
     }
     // For non-root paths under subdomains, pass through
     return NextResponse.next();

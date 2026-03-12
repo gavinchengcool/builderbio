@@ -1,24 +1,64 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import Titlebar from "@/components/Titlebar";
 import InstallCommandBox from "@/components/InstallCommandBox";
+import { loadPublicBuilderBioRecap } from "@/lib/builderbio-recap";
 
-async function isLiveGavinHost() {
+async function getBuilderBioSubdomainFromHost() {
   const headerStore = await headers();
-  const host = (headerStore.get("host") || "").split(":")[0];
-  return host === "gavin.builderbio.dev";
+  const injectedSubdomain = headerStore.get("x-builderbio-subdomain");
+  if (injectedSubdomain) return injectedSubdomain;
+
+  const host =
+    (headerStore.get("x-builderbio-host") || headerStore.get("host") || "").split(":")[0];
+  if (!host.endsWith(".builderbio.dev")) return null;
+  const subdomain = host.replace(".builderbio.dev", "");
+  if (!subdomain || subdomain.includes(".")) return null;
+  return subdomain;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const live = await isLiveGavinHost();
+  const subdomain = await getBuilderBioSubdomainFromHost();
 
-  if (live) {
+  if (subdomain === "gavin") {
     return {
       title: "Gavin's BuilderBio — What I Built with AI",
       description:
         "230 sessions, 12.7K turns, 34 active days of building with Claude Code and Codex. See how Gavin works with AI coding agents.",
       alternates: {
         canonical: "https://gavin.builderbio.dev",
+      },
+      robots: {
+        index: true,
+        follow: true,
+      },
+    };
+  }
+
+  if (subdomain) {
+    const loaded = await loadPublicBuilderBioRecap(subdomain);
+
+    if (!loaded) {
+      return {
+        title: "BuilderBio Not Found",
+        description: "This BuilderBio profile is not available.",
+        alternates: {
+          canonical: `https://${subdomain}.builderbio.dev`,
+        },
+        robots: {
+          index: false,
+          follow: false,
+        },
+      };
+    }
+
+    return {
+      title: loaded.seo.title,
+      description: loaded.seo.description,
+      alternates: {
+        canonical: loaded.seo.canonical,
       },
       robots: {
         index: true,
@@ -40,7 +80,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const preview = {
+const previewFallback = {
   label: "Local preview · not deployed",
   sectionLabel: "Gavin-based annual recap direction",
   name: "Gavin",
@@ -470,35 +510,56 @@ function hourColor(hour: number) {
   return "#FF6B35";
 }
 
-function buildPageCopy(liveGavin: boolean) {
+function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
   const busiestDay = preview.highlights.busiestDay;
   const biggestSession = preview.highlights.biggestSession;
-  const firstEra = preview.eras[0];
-  const transitionEra = preview.eras[1];
-  const latestEra = preview.eras[2];
-  const fastAgent = preview.agentRoles.find((agent) => agent.role.includes("快")) || preview.agentRoles[1];
-  const deepAgent = preview.agentRoles.find((agent) => agent.role.includes("深")) || preview.agentRoles[0];
+  const eraTitles = preview.eras
+    .map((era) => era?.title)
+    .filter(Boolean)
+    .slice(0, 3)
+    .join("、");
+  const fastAgent =
+    preview.agentRoles.find((agent) => /快|执行/.test(agent.role)) ||
+    preview.agentRoles[1] ||
+    preview.agentRoles[0];
+  const deepAgent =
+    preview.agentRoles.find((agent) => /深/.test(agent.role)) ||
+    preview.agentRoles[0] ||
+    preview.agentRoles[1];
+  const name = preview.name;
+  const dateLabel = busiestDay.date || preview.dateRange || "这段时间";
+  const socialCurrencySummary =
+    preview.socialCurrency.summary ||
+    `${formatCompact(preview.totalTokens)} tokens、${preview.stats[0].value} 个会话和 ${preview.stats[1].value} turns，说明这已经是持续而深入的 AI 协作，而不是偶尔试用。`;
 
   return {
-    badgeLabel: liveGavin ? "Built from real session logs" : preview.label,
-    sectionLabel: liveGavin ? "Gavin annual recap" : preview.sectionLabel,
-    recap: `${preview.dateRange} 这段时间里，Gavin 把 Agent 研究、产品策略和真实交付放进了同一条工作流：一边高频推进，一边把结果做成别人也能看见、也能使用的产品。`,
-    trustNote:
-      "顶部统计和 Unfiltered 标记都对应原始 session 日志校验结果。这页展示的是 Gavin 真实的协作轨迹，不是演示稿。",
-    socialCurrencySummary: `${formatCompact(preview.totalTokens)} tokens、${preview.stats[0].value} 个会话和 ${preview.stats[1].value} turns 说明，这已经不是偶尔试用 AI，而是把多 Agent 协作真正变成了日常工作流。`,
+    badgeLabel: preview.label,
+    sectionLabel: liveProfile ? preview.sectionLabel : preview.sectionLabel,
+    recap: preview.recap,
+    trustNote: preview.trust.note,
+    socialCurrencySummary,
     socialCurrencyBadge: "协作强度",
-    highMomentsHeading: `${busiestDay.date} 那天连开 ${busiestDay.sessions} 个 sessions，这些就是 Gavin 这段时间最容易被人记住的高光。`,
-    signatureMovesHeading: "研究、策略、执行和表达，经常被他压进同一条连续工作流里。",
-    projectsHeading: `从 ${preview.signatureBuild.name} 到产品策略与研究，这 ${preview.projects.length} 个项目就是 Gavin 最近这段 Builder 主线。`,
-    agentComparisonHeading: `${fastAgent.name} 扛速度，${deepAgent.name} 扛深度，这个分工已经非常稳定。`,
-    agentRolesHeading: "不同的 Agent 在 Gavin 这里有很明确的分工。",
-    agentRolesSummary: "重要的不是谁用得更多，而是 Gavin 会把不同 agent 放在不同任务里。",
-    erasHeading: `${firstEra.title}、${transitionEra.title}、${latestEra.title} 连在一起，能清楚看见 Gavin 这段时间的轨迹怎么一步步变化。`,
+    highMomentsHeading: `${dateLabel} 是 ${name} 这段时间最容易被人记住的一次高峰。`,
+    signatureMovesHeading: `这些反复出现的习惯，基本就是 ${name} 和 AI 协作时最稳定的做法。`,
+    projectsHeading: `这些项目最能说明 ${name} 这段时间到底在持续构建什么。`,
+    agentComparisonHeading:
+      fastAgent && deepAgent && fastAgent.name !== deepAgent.name
+        ? `${fastAgent.name} 扛速度，${deepAgent.name} 扛深度，这个分工已经很稳定。`
+        : `这些 agent 使用轨迹，基本勾勒出了 ${name} 的协作方式。`,
+    agentRolesHeading: `不同的 Agent 在 ${name} 这里有很明确的分工。`,
+    agentRolesSummary: `重要的不是谁用得更多，而是 ${name} 会把不同 agent 放在不同任务里。`,
+    erasHeading: eraTitles
+      ? `${eraTitles} 连在一起，能清楚看见 ${name} 这段时间的轨迹怎么一步步变化。`
+      : `这条时间线能清楚看见 ${name} 这段时间的轨迹怎么一步步变化。`,
     evidenceHeading: "这些判断背后，都能找到对应的日志证据。",
-    evidenceStatus: liveGavin ? "Unfiltered log receipts" : preview.evidence.coverage.status,
-    evidenceSummary: `从 ${preview.whenIbuild.peakHour} 的时间高峰，到 ${busiestDay.date} 的忙碌峰值，再到 ${fastAgent.name} / ${deepAgent.name} 的角色分工，这些结论都能在原始日志里找到对应证据。`,
-    evidenceNote: `最大单次会话达到 ${formatNumber(biggestSession.turns)} turns，最长连续协作 ${preview.highlights.longestStreak} 天；从最大会话到连续协作天数，这些结论都能回到原始 sessions。`,
-    activityHeading: `${preview.activity.activeDays} 个活跃日，把 Gavin 这段时间的构建节奏完整留了下来。`,
+    evidenceStatus: preview.evidence.coverage.status,
+    evidenceSummary:
+      preview.evidence.coverage.summary ||
+      `从 ${preview.whenIbuild.peakHour} 的时间高峰，到 ${busiestDay.date} 的忙碌峰值，再到 ${fastAgent.name} / ${deepAgent.name} 的角色分工，这些结论都能在原始日志里找到对应证据。`,
+    evidenceNote:
+      preview.evidence.coverage.note ||
+      `最大单次会话达到 ${formatNumber(biggestSession.turns)} turns，最长连续协作 ${preview.highlights.longestStreak} 天；从最大会话到连续协作天数，这些结论都能回到原始 sessions。`,
+    activityHeading: `${preview.activity.activeDays} 个活跃日，把 ${name} 这段时间的构建节奏完整留了下来。`,
     receiptsHeading: "这些高光不是包装出来的，而是可以直接回到真实历史里的事实。",
     ctaHeading: "也做一页属于你自己的 BuilderBio。",
     ctaSummary:
@@ -507,8 +568,18 @@ function buildPageCopy(liveGavin: boolean) {
 }
 
 export default async function BuilderBioPreviewPage() {
-  const liveGavin = await isLiveGavinHost();
-  const pageCopy = buildPageCopy(liveGavin);
+  const subdomain = await getBuilderBioSubdomainFromHost();
+  const liveProfile = !!subdomain;
+  const liveGavin = subdomain === "gavin";
+  const loaded = !liveGavin && subdomain ? await loadPublicBuilderBioRecap(subdomain) : null;
+
+  if (subdomain && !liveGavin && !loaded) {
+    notFound();
+  }
+
+  const preview = (loaded?.recap ?? previewFallback) as typeof previewFallback;
+  const themeStyle = (loaded?.themeStyle ?? {}) as CSSProperties;
+  const pageCopy = buildPageCopy(preview, liveProfile);
   const hourEntries = Array.from({ length: 24 }, (_, hour) => ({
     hour,
     sessions:
@@ -517,9 +588,11 @@ export default async function BuilderBioPreviewPage() {
       ] ?? 0,
   }));
   const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
-  const heatmapDates = Object.keys(preview.activity.heatmap).sort();
-  const firstHeatmapDate = new Date(`${heatmapDates[0]}T00:00:00`);
-  const heatmapPadBefore = (firstHeatmapDate.getDay() || 7) - 1;
+  const heatmapDates = Object.keys(preview.activity.heatmap || {}).sort();
+  const firstHeatmapDate = heatmapDates.length
+    ? new Date(`${heatmapDates[0]}T00:00:00`)
+    : new Date();
+  const heatmapPadBefore = heatmapDates.length ? (firstHeatmapDate.getDay() || 7) - 1 : 0;
   const heatmapCells = [
     ...Array.from({ length: heatmapPadBefore }, (_, index) => ({
       key: `pad-${index}`,
@@ -537,8 +610,8 @@ export default async function BuilderBioPreviewPage() {
 
   return (
     <>
-      <Titlebar forceBuiltByActive={liveGavin} />
-      <div className="relative overflow-hidden pt-12">
+      <Titlebar forceBuiltByActive={liveProfile} />
+      <div className="relative overflow-hidden pt-12" style={themeStyle}>
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,107,53,0.18),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(52,211,153,0.12),transparent_30%)]" />
 
         <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-12">
@@ -557,11 +630,15 @@ export default async function BuilderBioPreviewPage() {
                 <div className="mb-5 flex flex-col items-start gap-4 sm:mb-6 sm:flex-row sm:items-center">
                   <div
                     className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-3xl border border-accent/25 bg-accent/10 text-3xl font-black text-accent shadow-[0_12px_40px_rgba(255,107,53,0.12)] sm:h-20 sm:w-20"
-                    style={{
-                      backgroundImage: `linear-gradient(rgba(17,17,17,0.04), rgba(17,17,17,0.04)), url(${preview.avatarUrl})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }}
+                    style={
+                      preview.avatarUrl
+                        ? {
+                            backgroundImage: `linear-gradient(rgba(17,17,17,0.04), rgba(17,17,17,0.04)), url(${preview.avatarUrl})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }
+                        : undefined
+                    }
                   >
                     <span className="sr-only">{preview.avatarLetter}</span>
                   </div>
