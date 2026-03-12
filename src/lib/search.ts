@@ -2,6 +2,7 @@ import { db } from "./db";
 import { profiles, users } from "./db/schema";
 import {
   extractBuilderBioAvatarUrl,
+  extractBuilderBioScanInfo,
   extractPortraitAvatarUrl,
 } from "./builderbio";
 import { eq, and, sql, ilike, or, isNotNull, gt } from "drizzle-orm";
@@ -17,14 +18,21 @@ export interface SearchResult {
   searchProfile: unknown;
   sessionsAnalyzed: number | null;
   totalTokens: number | null;
+  scanStatus: string | null;
+  scannerVersion: string | null;
+  scanNeedsRescan: boolean;
   rank?: number;
 }
 
-type SearchRow = Omit<SearchResult, "avatarUrl"> & {
+type SearchRow = Omit<
+  SearchResult,
+  "avatarUrl" | "scanStatus" | "scannerVersion" | "scanNeedsRescan"
+> & {
   builderBioData: unknown;
 };
 
 function mapSearchResult(row: SearchRow): SearchResult {
+  const scanInfo = extractBuilderBioScanInfo(row.builderBioData);
   return {
     username: row.username,
     displayName: row.displayName,
@@ -38,6 +46,9 @@ function mapSearchResult(row: SearchRow): SearchResult {
     searchProfile: row.searchProfile,
     sessionsAnalyzed: row.sessionsAnalyzed,
     totalTokens: row.totalTokens,
+    scanStatus: scanInfo?.status ?? null,
+    scannerVersion: scanInfo?.scannerVersion ?? null,
+    scanNeedsRescan: scanInfo?.needsRescan ?? false,
   };
 }
 

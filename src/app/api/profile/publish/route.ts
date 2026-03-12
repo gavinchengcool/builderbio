@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users, profiles } from "@/lib/db/schema";
-import { normalizeBuilderBioData } from "@/lib/builderbio";
+import {
+  injectBuilderBioScannerMetadata,
+  normalizeBuilderBioData,
+} from "@/lib/builderbio";
 import { eq } from "drizzle-orm";
 import { sha256 } from "@/lib/auth";
 import { rateLimitByIp } from "@/lib/rate-limit";
@@ -64,6 +67,8 @@ const publishSchema = z.object({
     sessions_analyzed: z.number().min(0).default(0),
     total_tokens: z.number().min(0).default(0),
   }),
+  scanner_version: z.string().optional(),
+  scan_audit: z.record(z.string(), z.unknown()).optional(),
   // Full BuilderBio data model (D + E) for rendering the rich profile page
   builderbio: z
     .object({
@@ -157,7 +162,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { device_id, publish_token, data_hash, style_theme, profile, builderbio } = parsed.data;
+    const {
+      device_id,
+      publish_token,
+      data_hash,
+      style_theme,
+      profile,
+      builderbio,
+      scanner_version,
+      scan_audit,
+    } = parsed.data;
 
     if (!builderbio) {
       return NextResponse.json(
@@ -170,7 +184,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const normalizedBuilderBio = normalizeBuilderBioData(builderbio);
+    const normalizedBuilderBio = injectBuilderBioScannerMetadata(
+      normalizeBuilderBioData(builderbio),
+      scanner_version,
+      scan_audit
+    );
 
     // Sync profile metadata from builderbio.D if available
     // D.profile is the authoritative source for stats

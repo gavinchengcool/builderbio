@@ -1,0 +1,4 @@
+{"sessionId":"main-session","type":"user","userType":"external","timestamp":"2026-03-01T09:00:00Z","cwd":"/Users/demo/store-admin","version":"1.2.0","gitBranch":"main","message":{"content":[{"type":"text","text":"Build an admin dashboard for the store"}]}}
+{"sessionId":"main-session","type":"assistant","timestamp":"2026-03-01T09:00:05Z","message":{"model":"claude-sonnet","usage":{"input_tokens":120,"output_tokens":60},"content":[{"type":"text","text":"Starting plan"},{"type":"tool_use","name":"Read"}]}}
+{"sessionId":"main-session","type":"user","userType":"external","timestamp":"2026-03-01T09:05:00Z","message":{"content":[{"type":"text","text":"Add checkout analytics too"}]}}
+{"sessionId":"main-session","type":"assistant","timestamp":"2026-03-01T09:05:30Z","message":{"model":"claude-sonnet","usage":{"input_tokens":80,"cache_read_input_tokens":30,"output_tokens":40},"content":[{"type":"tool_use","name":"Bash"}]}}

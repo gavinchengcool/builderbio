@@ -5,6 +5,17 @@ export interface BuilderBioData {
   E: JsonObject;
 }
 
+export interface BuilderBioScanInfo {
+  scannerVersion: string | null;
+  status: string;
+  recommendation: string | null;
+  warningCount: number;
+  unknownSourceCount: number;
+  partialSessions: number;
+  confidence: number | null;
+  needsRescan: boolean;
+}
+
 function asObject(value: unknown): JsonObject | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as JsonObject;
@@ -107,6 +118,103 @@ function normalizeTopTools(value: unknown): [string, number][] {
     .filter((item): item is [string, number] => item !== null);
 }
 
+function normalizeStringArray(value: unknown): string[] {
+  return asArray(value)
+    .map((item) => asString(item))
+    .filter((item): item is string => item !== null);
+}
+
+function normalizeScanAudit(
+  value: unknown,
+  scannerVersionHint?: unknown
+): JsonObject | null {
+  const audit = asObject(value);
+  if (!audit) return null;
+
+  const warnings = normalizeStringArray(audit.warnings);
+  const summary = asObject(audit.summary) ?? {};
+  const agentSourcesFound = asObject(audit.agent_sources_found) ?? {};
+  const agents = asObject(audit.agents) ?? {};
+  const normalizedAgents: JsonObject = {};
+  const normalizedSourceCounts: JsonObject = {};
+
+  for (const [agentKey, rawStats] of Object.entries(agents)) {
+    const agent = normalizeAgentId(agentKey) ?? agentKey;
+    const stats = asObject(rawStats) ?? {};
+    normalizedAgents[agent] = {
+      sources_discovered: asNumber(stats.sources_discovered) ?? 0,
+      sources_parsed: asNumber(stats.sources_parsed) ?? 0,
+      sessions_parsed: asNumber(stats.sessions_parsed) ?? 0,
+      partial_sessions: asNumber(stats.partial_sessions) ?? 0,
+      strong_sources: asNumber(stats.strong_sources) ?? 0,
+      weak_sources: asNumber(stats.weak_sources) ?? 0,
+      source_samples: normalizeStringArray(stats.source_samples),
+      warnings: normalizeStringArray(stats.warnings),
+    };
+    normalizedSourceCounts[agent] =
+      asNumber(agentSourcesFound[agent]) ??
+      asNumber(agentSourcesFound[agentKey]) ??
+      asNumber(stats.sources_discovered) ??
+      0;
+  }
+
+  for (const [agentKey, value] of Object.entries(agentSourcesFound)) {
+    const agent = normalizeAgentId(agentKey) ?? agentKey;
+    if (asNumber(value) !== null && normalizedSourceCounts[agent] === undefined) {
+      normalizedSourceCounts[agent] = asNumber(value) ?? 0;
+    }
+  }
+
+  const unknownSources = asArray(audit.unknown_sources)
+    .map((entry) => {
+      const item = asObject(entry);
+      const path = asString(item?.path);
+      if (!path) return null;
+      return {
+        path,
+        reason: asString(item?.reason) ?? "",
+        probe_hint: asString(item?.probe_hint) ?? "",
+        agent_hint: normalizeAgentId(item?.agent_hint) ?? asString(item?.agent_hint) ?? "",
+      };
+    })
+    .filter((item) => item !== null) as JsonObject[];
+
+  const scannerVersion =
+    asString(audit.scanner_version) ?? asString(scannerVersionHint) ?? null;
+  const partialSessions =
+    asNumber(summary.partial_sessions) ??
+    Object.values(normalizedAgents).reduce<number>((sum, raw) => {
+      return sum + (asNumber(asObject(raw)?.partial_sessions) ?? 0);
+    }, 0);
+  const unknownCount =
+    asNumber(summary.unknown_sources) ?? unknownSources.length;
+  const skippedCount = asNumber(summary.skipped_sources) ?? 0;
+  const status =
+    asString(summary.status) ??
+    (partialSessions > 0 || unknownCount > 0 || skippedCount > 0
+      ? "partial"
+      : "complete");
+
+  return {
+    scanner_version: scannerVersion,
+    summary: {
+      status,
+      confidence: asNumber(summary.confidence) ?? null,
+      sessions_parsed: asNumber(summary.sessions_parsed) ?? 0,
+      sources_discovered: asNumber(summary.sources_discovered) ?? 0,
+      sources_parsed: asNumber(summary.sources_parsed) ?? 0,
+      partial_sessions: partialSessions,
+      unknown_sources: unknownCount,
+      skipped_sources: skippedCount,
+      recommended_action: asString(summary.recommended_action) ?? "",
+    },
+    agent_sources_found: normalizedSourceCounts,
+    agents: normalizedAgents,
+    warnings,
+    unknown_sources: unknownSources,
+  };
+}
+
 function normalizeProjects(value: unknown): JsonObject[] {
   return asArray(value).map((entry) => {
     const project = asObject(entry) ?? {};
@@ -188,6 +296,32 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
   }
 
   profile.social_links = normalizeSocialLinks(profile.social_links);
+
+  const normalizedScanAudit = normalizeScanAudit(
+    E.scan_audit ?? D.scan_audit ?? profile.scan_audit,
+    profile.scanner_version
+  );
+  if (normalizedScanAudit) {
+    E.scan_audit = normalizedScanAudit;
+    const scanSummary = asObject(normalizedScanAudit.summary) ?? {};
+    const agentSourcesFound =
+      asObject(normalizedScanAudit.agent_sources_found) ?? {};
+
+    if (!asString(profile.scanner_version)) {
+      profile.scanner_version =
+        asString(normalizedScanAudit.scanner_version) ?? "";
+    }
+    if (!asString(profile.scan_status)) {
+      profile.scan_status = asString(scanSummary.status) ?? "";
+    }
+    if (!asString(profile.scan_recommendation)) {
+      profile.scan_recommendation =
+        asString(scanSummary.recommended_action) ?? "";
+    }
+    if (!hasKeys(profile.agent_sources_found) && hasKeys(agentSourcesFound)) {
+      profile.agent_sources_found = agentSourcesFound;
+    }
+  }
 
   D.projects = normalizeProjects(D.projects);
 
@@ -442,4 +576,76 @@ export function extractPortraitAvatarUrl(portrait: unknown): string | null {
     "photo",
     "url",
   ]);
+}
+
+export function injectBuilderBioScannerMetadata(
+  data: BuilderBioData,
+  scannerVersion?: unknown,
+  scanAudit?: unknown
+): BuilderBioData {
+  const cloned = structuredClone(data) as BuilderBioData;
+  const D = asObject(cloned.D) ?? {};
+  const E = asObject(cloned.E) ?? {};
+  const profile = asObject(D.profile) ?? {};
+
+  cloned.D = D;
+  cloned.E = E;
+  D.profile = profile;
+
+  const version = asString(scannerVersion);
+  if (version) {
+    profile.scanner_version = version;
+  }
+
+  const normalizedAudit = normalizeScanAudit(scanAudit, version);
+  if (normalizedAudit) {
+    E.scan_audit = normalizedAudit;
+    const summary = asObject(normalizedAudit.summary) ?? {};
+    profile.scan_status = asString(summary.status) ?? "";
+    profile.scan_recommendation =
+      asString(summary.recommended_action) ?? "";
+    profile.agent_sources_found =
+      asObject(normalizedAudit.agent_sources_found) ?? {};
+  }
+
+  return normalizeBuilderBioData(cloned);
+}
+
+export function extractBuilderBioScanInfo(
+  data: unknown
+): BuilderBioScanInfo | null {
+  const bioData = asObject(data) as BuilderBioData | null;
+  if (!bioData?.D) return null;
+
+  const normalized = normalizeBuilderBioData(bioData);
+  const profile = asObject(normalized.D.profile);
+  const scanAudit = normalizeScanAudit(
+    asObject(normalized.E)?.scan_audit ?? profile?.scan_audit,
+    profile?.scanner_version
+  );
+  if (!scanAudit) return null;
+
+  const summary = asObject(scanAudit.summary) ?? {};
+  const warningCount = normalizeStringArray(scanAudit.warnings).length;
+  const unknownSourceCount = asArray(scanAudit.unknown_sources).length;
+  const partialSessions = asNumber(summary.partial_sessions) ?? 0;
+  const confidence = asNumber(summary.confidence);
+  const status = asString(summary.status) ?? "unknown";
+
+  return {
+    scannerVersion:
+      asString(scanAudit.scanner_version) ??
+      asString(profile?.scanner_version) ??
+      null,
+    status,
+    recommendation:
+      asString(summary.recommended_action) ??
+      asString(profile?.scan_recommendation) ??
+      null,
+    warningCount,
+    unknownSourceCount,
+    partialSessions,
+    confidence,
+    needsRescan: status !== "complete",
+  };
 }

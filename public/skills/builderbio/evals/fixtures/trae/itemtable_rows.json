@@ -1,0 +1,26 @@
+[
+  {
+    "key": "memento/icube-ai-chat-storage-1234567890",
+    "value": {
+      "list": [
+        {
+          "sessionId": "trae-sample",
+          "createdAt": "2026-03-01T11:00:00Z",
+          "model": "doubao-pro",
+          "messages": [
+            {
+              "role": "user",
+              "createdAt": "2026-03-01T11:00:00Z",
+              "content": "Ship the landing page hero"
+            },
+            {
+              "role": "assistant",
+              "createdAt": "2026-03-01T11:01:00Z",
+              "content": "Landing hero shipped"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

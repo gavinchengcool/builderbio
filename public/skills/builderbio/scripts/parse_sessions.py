@@ -2,8 +2,9 @@
 """Batch-parse all local Coding Agent sessions into a Builder Profile data model.
 
 Scans Claude Code, Codex, Trae, Antigravity, Kiro, Windsurf, OpenClaw, and
-generic import sessions. Extracts lightweight summaries, computes aggregate
-stats, and outputs a single JSON ready for profile generation.
+generic import sessions. Includes source discovery, schema probing, generic
+fallback parsing, and an audit report so missing coverage is visible instead of
+being silently dropped.
 
 Usage:
     python parse_sessions.py \
@@ -30,6 +31,76 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 
+SCANNER_VERSION = "0.6.0"
+MAX_AUDIT_ITEMS = 25
+WEAK_SCAN_LIMIT = 400
+COMMON_DISCOVERY_ROOTS = [
+    "~/.config",
+    "~/Library/Application Support",
+    "~/.cursor",
+    "~/.vscode",
+    "~/.codeium",
+]
+DISCOVERY_DIR_HINTS = {
+    "claude",
+    "codex",
+    "cursor",
+    "cline",
+    "roo",
+    "trae",
+    "windsurf",
+    "codeium",
+    "kiro",
+    "openclaw",
+    "antigravity",
+    "gemini",
+    "goose",
+    "augment",
+    "continue",
+    "agent",
+    "chat",
+    "session",
+    "rollout",
+    "workspace",
+}
+SKIP_DIR_NAMES = {
+    ".git",
+    "node_modules",
+    "__pycache__",
+    ".next",
+    ".venv",
+    "venv",
+    "dist",
+    "build",
+    "Caches",
+    "cache",
+}
+GENERIC_FILE_HINTS = (
+    ".jsonl",
+    ".json",
+    ".db",
+    ".sqlite",
+    ".vscdb",
+)
+PATH_AGENT_HINTS = [
+    ("claude", "claude-code"),
+    ("codex", "codex"),
+    ("trae", "trae"),
+    ("antigravity", "antigravity"),
+    ("gemini", "antigravity"),
+    ("kiro", "kiro"),
+    ("windsurf", "windsurf"),
+    ("codeium", "windsurf"),
+    ("openclaw", "openclaw"),
+    ("cursor", "cursor"),
+    ("cline", "cline"),
+    ("roo", "roo-code"),
+    ("augment", "augment"),
+    ("goose", "goose"),
+    ("continue", "continue"),
+]
+
+
 def main():
     args = parse_args()
     days = int(args.get("days", 30))
@@ -38,65 +109,48 @@ def main():
     else:
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
-    sessions = []
-
-    # Parse Claude Code sessions
     claude_dir = os.path.expanduser(args.get("claude_dir", "~/.claude"))
-    if os.path.isdir(claude_dir):
-        history = load_claude_history(claude_dir)
-        cc_sessions = parse_claude_code_sessions(claude_dir, cutoff, history)
-        sessions.extend(cc_sessions)
-
-    # Parse Codex sessions
     codex_dir = os.path.expanduser(args.get("codex_dir", "~/.codex"))
-    if os.path.isdir(codex_dir):
-        cx_sessions = parse_codex_sessions(codex_dir, cutoff)
-        sessions.extend(cx_sessions)
-
-    # Parse Trae sessions (global + CN variant)
     trae_dir = os.path.expanduser(args.get("trae_dir", "~/Library/Application Support/Trae"))
     trae_cn_dir = os.path.expanduser("~/Library/Application Support/Trae CN")
-    if os.path.isdir(trae_dir) or os.path.isdir(trae_cn_dir):
-        trae_sessions = parse_trae_sessions(trae_dir, trae_cn_dir, cutoff)
-        sessions.extend(trae_sessions)
-
-    # Parse Antigravity sessions
     antigravity_dir = os.path.expanduser(args.get("antigravity_dir", "~/.antigravity_tools"))
-    if os.path.isdir(antigravity_dir):
-        ag_sessions = parse_antigravity_sessions(antigravity_dir, cutoff)
-        sessions.extend(ag_sessions)
-
-    # Parse Kiro sessions
     kiro_dir = os.path.expanduser(args.get("kiro_dir", "~/.kiro"))
-    if os.path.isdir(kiro_dir):
-        kiro_sessions = parse_kiro_sessions(kiro_dir, cutoff)
-        sessions.extend(kiro_sessions)
-
-    # Parse Windsurf sessions
     windsurf_dir = os.path.expanduser(args.get("windsurf_dir", "~/.windsurf"))
-    if os.path.isdir(windsurf_dir):
-        ws_sessions = parse_windsurf_sessions(windsurf_dir, cutoff)
-        sessions.extend(ws_sessions)
-
-    # Parse OpenClaw sessions
     openclaw_dir = os.path.expanduser(args.get("openclaw_dir", "~/.openclaw"))
-    if os.path.isdir(openclaw_dir):
-        oc_sessions = parse_openclaw_sessions(openclaw_dir, cutoff)
-        sessions.extend(oc_sessions)
-
-    # Parse generic import sessions
     import_dir = args.get("import_dir", "")
     if import_dir:
         import_dir = os.path.expanduser(import_dir)
-        if os.path.isdir(import_dir):
-            imp_sessions = parse_import_sessions(import_dir, cutoff)
-            sessions.extend(imp_sessions)
+
+    history = load_claude_history(claude_dir) if os.path.isdir(claude_dir) else {}
+    audit = init_scan_audit(args, days, cutoff)
+    discovery = discover_sources(
+        args,
+        claude_dir,
+        codex_dir,
+        trae_dir,
+        trae_cn_dir,
+        antigravity_dir,
+        kiro_dir,
+        windsurf_dir,
+        openclaw_dir,
+        import_dir,
+        history,
+        audit,
+    )
+    sessions = parse_discovered_sources(discovery, cutoff, history, audit)
 
     # Sort by date descending
     sessions.sort(key=lambda s: s.get("date", ""), reverse=True)
+    summarize_scan_audit(audit, sessions, discovery)
 
     # Compute aggregates
     profile = compute_profile(sessions, days)
+    profile["scanner_version"] = SCANNER_VERSION
+    profile["scan_status"] = audit["summary"]["status"]
+    profile["scan_confidence"] = audit["summary"]["confidence"]
+    profile["scan_recommendation"] = audit["summary"]["recommended_action"]
+    profile["agent_sources_found"] = audit["agent_sources_found"]
+    profile["scan_warnings"] = audit["warnings"][:5]
     heatmap = compute_heatmap(sessions, days)
     style = compute_style(sessions)
     highlights = compute_highlights(sessions)
@@ -115,6 +169,7 @@ def main():
         s.pop("_start_hour", None)
 
     result = {
+        "scanner_version": SCANNER_VERSION,
         "profile": profile,
         "sessions": sessions,
         "heatmap": heatmap,
@@ -125,6 +180,7 @@ def main():
         "keywords": keywords,
         "evolution": evolution,
         "agent_comparison": comparison,
+        "scan_audit": audit,
         "projects": [],  # Agent fills this via clustering
     }
 
@@ -137,6 +193,940 @@ def main():
     print(f"Parsed {len(sessions)} sessions \u2192 {output}")
     for agent, count in agent_counts.most_common():
         print(f"  {agent}: {count}")
+    print(
+        "Audit: "
+        f"{audit['summary']['status']} · "
+        f"{audit['summary']['sources_parsed']}/{audit['summary']['sources_discovered']} sources parsed · "
+        f"{audit['summary']['unknown_sources']} unknown sources · "
+        f"{audit['summary']['partial_sessions']} partial sessions"
+    )
+    for warning in audit["warnings"][:5]:
+        print(f"  ! {warning}")
+
+
+def init_scan_audit(args, days, cutoff):
+    return {
+        "scanner_version": SCANNER_VERSION,
+        "days": days,
+        "cutoff": cutoff.isoformat(),
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "requested_roots": {
+            "claude": args.get("claude_dir", "~/.claude"),
+            "codex": args.get("codex_dir", "~/.codex"),
+            "trae": args.get("trae_dir", "~/Library/Application Support/Trae"),
+            "antigravity": args.get("antigravity_dir", "~/.antigravity_tools"),
+            "kiro": args.get("kiro_dir", "~/.kiro"),
+            "windsurf": args.get("windsurf_dir", "~/.windsurf"),
+            "openclaw": args.get("openclaw_dir", "~/.openclaw"),
+            "import": args.get("import_dir", ""),
+        },
+        "agent_sources_found": {},
+        "agents": {},
+        "warnings": [],
+        "unknown_sources": [],
+        "skipped_sources": [],
+        "summary": {},
+    }
+
+
+def shorten_path(path):
+    if not path:
+        return ""
+    home = str(Path.home())
+    return path.replace(home, "~")
+
+
+def init_agent_audit(audit, agent):
+    agent_key = agent or "unknown"
+    if agent_key not in audit["agents"]:
+        audit["agents"][agent_key] = {
+            "sources_discovered": 0,
+            "sources_parsed": 0,
+            "sessions_parsed": 0,
+            "partial_sessions": 0,
+            "strong_sources": 0,
+            "weak_sources": 0,
+            "source_samples": [],
+            "warnings": [],
+        }
+    return audit["agents"][agent_key]
+
+
+def add_limited_item(items, item):
+    if len(items) < MAX_AUDIT_ITEMS:
+        items.append(item)
+
+
+def record_source_discovery(audit, source):
+    agent_meta = init_agent_audit(audit, source["agent"])
+    agent_meta["sources_discovered"] += 1
+    if source["strength"] == "strong":
+        agent_meta["strong_sources"] += 1
+    else:
+        agent_meta["weak_sources"] += 1
+    if len(agent_meta["source_samples"]) < 5:
+        agent_meta["source_samples"].append(shorten_path(source["path"]))
+    audit["agent_sources_found"][source["agent"]] = (
+        audit["agent_sources_found"].get(source["agent"], 0) + 1
+    )
+
+
+def record_unknown_source(audit, path, reason, probe_hint="", agent_hint=""):
+    add_limited_item(
+        audit["unknown_sources"],
+        {
+            "path": shorten_path(path),
+            "reason": reason,
+            "probe_hint": probe_hint,
+            "agent_hint": agent_hint,
+        },
+    )
+    if reason:
+        add_warning(
+            audit,
+            f"Unparsed candidate source: {shorten_path(path)} ({reason})",
+            agent_hint or "unknown",
+        )
+
+
+def add_warning(audit, message, agent=None):
+    if message not in audit["warnings"]:
+        add_limited_item(audit["warnings"], message)
+    if agent:
+        agent_meta = init_agent_audit(audit, agent)
+        if message not in agent_meta["warnings"] and len(agent_meta["warnings"]) < 5:
+            agent_meta["warnings"].append(message)
+
+
+def infer_agent_from_path(path):
+    lower = path.lower()
+    for hint, agent in PATH_AGENT_HINTS:
+        if hint in lower:
+            return agent
+    return "imported"
+
+
+def make_source(agent, parser, path, strength, probe_hint="", root_key=""):
+    return {
+        "agent": agent,
+        "parser": parser,
+        "path": path,
+        "strength": strength,
+        "probe_hint": probe_hint or parser,
+        "root_key": root_key,
+    }
+
+
+def add_source(discovery, audit, seen_paths, source, bucket):
+    path = os.path.realpath(source["path"])
+    if path in seen_paths:
+        return
+    source["path"] = path
+    seen_paths.add(path)
+    discovery[bucket].append(source)
+    record_source_discovery(audit, source)
+
+
+def discover_sources(
+    _args,
+    claude_dir,
+    codex_dir,
+    trae_dir,
+    trae_cn_dir,
+    antigravity_dir,
+    kiro_dir,
+    windsurf_dir,
+    openclaw_dir,
+    import_dir,
+    history,
+    audit,
+):
+    discovery = {
+        "strong_sources": [],
+        "weak_sources": [],
+        "roots": {
+            "claude_dir": claude_dir,
+            "codex_dir": codex_dir,
+            "trae_dir": trae_dir,
+            "trae_cn_dir": trae_cn_dir,
+            "antigravity_dir": antigravity_dir,
+            "kiro_dir": kiro_dir,
+            "windsurf_dir": windsurf_dir,
+            "openclaw_dir": openclaw_dir,
+            "import_dir": import_dir,
+            "history_entries": len(history),
+        },
+    }
+    seen_paths = set()
+
+    if os.path.isdir(claude_dir):
+        for fp in glob.glob(os.path.join(claude_dir, "projects", "**", "*.jsonl"), recursive=True):
+            add_source(
+                discovery,
+                audit,
+                seen_paths,
+                make_source("claude-code", "claude-file", fp, "strong", "claude-jsonl", "claude_dir"),
+                "strong_sources",
+            )
+
+    if os.path.isdir(codex_dir):
+        for fp in glob.glob(os.path.join(codex_dir, "sessions", "*", "*", "*", "*.jsonl")):
+            add_source(
+                discovery,
+                audit,
+                seen_paths,
+                make_source("codex", "codex-file", fp, "strong", "codex-jsonl", "codex_dir"),
+                "strong_sources",
+            )
+
+    for base_dir, root_key in [(trae_dir, "trae_dir"), (trae_cn_dir, "trae_cn_dir")]:
+        if not os.path.isdir(base_dir):
+            continue
+        for root, _dirs, files in os.walk(os.path.join(base_dir, "User")):
+            for fname in files:
+                if fname == "state.vscdb":
+                    add_source(
+                        discovery,
+                        audit,
+                        seen_paths,
+                        make_source("trae", "trae-db", os.path.join(root, fname), "strong", "trae-state-vscdb", root_key),
+                        "strong_sources",
+                    )
+
+    antigravity_db = os.path.join(antigravity_dir, "proxy_logs.db")
+    if os.path.isfile(antigravity_db):
+        add_source(
+            discovery,
+            audit,
+            seen_paths,
+            make_source("antigravity", "antigravity-db", antigravity_db, "strong", "proxy-logs-db", "antigravity_dir"),
+            "strong_sources",
+        )
+
+    if os.path.isdir(kiro_dir):
+        for fp in glob.glob(os.path.join(kiro_dir, "*.db")):
+            add_source(
+                discovery,
+                audit,
+                seen_paths,
+                make_source("kiro", "kiro-db", fp, "strong", "kiro-db", "kiro_dir"),
+                "strong_sources",
+            )
+        for fp in glob.glob(os.path.join(kiro_dir, "exports", "*.json")) + glob.glob(
+            os.path.join(kiro_dir, "*.json")
+        ):
+            add_source(
+                discovery,
+                audit,
+                seen_paths,
+                make_source("kiro", "kiro-json", fp, "strong", "kiro-json", "kiro_dir"),
+                "strong_sources",
+            )
+
+    for sdir in [
+        os.path.join(windsurf_dir, "transcripts"),
+        os.path.expanduser("~/.codeium/windsurf/cascade"),
+    ]:
+        if not os.path.isdir(sdir):
+            continue
+        for fp in glob.glob(os.path.join(sdir, "*.jsonl")):
+            add_source(
+                discovery,
+                audit,
+                seen_paths,
+                make_source("windsurf", "windsurf-file", fp, "strong", "windsurf-jsonl", "windsurf_dir"),
+                "strong_sources",
+            )
+
+    if os.path.isdir(openclaw_dir):
+        for fp in glob.glob(os.path.join(openclaw_dir, "agents", "*", "sessions", "*.jsonl")):
+            add_source(
+                discovery,
+                audit,
+                seen_paths,
+                make_source("openclaw", "openclaw-file", fp, "strong", "openclaw-jsonl", "openclaw_dir"),
+                "strong_sources",
+            )
+
+    if import_dir and os.path.isdir(import_dir):
+        for fp in glob.glob(os.path.join(import_dir, "*.json")) + glob.glob(
+            os.path.join(import_dir, "*.jsonl")
+        ):
+            parser = "import-jsonl" if fp.endswith(".jsonl") else "import-json"
+            add_source(
+                discovery,
+                audit,
+                seen_paths,
+                make_source("imported", parser, fp, "strong", "generic-import", "import_dir"),
+                "strong_sources",
+            )
+
+    for fp in discover_weak_candidates():
+        real_path = os.path.realpath(fp)
+        if real_path in seen_paths:
+            continue
+        probe = probe_source(real_path)
+        if not probe["recognized"]:
+            if probe["chat_like"] or probe["reason"]:
+                record_unknown_source(
+                    audit,
+                    real_path,
+                    probe["reason"],
+                    probe.get("probe_hint", ""),
+                    probe.get("agent", ""),
+                )
+            continue
+        add_source(
+            discovery,
+            audit,
+            seen_paths,
+            make_source(
+                probe["agent"],
+                probe["parser"],
+                real_path,
+                "weak",
+                probe.get("probe_hint", probe["parser"]),
+                "",
+            ),
+            "weak_sources",
+        )
+
+    return discovery
+
+
+def discover_weak_candidates():
+    discovered = []
+    seen = set()
+    for root in COMMON_DISCOVERY_ROOTS:
+        expanded = os.path.expanduser(root)
+        if not os.path.exists(expanded):
+            continue
+        for path in walk_candidate_files(expanded):
+            real_path = os.path.realpath(path)
+            if real_path in seen:
+                continue
+            seen.add(real_path)
+            discovered.append(real_path)
+            if len(discovered) >= WEAK_SCAN_LIMIT:
+                return discovered
+    return discovered
+
+
+def walk_candidate_files(root):
+    stack = [(root, 0)]
+    yielded = 0
+    while stack and yielded < WEAK_SCAN_LIMIT:
+        current, depth = stack.pop()
+        try:
+            with os.scandir(current) as entries:
+                for entry in entries:
+                    name_lower = entry.name.lower()
+                    if entry.is_dir(follow_symlinks=False):
+                        if name_lower in SKIP_DIR_NAMES:
+                            continue
+                        should_descend = (
+                            depth < 2
+                            or any(hint in name_lower for hint in DISCOVERY_DIR_HINTS)
+                            or name_lower in {"user", "workspacestorage", "globalstorage", "sessions", "transcripts", "projects", "logs"}
+                        )
+                        if should_descend and depth < 6:
+                            stack.append((entry.path, depth + 1))
+                        continue
+
+                    if not entry.is_file(follow_symlinks=False):
+                        continue
+                    if not entry.name.endswith(GENERIC_FILE_HINTS):
+                        continue
+                    path_lower = entry.path.lower()
+                    if not any(hint in path_lower for hint in DISCOVERY_DIR_HINTS):
+                        continue
+                    yielded += 1
+                    yield entry.path
+        except OSError:
+            continue
+
+
+def probe_source(path):
+    lower = path.lower()
+    suffix = Path(path).suffix.lower()
+    agent_hint = infer_agent_from_path(path)
+
+    if os.path.basename(lower) == "proxy_logs.db":
+        return {
+            "recognized": True,
+            "agent": "antigravity",
+            "parser": "antigravity-db",
+            "probe_hint": "proxy-logs-db",
+            "chat_like": True,
+            "reason": "",
+        }
+    if suffix == ".jsonl":
+        return probe_jsonl_source(path, agent_hint)
+    if suffix == ".json":
+        return probe_json_source(path, agent_hint)
+    if suffix in {".db", ".sqlite", ".vscdb"}:
+        return probe_sqlite_source(path, agent_hint)
+    return {
+        "recognized": False,
+        "agent": agent_hint,
+        "parser": "",
+        "probe_hint": "unknown-file",
+        "chat_like": False,
+        "reason": "unsupported file type",
+    }
+
+
+def probe_jsonl_source(path, agent_hint):
+    event_types = set()
+    roles = set()
+    chat_like = False
+    parsed_lines = 0
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                parsed_lines += 1
+                if isinstance(entry, dict):
+                    if entry.get("type"):
+                        event_types.add(str(entry.get("type")))
+                    if entry.get("role"):
+                        roles.add(str(entry.get("role")).lower())
+                    if entry.get("sessionId") or entry.get("messages") or entry.get("message"):
+                        chat_like = True
+                if parsed_lines >= 20:
+                    break
+    except OSError:
+        return {
+            "recognized": False,
+            "agent": agent_hint,
+            "parser": "",
+            "probe_hint": "jsonl-open-failed",
+            "chat_like": False,
+            "reason": "could not read file",
+        }
+
+    if {"session_meta", "event_msg"} & event_types or "response_item" in event_types:
+        return {
+            "recognized": True,
+            "agent": "codex",
+            "parser": "codex-file",
+            "probe_hint": "codex-jsonl",
+            "chat_like": True,
+            "reason": "",
+        }
+
+    if {"user_input", "planner_response", "code_action", "command_action", "search_action"} & event_types:
+        return {
+            "recognized": True,
+            "agent": "windsurf",
+            "parser": "windsurf-file",
+            "probe_hint": "windsurf-jsonl",
+            "chat_like": True,
+            "reason": "",
+        }
+
+    if {"user", "assistant"} & event_types:
+        parser = "openclaw-file" if "openclaw" in path.lower() else "claude-like-jsonl"
+        agent = (
+            "openclaw"
+            if parser == "openclaw-file"
+            else agent_hint
+            if agent_hint != "imported"
+            else "claude-code"
+        )
+        return {
+            "recognized": True,
+            "agent": agent,
+            "parser": parser,
+            "probe_hint": "assistant-jsonl",
+            "chat_like": True,
+            "reason": "",
+        }
+
+    if roles & {"user", "human", "assistant", "ai", "model"}:
+        return {
+            "recognized": True,
+            "agent": agent_hint,
+            "parser": "generic-jsonl",
+            "probe_hint": "role-jsonl",
+            "chat_like": True,
+            "reason": "",
+        }
+
+    return {
+        "recognized": False,
+        "agent": agent_hint,
+        "parser": "",
+        "probe_hint": "jsonl-unrecognized",
+        "chat_like": chat_like,
+        "reason": "unrecognized JSONL schema",
+    }
+
+
+def probe_json_source(path, agent_hint):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {
+            "recognized": False,
+            "agent": agent_hint,
+            "parser": "",
+            "probe_hint": "json-open-failed",
+            "chat_like": False,
+            "reason": "could not parse JSON",
+        }
+
+    entries = data if isinstance(data, list) else [data]
+    for entry in entries[:5]:
+        if not isinstance(entry, dict):
+            continue
+        if {"id", "agent", "turns"}.issubset(entry.keys()):
+            return {
+                "recognized": True,
+                "agent": str(entry.get("agent") or agent_hint),
+                "parser": "import-json",
+                "probe_hint": "preformatted-json",
+                "chat_like": True,
+                "reason": "",
+            }
+        messages = entry.get("messages")
+        if isinstance(messages, list):
+            return {
+                "recognized": True,
+                "agent": agent_hint,
+                "parser": "generic-json",
+                "probe_hint": "messages-json",
+                "chat_like": True,
+                "reason": "",
+            }
+    return {
+        "recognized": False,
+        "agent": agent_hint,
+        "parser": "",
+        "probe_hint": "json-unrecognized",
+        "chat_like": False,
+        "reason": "unrecognized JSON schema",
+    }
+
+
+def probe_sqlite_source(path, agent_hint):
+    try:
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = {row["name"] for row in cur.fetchall()}
+
+        if "request_logs" in tables:
+            conn.close()
+            return {
+                "recognized": True,
+                "agent": "antigravity",
+                "parser": "antigravity-db",
+                "probe_hint": "request-logs-table",
+                "chat_like": True,
+                "reason": "",
+            }
+
+        if "ItemTable" in tables:
+            cur.execute("SELECT key FROM ItemTable LIMIT 50")
+            keys = [row["key"] for row in cur.fetchall() if row["key"]]
+            conn.close()
+            keys_text = " ".join(keys).lower()
+            if "icube-ai" in keys_text or "chathistoryneedtobemigrated" in keys_text:
+                return {
+                    "recognized": True,
+                    "agent": "trae",
+                    "parser": "trae-db",
+                    "probe_hint": "icube-itemtable",
+                    "chat_like": True,
+                    "reason": "",
+                }
+            return {
+                "recognized": False,
+                "agent": agent_hint,
+                "parser": "",
+                "probe_hint": "itemtable-unrecognized",
+                "chat_like": "chat" in keys_text or "session" in keys_text,
+                "reason": "ItemTable exists but no supported key family matched",
+            }
+
+        if {"sessions", "conversations", "chats", "chat_sessions"} & tables:
+            conn.close()
+            return {
+                "recognized": True,
+                "agent": "kiro" if agent_hint == "kiro" else agent_hint,
+                "parser": "kiro-db",
+                "probe_hint": "session-table",
+                "chat_like": True,
+                "reason": "",
+            }
+
+        conn.close()
+    except (sqlite3.Error, OSError):
+        return {
+            "recognized": False,
+            "agent": agent_hint,
+            "parser": "",
+            "probe_hint": "sqlite-open-failed",
+            "chat_like": False,
+            "reason": "could not inspect SQLite DB",
+        }
+
+    return {
+        "recognized": False,
+        "agent": agent_hint,
+        "parser": "",
+        "probe_hint": "sqlite-unrecognized",
+        "chat_like": False,
+        "reason": "unrecognized SQLite schema",
+    }
+
+
+def annotate_session(
+    session,
+    source_path="",
+    parse_mode="complete",
+    partial_reasons=None,
+    parser="",
+    discovery_strength="strong",
+    probe_hint="",
+    agent_override=None,
+):
+    if not session:
+        return None
+    if agent_override:
+        session["agent"] = agent_override
+    session.setdefault("source_refs", [])
+    if source_path:
+        short_path = shorten_path(source_path)
+        if short_path not in session["source_refs"]:
+            session["source_refs"].append(short_path)
+    session["parse_mode"] = parse_mode
+    session["partial_reasons"] = partial_reasons or []
+    session["parser"] = parser or session.get("parser") or ""
+    session["discovery_strength"] = discovery_strength
+    session["probe_hint"] = probe_hint or session.get("probe_hint") or ""
+    return session
+
+
+def parse_discovered_sources(discovery, cutoff, history, audit):
+    sessions = []
+    seen_session_keys = set()
+
+    if os.path.isdir(discovery["roots"]["claude_dir"]):
+        claude_sessions = parse_claude_code_sessions(
+            discovery["roots"]["claude_dir"], cutoff, history
+        )
+        register_sessions(sessions, claude_sessions, seen_session_keys, audit)
+        mark_sources_parsed(audit, "claude-code", discovery["strong_sources"], "claude-file")
+
+    if os.path.isdir(discovery["roots"]["codex_dir"]):
+        codex_sessions = parse_codex_sessions(discovery["roots"]["codex_dir"], cutoff)
+        register_sessions(sessions, codex_sessions, seen_session_keys, audit)
+        mark_sources_parsed(audit, "codex", discovery["strong_sources"], "codex-file")
+
+    if os.path.isdir(discovery["roots"]["trae_dir"]) or os.path.isdir(discovery["roots"]["trae_cn_dir"]):
+        trae_sessions = parse_trae_sessions(
+            discovery["roots"]["trae_dir"], discovery["roots"]["trae_cn_dir"], cutoff
+        )
+        register_sessions(sessions, trae_sessions, seen_session_keys, audit)
+        mark_sources_parsed(audit, "trae", discovery["strong_sources"], "trae-db")
+
+    if os.path.isdir(discovery["roots"]["antigravity_dir"]):
+        antigravity_sessions = parse_antigravity_sessions(
+            discovery["roots"]["antigravity_dir"], cutoff
+        )
+        register_sessions(sessions, antigravity_sessions, seen_session_keys, audit)
+        mark_sources_parsed(audit, "antigravity", discovery["strong_sources"], "antigravity-db")
+
+    if os.path.isdir(discovery["roots"]["kiro_dir"]):
+        kiro_sessions = parse_kiro_sessions(discovery["roots"]["kiro_dir"], cutoff)
+        register_sessions(sessions, kiro_sessions, seen_session_keys, audit)
+        mark_sources_parsed(audit, "kiro", discovery["strong_sources"], "kiro-db")
+        mark_sources_parsed(audit, "kiro", discovery["strong_sources"], "kiro-json")
+
+    if os.path.isdir(discovery["roots"]["windsurf_dir"]) or os.path.isdir(
+        os.path.expanduser("~/.codeium/windsurf/cascade")
+    ):
+        windsurf_sessions = parse_windsurf_sessions(
+            discovery["roots"]["windsurf_dir"], cutoff
+        )
+        register_sessions(sessions, windsurf_sessions, seen_session_keys, audit)
+        mark_sources_parsed(audit, "windsurf", discovery["strong_sources"], "windsurf-file")
+
+    if os.path.isdir(discovery["roots"]["openclaw_dir"]):
+        openclaw_sessions = parse_openclaw_sessions(
+            discovery["roots"]["openclaw_dir"], cutoff
+        )
+        register_sessions(sessions, openclaw_sessions, seen_session_keys, audit)
+        mark_sources_parsed(audit, "openclaw", discovery["strong_sources"], "openclaw-file")
+
+    if discovery["roots"]["import_dir"] and os.path.isdir(discovery["roots"]["import_dir"]):
+        import_sessions = parse_import_sessions(discovery["roots"]["import_dir"], cutoff)
+        register_sessions(sessions, import_sessions, seen_session_keys, audit)
+        mark_sources_parsed(audit, "imported", discovery["strong_sources"], "import-json")
+        mark_sources_parsed(audit, "imported", discovery["strong_sources"], "import-jsonl")
+
+    for source in discovery["weak_sources"]:
+        parsed = parse_source_with_fallback(source, cutoff, history, audit)
+        if parsed:
+            init_agent_audit(audit, source["agent"])["sources_parsed"] += 1
+        register_sessions(sessions, parsed, seen_session_keys, audit)
+
+    return sessions
+
+
+def mark_sources_parsed(audit, agent, sources, parser_name):
+    count = sum(1 for source in sources if source["agent"] == agent and source["parser"] == parser_name)
+    if count:
+        init_agent_audit(audit, agent)["sources_parsed"] += count
+
+
+def register_sessions(target, new_sessions, seen_session_keys, audit):
+    for session in new_sessions or []:
+        if not session:
+            continue
+        key = (session.get("agent", ""), session.get("id", ""))
+        if key in seen_session_keys:
+            continue
+        seen_session_keys.add(key)
+        target.append(session)
+        agent_meta = init_agent_audit(audit, session.get("agent", "unknown"))
+        agent_meta["sessions_parsed"] += 1
+        if session.get("parse_mode") != "complete":
+            agent_meta["partial_sessions"] += 1
+
+
+def parse_source_with_fallback(source, cutoff, history, audit):
+    path = source["path"]
+    parser = source["parser"]
+    agent = source["agent"]
+    parse_mode = "partial"
+    reasons = ["generic_fallback"]
+    sessions = []
+
+    if parser == "codex-file":
+        summary = parse_codex_session(path)
+        if summary and summary.get("date"):
+            ts = parse_ts(summary.get("date"))
+            if not ts or ts >= cutoff:
+                sessions = [
+                    annotate_session(
+                        summary,
+                        source_path=path,
+                        parse_mode="complete",
+                        partial_reasons=[],
+                        parser=parser,
+                        discovery_strength=source["strength"],
+                        probe_hint=source["probe_hint"],
+                    )
+                ]
+                reasons = []
+                parse_mode = "complete"
+    elif parser == "windsurf-file":
+        summary = _parse_windsurf_file(path, Path(path).stem)
+        if summary:
+            sessions = [
+                annotate_session(
+                    summary,
+                    source_path=path,
+                    parse_mode="partial",
+                    partial_reasons=["tokens_unavailable"],
+                    parser=parser,
+                    discovery_strength=source["strength"],
+                    probe_hint=source["probe_hint"],
+                )
+            ]
+            reasons = ["tokens_unavailable"]
+    elif parser == "openclaw-file":
+        summary = _parse_openclaw_file(path, Path(path).stem)
+        if summary:
+            sessions = [
+                annotate_session(
+                    summary,
+                    source_path=path,
+                    parse_mode="complete",
+                    partial_reasons=[],
+                    parser=parser,
+                    discovery_strength=source["strength"],
+                    probe_hint=source["probe_hint"],
+                    agent_override=agent,
+                )
+            ]
+            reasons = []
+            parse_mode = "complete"
+    elif parser == "claude-like-jsonl":
+        summary = parse_claude_code_session(path, infer_claude_session_id(path), history)
+        if summary:
+            sessions = [
+                annotate_session(
+                    summary,
+                    source_path=path,
+                    parse_mode="partial" if agent != "claude-code" else "complete",
+                    partial_reasons=[] if agent == "claude-code" else ["generic_agent_mapping"],
+                    parser=parser,
+                    discovery_strength=source["strength"],
+                    probe_hint=source["probe_hint"],
+                    agent_override=agent,
+                )
+            ]
+            reasons = [] if agent == "claude-code" else ["generic_agent_mapping"]
+            parse_mode = "complete" if agent == "claude-code" else "partial"
+    elif parser == "generic-jsonl":
+        summary = _parse_import_jsonl(path, cutoff, agent_override=agent)
+        if summary:
+            sessions = [
+                annotate_session(
+                    summary,
+                    source_path=path,
+                    parse_mode=parse_mode,
+                    partial_reasons=reasons,
+                    parser=parser,
+                    discovery_strength=source["strength"],
+                    probe_hint=source["probe_hint"],
+                )
+            ]
+    elif parser == "generic-json":
+        sessions = [
+            annotate_session(
+                session,
+                source_path=path,
+                parse_mode=parse_mode,
+                partial_reasons=reasons,
+                parser=parser,
+                discovery_strength=source["strength"],
+                probe_hint=source["probe_hint"],
+                agent_override=agent,
+            )
+            for session in _parse_import_json(path, cutoff)
+        ]
+    elif parser == "import-json":
+        sessions = [
+            annotate_session(
+                session,
+                source_path=path,
+                parse_mode="partial",
+                partial_reasons=["imported_session"],
+                parser=parser,
+                discovery_strength=source["strength"],
+                probe_hint=source["probe_hint"],
+            )
+            for session in _parse_import_json(path, cutoff)
+        ]
+    elif parser == "import-jsonl":
+        summary = _parse_import_jsonl(path, cutoff, agent_override=agent)
+        if summary:
+            sessions = [
+                annotate_session(
+                    summary,
+                    source_path=path,
+                    parse_mode="partial",
+                    partial_reasons=["imported_session"],
+                    parser=parser,
+                    discovery_strength=source["strength"],
+                    probe_hint=source["probe_hint"],
+                )
+            ]
+    elif parser == "kiro-db":
+        seen_ids = set()
+        sessions = [
+            annotate_session(
+                session,
+                source_path=path,
+                parse_mode="partial",
+                partial_reasons=["schema_discovery"],
+                parser=parser,
+                discovery_strength=source["strength"],
+                probe_hint=source["probe_hint"],
+                agent_override=agent,
+            )
+            for session in _parse_kiro_db(path, cutoff, seen_ids)
+        ]
+    elif parser == "kiro-json":
+        seen_ids = set()
+        sessions = [
+            annotate_session(
+                session,
+                source_path=path,
+                parse_mode="partial",
+                partial_reasons=["schema_discovery"],
+                parser=parser,
+                discovery_strength=source["strength"],
+                probe_hint=source["probe_hint"],
+                agent_override=agent,
+            )
+            for session in _parse_kiro_json(path, cutoff, seen_ids)
+        ]
+    elif parser == "trae-db":
+        sessions = [
+            annotate_session(
+                session,
+                source_path=path,
+                parse_mode="partial",
+                partial_reasons=["tokens_unavailable"],
+                parser=parser,
+                discovery_strength=source["strength"],
+                probe_hint=source["probe_hint"],
+            )
+            for session in _parse_trae_db(path, cutoff, set())
+        ]
+
+    if not sessions:
+        add_limited_item(
+            audit["skipped_sources"],
+            {
+                "path": shorten_path(path),
+                "agent": agent,
+                "parser": parser,
+                "reason": "probe matched but parser produced no sessions",
+            },
+        )
+    return sessions
+
+
+def summarize_scan_audit(audit, sessions, discovery):
+    partial_sessions = sum(1 for session in sessions if session.get("parse_mode") != "complete")
+    sources_discovered = len(discovery["strong_sources"]) + len(discovery["weak_sources"])
+    sources_parsed = sum(meta["sources_parsed"] for meta in audit["agents"].values())
+    unknown_sources = len(audit["unknown_sources"])
+    skipped_sources = len(audit["skipped_sources"])
+    status = "complete"
+    if not sessions:
+        status = "empty"
+    elif partial_sessions > 0 or unknown_sources > 0 or skipped_sources > 0:
+        status = "partial"
+    confidence = 1.0
+    if sources_discovered > 0:
+        confidence = round(max(0.35, min(1.0, sources_parsed / sources_discovered)), 2)
+    recommended_action = ""
+    if status == "partial":
+        recommended_action = (
+            "Re-run BuilderBio with the latest skill if you used agents that are missing "
+            "from the badges or if the audit lists unknown sources."
+        )
+    elif status == "empty":
+        recommended_action = "No supported session logs were parsed. Check the audit and add imports if needed."
+
+    audit["summary"] = {
+        "status": status,
+        "confidence": confidence,
+        "sessions_parsed": len(sessions),
+        "sources_discovered": sources_discovered,
+        "sources_parsed": sources_parsed,
+        "partial_sessions": partial_sessions,
+        "unknown_sources": unknown_sources,
+        "skipped_sources": skipped_sources,
+        "agents_found": sorted(audit["agent_sources_found"].keys()),
+        "recommended_action": recommended_action,
+    }
 
 
 def load_claude_history(claude_dir):
@@ -216,11 +1206,16 @@ def new_claude_session_accumulator(session_id, history):
         "start_ts": None,
         "end_ts": None,
         "first_user_msg": "",
+        "source_refs": [],
     }
 
 
-def update_claude_session_accumulator(acc, entry):
+def update_claude_session_accumulator(acc, entry, source_path=""):
     """Merge one Claude JSONL entry into a logical session summary."""
+    if source_path:
+        short_path = shorten_path(source_path)
+        if short_path not in acc["source_refs"]:
+            acc["source_refs"].append(short_path)
     ts = parse_ts(entry.get("timestamp"))
     if ts:
         if acc["start_ts"] is None or ts < acc["start_ts"]:
@@ -296,6 +1291,12 @@ def finalize_claude_session(acc):
         "cwd": acc["cwd"],
         "git_branch": acc["git_branch"],
         "_start_hour": acc["start_ts"].hour if acc["start_ts"] else None,
+        "source_refs": acc["source_refs"],
+        "parser": "claude-file",
+        "parse_mode": "complete",
+        "partial_reasons": [],
+        "discovery_strength": "strong",
+        "probe_hint": "claude-jsonl",
     }
 
 
@@ -323,7 +1324,7 @@ def parse_claude_code_sessions(claude_dir, cutoff, history):
                     if acc is None:
                         acc = new_claude_session_accumulator(session_id, history)
                         accumulators[session_id] = acc
-                    update_claude_session_accumulator(acc, entry)
+                    update_claude_session_accumulator(acc, entry, fp)
         except (OSError, IOError):
             continue
 
@@ -436,6 +1437,12 @@ def parse_claude_code_session(filepath, session_id, history):
         "cwd": cwd,
         "git_branch": git_branch,
         "_start_hour": start_ts.hour if start_ts else None,
+        "source_refs": [shorten_path(filepath)],
+        "parser": "claude-file",
+        "parse_mode": "complete",
+        "partial_reasons": [],
+        "discovery_strength": "strong",
+        "probe_hint": "claude-jsonl",
     }
 
 
@@ -603,6 +1610,12 @@ def parse_codex_session(filepath):
         "cwd": cwd,
         "git_branch": git_branch,
         "_start_hour": start_ts.hour if start_ts else None,
+        "source_refs": [shorten_path(filepath)],
+        "parser": "codex-file",
+        "parse_mode": "complete",
+        "partial_reasons": [],
+        "discovery_strength": "strong",
+        "probe_hint": "codex-jsonl",
     }
 
 
@@ -730,6 +1743,12 @@ def _parse_trae_db(db_path, cutoff, seen_ids):
                     "cwd": "",
                     "git_branch": "",
                     "_start_hour": start_ts.hour if start_ts else None,
+                    "source_refs": [shorten_path(db_path)],
+                    "parser": "trae-db",
+                    "parse_mode": "partial",
+                    "partial_reasons": ["tokens_unavailable"],
+                    "discovery_strength": "strong",
+                    "probe_hint": "trae-state-vscdb",
                 })
 
         conn.close()
@@ -915,6 +1934,12 @@ def parse_antigravity_sessions(antigravity_dir, cutoff):
             "cwd": "",
             "git_branch": "",
             "_start_hour": start_ts.hour if start_ts else None,
+            "source_refs": [shorten_path(db_path)],
+            "parser": "antigravity-db",
+            "parse_mode": "complete",
+            "partial_reasons": [],
+            "discovery_strength": "strong",
+            "probe_hint": "proxy-logs-db",
         })
 
     return sessions
@@ -1064,6 +2089,12 @@ def _parse_kiro_db(db_path, cutoff, seen_ids):
                     "cwd": cwd,
                     "git_branch": "",
                     "_start_hour": start_ts.hour if start_ts else None,
+                    "source_refs": [shorten_path(db_path)],
+                    "parser": "kiro-db",
+                    "parse_mode": "partial",
+                    "partial_reasons": ["schema_discovery"],
+                    "discovery_strength": "strong",
+                    "probe_hint": "kiro-db",
                 })
 
         conn.close()
@@ -1150,6 +2181,12 @@ def _parse_kiro_json(filepath, cutoff, seen_ids):
             "cwd": entry.get("cwd", ""),
             "git_branch": "",
             "_start_hour": start_ts.hour if start_ts else None,
+            "source_refs": [shorten_path(filepath)],
+            "parser": "kiro-json",
+            "parse_mode": "partial",
+            "partial_reasons": ["schema_discovery"],
+            "discovery_strength": "strong",
+            "probe_hint": "kiro-json",
         })
 
     return results
@@ -1272,6 +2309,12 @@ def _parse_windsurf_file(filepath, session_id):
         "cwd": "",
         "git_branch": "",
         "_start_hour": start_ts.hour if start_ts else None,
+        "source_refs": [shorten_path(filepath)],
+        "parser": "windsurf-file",
+        "parse_mode": "partial",
+        "partial_reasons": ["tokens_unavailable"],
+        "discovery_strength": "strong",
+        "probe_hint": "windsurf-jsonl",
     }
 
 
@@ -1400,6 +2443,12 @@ def _parse_openclaw_file(filepath, session_id):
         "cwd": cwd,
         "git_branch": git_branch,
         "_start_hour": start_ts.hour if start_ts else None,
+        "source_refs": [shorten_path(filepath)],
+        "parser": "openclaw-file",
+        "parse_mode": "complete",
+        "partial_reasons": [],
+        "discovery_strength": "strong",
+        "probe_hint": "openclaw-jsonl",
     }
 
 
@@ -1474,13 +2523,19 @@ def _parse_import_json(filepath, cutoff):
             "cwd": str(entry.get("cwd", "")),
             "git_branch": str(entry.get("git_branch", "")),
             "_start_hour": entry.get("_start_hour"),
+            "source_refs": [shorten_path(filepath)],
+            "parser": "import-json",
+            "parse_mode": "partial",
+            "partial_reasons": ["imported_session"],
+            "discovery_strength": "strong",
+            "probe_hint": "preformatted-json",
         }
         results.append(session)
 
     return results
 
 
-def _parse_import_jsonl(filepath, cutoff):
+def _parse_import_jsonl(filepath, cutoff, agent_override="imported"):
     """Parse a generic JSONL import file (one message per line)."""
     user_turns = 0
     assistant_turns = 0
@@ -1537,7 +2592,7 @@ def _parse_import_jsonl(filepath, cutoff):
 
     return {
         "id": Path(filepath).stem,
-        "agent": "imported",
+        "agent": agent_override or "imported",
         "model": "",
         "version": "",
         "date": date_str,
@@ -1553,6 +2608,12 @@ def _parse_import_jsonl(filepath, cutoff):
         "cwd": "",
         "git_branch": "",
         "_start_hour": start_ts.hour if start_ts else None,
+        "source_refs": [shorten_path(filepath)],
+        "parser": "import-jsonl",
+        "parse_mode": "partial",
+        "partial_reasons": ["imported_session"],
+        "discovery_strength": "strong",
+        "probe_hint": "role-jsonl",
     }
 
 
@@ -1565,10 +2626,16 @@ def parse_ts(ts):
     if not ts:
         return None
     if isinstance(ts, (int, float)):
-        return datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
+        value = float(ts)
+        if value > 1e12:
+            value = value / 1000
+        return datetime.fromtimestamp(value, tz=timezone.utc)
     if isinstance(ts, str):
         try:
-            return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            parsed = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed
         except ValueError:
             return None
     return None
@@ -1576,7 +2643,7 @@ def parse_ts(ts):
 
 def compute_profile(sessions, days):
     """Compute aggregate profile stats."""
-    agents = defaultdict(lambda: {"sessions": 0, "turns": 0})
+    agents = defaultdict(lambda: {"sessions": 0, "turns": 0, "first_session": ""})
     active_dates = set()
     total_turns = 0
     total_tools = 0
@@ -1585,6 +2652,10 @@ def compute_profile(sessions, days):
     for s in sessions:
         agents[s["agent"]]["sessions"] += 1
         agents[s["agent"]]["turns"] += s["turns"]
+        if s["date"]:
+            current_first = agents[s["agent"]]["first_session"]
+            if not current_first or s["date"] < current_first:
+                agents[s["agent"]]["first_session"] = s["date"]
         if s["date"]:
             active_dates.add(s["date"])
         total_turns += s["turns"]

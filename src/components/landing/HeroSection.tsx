@@ -114,7 +114,7 @@ export default function HeroSection({ t }: HeroSectionProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-3xl mx-auto">
             {[
               { title: "Open source", desc: "Every line of code is readable — the skill file, the parser script, and this website." },
-              { title: "Runs locally", desc: "All session parsing happens on your machine. Raw data never leaves your device." },
+              { title: "Runs locally", desc: "All session parsing happens on your machine. The parser prints an audit report showing what it found, skipped, or only partially recovered." },
               { title: "Aggregate only", desc: "Only stats are published — session counts, tool usage, timelines. No code, no conversations." },
             ].map((item) => (
               <div key={item.title} className="terminal-block text-left space-y-2 h-full">

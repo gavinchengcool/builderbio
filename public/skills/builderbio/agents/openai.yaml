@@ -1,0 +1,4 @@
+interface:
+  display_name: "BuilderBio"
+  short_description: "Generate and publish an audited BuilderBio profile"
+  default_prompt: "Use $builderbio to scan my local coding-agent history, audit source coverage, and publish my BuilderBio."

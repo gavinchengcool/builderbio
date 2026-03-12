@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# builderbio installer v0.5.2
+# builderbio installer v0.6.0
 # Usage: curl -sfL https://builderbio.dev/install.sh | bash
 set -euo pipefail
 
-VERSION="0.5.2"
+VERSION="0.6.0"
 BASE_URL="${BUILDERBIO_URL:-https://builderbio.dev}"
 INSTALL_DIR="${HOME}/.builderbio"
 SKILL_DIR="${INSTALL_DIR}/skills/builderbio"
@@ -18,6 +18,11 @@ mkdir -p "${SKILL_DIR}/scripts"
 mkdir -p "${SKILL_DIR}/assets"
 mkdir -p "${SKILL_DIR}/references"
 mkdir -p "${SKILL_DIR}/evals"
+mkdir -p "${SKILL_DIR}/evals/fixtures/claude/projects/demo/subagents"
+mkdir -p "${SKILL_DIR}/evals/fixtures/codex/sessions/2026/03/01"
+mkdir -p "${SKILL_DIR}/evals/fixtures/cursor/logs"
+mkdir -p "${SKILL_DIR}/evals/fixtures/trae"
+mkdir -p "${SKILL_DIR}/agents"
 
 # Download all skill files
 echo "→ Downloading skill files..."
@@ -29,16 +34,32 @@ curl -sfL "${BASE_URL}/skills/builderbio/scripts/parse_sessions.py" -o "${SKILL_
 chmod +x "${SKILL_DIR}/scripts/parse_sessions.py"
 echo "  ✓ scripts/parse_sessions.py"
 
+curl -sfL "${BASE_URL}/skills/builderbio/scripts/run_fixture_evals.py" -o "${SKILL_DIR}/scripts/run_fixture_evals.py"
+chmod +x "${SKILL_DIR}/scripts/run_fixture_evals.py"
+echo "  ✓ scripts/run_fixture_evals.py"
+
 curl -sfL "${BASE_URL}/skills/builderbio/assets/template.html" -o "${SKILL_DIR}/assets/template.html"
 echo "  ✓ assets/template.html"
 
 curl -sfL "${BASE_URL}/skills/builderbio/references/claude-code-format.md" -o "${SKILL_DIR}/references/claude-code-format.md"
 curl -sfL "${BASE_URL}/skills/builderbio/references/codex-format.md" -o "${SKILL_DIR}/references/codex-format.md"
+curl -sfL "${BASE_URL}/skills/builderbio/references/data-model.md" -o "${SKILL_DIR}/references/data-model.md"
 curl -sfL "${BASE_URL}/skills/builderbio/references/profile-dimensions.md" -o "${SKILL_DIR}/references/profile-dimensions.md"
+curl -sfL "${BASE_URL}/skills/builderbio/references/workflow-details.md" -o "${SKILL_DIR}/references/workflow-details.md"
 echo "  ✓ references/"
 
 curl -sfL "${BASE_URL}/skills/builderbio/evals/evals.json" -o "${SKILL_DIR}/evals/evals.json"
+curl -sfL "${BASE_URL}/skills/builderbio/evals/fixtures/claude/history.jsonl" -o "${SKILL_DIR}/evals/fixtures/claude/history.jsonl"
+curl -sfL "${BASE_URL}/skills/builderbio/evals/fixtures/claude/projects/demo/main-session.jsonl" -o "${SKILL_DIR}/evals/fixtures/claude/projects/demo/main-session.jsonl"
+curl -sfL "${BASE_URL}/skills/builderbio/evals/fixtures/claude/projects/demo/subagents/agent-worker.jsonl" -o "${SKILL_DIR}/evals/fixtures/claude/projects/demo/subagents/agent-worker.jsonl"
+curl -sfL "${BASE_URL}/skills/builderbio/evals/fixtures/codex/sessions/2026/03/01/rollout-sample.jsonl" -o "${SKILL_DIR}/evals/fixtures/codex/sessions/2026/03/01/rollout-sample.jsonl"
+curl -sfL "${BASE_URL}/skills/builderbio/evals/fixtures/cursor/logs/cursor-session.jsonl" -o "${SKILL_DIR}/evals/fixtures/cursor/logs/cursor-session.jsonl"
+curl -sfL "${BASE_URL}/skills/builderbio/evals/fixtures/trae/itemtable_rows.json" -o "${SKILL_DIR}/evals/fixtures/trae/itemtable_rows.json"
+curl -sfL "${BASE_URL}/skills/builderbio/evals/fixtures/expected.json" -o "${SKILL_DIR}/evals/fixtures/expected.json"
 echo "  ✓ evals/"
+
+curl -sfL "${BASE_URL}/skills/builderbio/agents/openai.yaml" -o "${SKILL_DIR}/agents/openai.yaml"
+echo "  ✓ agents/openai.yaml"
 
 echo "  ✓ All files downloaded"
 

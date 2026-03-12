@@ -1,0 +1,25 @@
+{
+  "scanner_version": "0.6.0",
+  "sessions_parsed": 4,
+  "sources_discovered": 5,
+  "sources_parsed": 5,
+  "partial_sessions": 2,
+  "unknown_sources": 0,
+  "agents": {
+    "claude-code": {
+      "sessions": 1,
+      "turns": 6,
+      "tool_calls": 3
+    },
+    "codex": {
+      "sessions": 1,
+      "tokens": 1300
+    },
+    "trae": {
+      "sessions": 1
+    },
+    "cursor": {
+      "sessions": 1
+    }
+  }
+}

@@ -1,8 +1,8 @@
 ---
 name: builderbio
-version: 0.5.2
+version: 0.6.0
 description: |
-  This skill should be used when the user wants to generate a shareable "BuilderBio" — a profile page showcasing everything they built with AI coding agents (Claude Code, Codex, Trae, Antigravity, Kiro, Windsurf, OpenClaw, and more). It scans all local agent sessions, aggregates stats, clusters projects, and produces a personal portfolio. This skill should be used when the user mentions "BuilderBio", "builder bio", "builder profile", "share my builds", "coding history", "AI portfolio", "showcase", "分享", "画像", "展示", "导出", or "profile".
+  This skill should be used when the user wants to generate a shareable "BuilderBio" — a profile page showcasing everything they built with AI coding agents (Claude Code, Codex, Trae, Antigravity, Kiro, Windsurf, OpenClaw, Cursor-like fallbacks, and more). It scans all local agent sessions, emits an audit report showing scan completeness, clusters projects, and publishes a personal portfolio. This skill should be used when the user mentions "BuilderBio", "builder bio", "builder profile", "share my builds", "coding history", "AI portfolio", "showcase", "分享", "画像", "展示", "导出", or "profile".
 allowed-tools:
   - Read
   - Write
@@ -30,8 +30,8 @@ The only user input is **choosing a visual style theme** (Phase 3.5). Everything
 ## Quick Start
 
 1. Scan ALL local agent sessions (no time range limit)
-2. Parse each session into lightweight summary data
-3. Analyze and build the full profile data model (D + E)
+2. Parse each session into lightweight summary data and emit a scan audit
+3. Analyze and build the full profile data model (D + E), carrying scanner metadata through
 4. Ask user to choose a visual style theme
 5. Auto-publish to `<shortcode>.builderbio.dev`
 6. Print the live URL
@@ -50,6 +50,7 @@ The only user input is **choosing a visual style theme** (Phase 3.5). Everything
 | Windsurf (Codeium) | `~/.windsurf/transcripts/*.jsonl` | JSONL |
 | OpenClaw | `~/.openclaw/agents/<agentId>/sessions/<session-id>.jsonl` | JSONL |
 | Generic import | `--import-dir` path | JSON/JSONL |
+| Weak discovery fallback | Common config/app-support roots | JSON/JSONL/SQLite candidates |
 
 For parsing details, see [references/claude-code-format.md](references/claude-code-format.md) and [references/codex-format.md](references/codex-format.md).
 
@@ -68,6 +69,8 @@ For parsing details, see [references/claude-code-format.md](references/claude-co
 **Windsurf format**: JSONL transcripts with event types: `user_input`, `planner_response`, `code_action`, `command_action`, `search_action`.
 
 **Generic import**: Place `.json` (pre-formatted session dicts) or `.jsonl` (role-based messages) in a directory and pass via `--import-dir`.
+
+**Weak discovery**: The parser also probes common config roots such as `~/.config`, `~/Library/Application Support`, and editor-specific folders like `~/.cursor`. If it finds chat-like logs without a dedicated parser, it will either parse them with a generic fallback or report them in `scan_audit` instead of silently dropping them.
 
 ## Workflow
 
@@ -108,6 +111,8 @@ ls -lt ~/.openclaw/agents/*/sessions/*.jsonl 2>/dev/null | head -100
 
 Read `~/.claude/history.jsonl` to get human-readable display text per session.
 
+Also note: the parser prints an audit summary at the end. Treat that summary as part of the product output, not debugging noise.
+
 ### Phase 2: Parse All Sessions
 
 Run the parser on ALL session files to extract session summaries:
@@ -127,11 +132,26 @@ python <skill-path>/scripts/parse_sessions.py \
 
 Use `--days 0` to include ALL sessions with no time limit. The parser treats `--days <= 0` as full-history scan, merges Claude sidechains by `sessionId`, and prefers Codex cumulative token snapshots over duplicate per-turn additions. Only include flags for agents with detected data. The script skips missing directories gracefully.
 
+The parser now emits:
+- `scanner_version`
+- `scan_audit.summary`
+- `scan_audit.agent_sources_found`
+- per-session provenance (`source_refs`, `parse_mode`, `partial_reasons`)
+
+If `scan_audit.summary.status != "complete"`, explicitly tell the user a re-scan may still be needed.
+
 If the script fails, fall back to manual parsing: read each JSONL file and extract the fields documented in the format references.
 
 ### Phase 3: Analyze & Build Profile
 
 This is the core intellectual work. Read the parsed data and produce the full BuilderBio analysis. Build both the **D** (primary data) and **E** (extra data) objects. Refer to [references/profile-dimensions.md](references/profile-dimensions.md) for the full rubric.
+
+Copy scan metadata through to the publishable profile:
+- Set `D.profile.scanner_version = parsed.scanner_version`
+- Set `D.profile.scan_status = parsed.scan_audit.summary.status`
+- Set `D.profile.scan_recommendation = parsed.scan_audit.summary.recommended_action`
+- Set `D.profile.agent_sources_found = parsed.scan_audit.agent_sources_found`
+- Set `E.scan_audit = parsed.scan_audit`
 
 The eleven sections:
 
@@ -262,6 +282,8 @@ curl -s -X POST https://builderbio.dev/api/profile/publish \
     "publish_token": "TOKEN_OR_EMPTY_STRING",
     "data_hash": "SHA256_HASH_FROM_PHASE_3_6",
     "style_theme": "default",
+    "scanner_version": "0.6.0",
+    "scan_audit": { ... parsed scan_audit object ... },
     "profile": {
       "summary": "ONE_LINE_SUMMARY",
       "display_name": "DISPLAY_NAME",
@@ -328,3 +350,5 @@ Build both D and E data objects and inject into the publish API call.
 - **Publish directly** — no local HTML file needed, go straight to `<shortcode>.builderbio.dev`
 - **Compute data_hash BEFORE showing data to user** — this preserves the Unfiltered badge
 - **Generate good summary and tags** — these show up on the taste-board listing page
+- **Never hide scan uncertainty** — if the parser reports `partial` or `unknown_sources > 0`, tell the user and carry that metadata into the published profile
+- **Regression-test parser changes** — run `python <skill-path>/scripts/run_fixture_evals.py` after changing scan logic

@@ -69,6 +69,11 @@ section{padding:60px 0}
 .agent-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;border-radius:100px;font-size:13px;font-weight:500;background:var(--s2);color:var(--t2);border:1px solid var(--bd)}
 .agent-dot{width:8px;height:8px;border-radius:50%}
 .hero-avatar{width:88px;height:88px;border-radius:50%;border:3px solid var(--bd2);object-fit:cover;margin:0 auto 16px;box-shadow:0 0 0 4px var(--bg),0 0 24px rgba(99,102,241,.15);display:none}
+.scan-audit{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.scan-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--s2);border:1px solid var(--bd);font-size:11px;color:var(--t2);font-weight:600}
+.scan-chip.warn{border-color:rgba(251,191,36,.35);color:var(--y);background:rgba(251,191,36,.08)}
+.scan-chip.ok{border-color:rgba(52,211,153,.28);color:var(--g);background:rgba(52,211,153,.08)}
+.scan-note{width:100%;max-width:620px;margin:4px auto 0;font-size:12px;color:var(--tm);line-height:1.55}
 .social-row{display:flex;justify-content:center;gap:14px;margin-top:22px}
 .social-link{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--s2);border:1px solid var(--bd);color:var(--t2);transition:all .25s;text-decoration:none}
 .social-link:hover{border-color:var(--bd2);color:var(--t);transform:translateY(-2px)}
@@ -340,6 +345,7 @@ section{padding:60px 0}
   <p class="tagline" id="hero-tagline" style="font-size:14px;color:var(--tm);margin-bottom:4px;display:none"></p>
   <p class="sub" id="date-range"></p>
   <p class="gen-time" id="gen-time" style="display:none"></p>
+  <div class="scan-audit" id="scan-audit" style="display:none"></div>
   <div class="stats-row" id="stats-row"></div>
   <div class="agent-row" id="agent-row"></div>
   <div class="social-row" id="social-row"></div>
@@ -431,6 +437,23 @@ function safeRun(name,fn){try{fn()}catch(e){console.warn('BuilderBio: section "'
     p.social_links=Object.entries(p.social_links).filter(([,url])=>typeof url==='string'&&url).map(([platform,url])=>({platform,url}));
   }
   if(!Array.isArray(p.social_links))p.social_links=[];
+  if(!E.scan_audit&&D.scan_audit)E.scan_audit=D.scan_audit;
+  if(!E.scan_audit&&p.scan_audit)E.scan_audit=p.scan_audit;
+  if(E.scan_audit&&typeof E.scan_audit==='object'){
+    if(!E.scan_audit.summary||typeof E.scan_audit.summary!=='object')E.scan_audit.summary={};
+    if(!Array.isArray(E.scan_audit.warnings))E.scan_audit.warnings=[];
+    if(!Array.isArray(E.scan_audit.unknown_sources))E.scan_audit.unknown_sources=[];
+    if(!E.scan_audit.agent_sources_found&&E.scan_audit.agents&&typeof E.scan_audit.agents==='object'){
+      E.scan_audit.agent_sources_found={};
+      Object.entries(E.scan_audit.agents).forEach(function([agent,stats]){
+        E.scan_audit.agent_sources_found[agent]=(stats&&stats.sources_discovered)||0;
+      });
+    }
+    if(!p.scanner_version&&E.scan_audit.scanner_version)p.scanner_version=E.scan_audit.scanner_version;
+    if(!p.scan_status&&E.scan_audit.summary.status)p.scan_status=E.scan_audit.summary.status;
+    if(!p.scan_recommendation&&E.scan_audit.summary.recommended_action)p.scan_recommendation=E.scan_audit.summary.recommended_action;
+    if(!p.agent_sources_found&&E.scan_audit.agent_sources_found)p.agent_sources_found=E.scan_audit.agent_sources_found;
+  }
   // Ensure tech_stack.areas → E.tech object
   if((!E.tech||typeof E.tech!=='object'||Object.keys(E.tech).length===0)&&Array.isArray(D.tech_stack)){
     E.tech={};D.tech_stack.forEach(function(a){if(a&&a.name!=null)E.tech[a.name]=a.score||0;});
@@ -741,6 +764,26 @@ safeRun('hero',function(){
     const gt=document.getElementById('gen-time');
     gt.textContent='Generated on '+GEN_TIME;
     gt.style.display='block';
+  }
+  const sa=E.scan_audit||{};
+  const ss=sa.summary||{};
+  const audit=document.getElementById('scan-audit');
+  const chips=[];
+  if(p.scanner_version)chips.push(`<span class="scan-chip">scanner ${esc(p.scanner_version)}</span>`);
+  if(Object.keys(p.agent_sources_found||{}).length){
+    const totalSources=Object.values(p.agent_sources_found).reduce((sum,v)=>sum+(Number(v)||0),0);
+    chips.push(`<span class="scan-chip">${totalSources} sources discovered</span>`);
+  }
+  if(p.scan_status){
+    const chipClass=p.scan_status==='complete'?'ok':'warn';
+    chips.push(`<span class="scan-chip ${chipClass}">${esc(p.scan_status==='complete'?'scan complete':'rescan recommended')}</span>`);
+  }
+  if((ss.partial_sessions||0)>0)chips.push(`<span class="scan-chip warn">${fN(ss.partial_sessions)} partial sessions</span>`);
+  if((ss.unknown_sources||0)>0)chips.push(`<span class="scan-chip warn">${fN(ss.unknown_sources)} unknown sources</span>`);
+  const note=(p.scan_recommendation||sa.warnings&&sa.warnings[0]||'').trim();
+  if(chips.length){
+    audit.innerHTML=chips.join('')+(note?`<div class="scan-note">${esc(note)}</div>`:'');
+    audit.style.display='flex';
   }
 });
 

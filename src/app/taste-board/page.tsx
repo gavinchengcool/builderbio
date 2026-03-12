@@ -21,6 +21,9 @@ interface ProfileCard {
   searchProfile: SearchProfile | null;
   sessionsAnalyzed: number | null;
   totalTokens: number | null;
+  scanStatus: string | null;
+  scannerVersion: string | null;
+  scanNeedsRescan: boolean;
 }
 
 function getCardSummary(profile: ProfileCard): string | null {
@@ -139,9 +142,18 @@ export default function TasteBoardPage() {
                       <p className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors">
                         {profile.displayName || profile.username}
                       </p>
-                      <p className="text-xs text-text-muted">
-                        builder of things
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-text-muted">builder of things</p>
+                        {profile.scanNeedsRescan ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-warning/40 text-warning">
+                            rescan recommended
+                          </span>
+                        ) : profile.scannerVersion ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-border text-text-muted">
+                            scanner {profile.scannerVersion}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
 

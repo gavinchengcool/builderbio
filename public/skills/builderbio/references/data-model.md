@@ -15,6 +15,14 @@ The profile consists of two data objects: **D** (primary data) and **E** (extra/
     "total_turns": 4200,
     "total_tool_calls": 2100,
     "total_tokens": 850000,
+    "scanner_version": "0.6.0",
+    "scan_status": "partial",
+    "scan_recommendation": "Re-run BuilderBio with the latest skill if you used agents that are missing from the badges.",
+    "agent_sources_found": {
+      "claude-code": 42,
+      "codex": 18,
+      "cursor": 3
+    },
     "summary": "Full-stack builder shipping AI tools and dev infrastructure",
     "tags": ["AI Tooling", "Full-Stack", "Night Builder"],
     "agents_used": {
@@ -109,7 +117,20 @@ The profile consists of two data objects: **D** (primary data) and **E** (extra/
       "distribution": { "short": 5, "medium": 8, "long": 7 }
     }
   },
-  "comparison_insight": "Uses Claude Code for deep building, Codex for quick explorations."
+  "comparison_insight": "Uses Claude Code for deep building, Codex for quick explorations.",
+  "scan_audit": {
+    "scanner_version": "0.6.0",
+    "summary": {
+      "status": "partial",
+      "confidence": 0.83,
+      "sessions_parsed": 25,
+      "sources_discovered": 64,
+      "sources_parsed": 61,
+      "partial_sessions": 6,
+      "unknown_sources": 1,
+      "recommended_action": "Re-run BuilderBio with the latest skill if you used agents that are missing from the badges."
+    }
+  }
 }
 ```
 

@@ -39,6 +39,8 @@ ls -lt ~/.openclaw/agents/*/sessions/*.jsonl 2>/dev/null | head -100
 
 Read `~/.claude/history.jsonl` to get human-readable display text per session.
 
+Also probe common config/application-support roots for additional chat logs. If a candidate source is only partially supported, surface it in the audit instead of silently skipping it.
+
 ## Phase 2: Parse All Sessions
 
 Run the parser on ALL session files to extract session summaries:
@@ -58,11 +60,26 @@ python <skill-path>/scripts/parse_sessions.py \
 
 Use `--days 0` to include ALL sessions with no time limit. The parser treats `--days <= 0` as full-history scan, merges Claude sidechains by `sessionId`, prefers Codex `total_token_usage` max snapshots, and scans Trae `workspaceStorage` `state.vscdb` files in addition to global storage, including `chatHistoryNeedToBeMigrated-*` fallback records. Only include flags for agents with detected data. The script skips missing directories gracefully.
 
+The parser output now contains:
+- `scanner_version`
+- `scan_audit.summary`
+- `scan_audit.agent_sources_found`
+- per-session `source_refs`, `parse_mode`, and `partial_reasons`
+
+If the audit status is `partial`, do not pretend the profile is exhaustive.
+
 If the script fails, fall back to manual parsing: read each JSONL file and extract the fields documented in the format references.
 
 ## Phase 3: Analyze & Build Profile
 
 Read the parsed data and produce the full BuilderBio analysis. Build both the **D** (primary data) and **E** (extra data) objects. Refer to [profile-dimensions.md](profile-dimensions.md) for the full rubric.
+
+Carry scan metadata through:
+- `D.profile.scanner_version = parsed.scanner_version`
+- `D.profile.scan_status = parsed.scan_audit.summary.status`
+- `D.profile.scan_recommendation = parsed.scan_audit.summary.recommended_action`
+- `D.profile.agent_sources_found = parsed.scan_audit.agent_sources_found`
+- `E.scan_audit = parsed.scan_audit`
 
 The eleven sections:
 
@@ -200,6 +217,8 @@ curl -s -X POST https://builderbio.dev/api/profile/publish \
     "publish_token": "TOKEN_OR_EMPTY_STRING",
     "data_hash": "SHA256_HASH_FROM_PHASE_3_6",
     "style_theme": "default",
+    "scanner_version": "0.6.0",
+    "scan_audit": { ... parsed scan_audit object ... },
     "profile": {
       "summary": "ONE_LINE_SUMMARY",
       "display_name": "DISPLAY_NAME",
@@ -222,6 +241,20 @@ Response:
   "publish_token": "TOKEN (only on first publish or token refresh)"
 }
 ```
+
+## Regression Safety
+
+When you update parser logic, run:
+
+```bash
+python <skill-path>/scripts/run_fixture_evals.py
+```
+
+That fixture suite covers:
+- Claude root + subagent merge
+- Codex cumulative token snapshots
+- Trae `ItemTable` key-family parsing
+- weak-discovery generic fallback for Cursor-like JSONL
 
 ### Step 3: Save config
 
