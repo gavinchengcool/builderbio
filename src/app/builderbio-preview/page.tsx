@@ -83,6 +83,7 @@ export async function generateMetadata(): Promise<Metadata> {
 const previewFallback = {
   label: "Local preview · not deployed",
   sectionLabel: "Gavin-based annual recap direction",
+  lang: "zh",
   name: "Gavin",
   slug: "gavin.builderbio.dev",
   avatarUrl: "/avatar-gavin.jpg",
@@ -510,27 +511,96 @@ function hourColor(hour: number) {
   return "#FF6B35";
 }
 
+function getUiCopy(lang: "zh" | "en") {
+  return lang === "zh"
+    ? {
+        generatedAt: "生成于",
+        tokenLabel: "与 AI 协作产生的 tokens",
+        signatureHeading: "这段时间最能代表他的作品",
+        signatureWhy: "为什么它重要",
+        promptStyle: "Prompt 风格",
+        sessionRhythm: "会话节奏",
+        toolPreference: "工具偏好",
+        agentLoyalty: "Agent 忠诚度",
+        toolDistribution: "工具分布",
+        sessions: "会话",
+        turns: "轮对话",
+        avgTurns: "平均 turns",
+        toolCalls: "工具调用",
+        roleLens: "看角色，不只看占比",
+        peakSentence: "是最强高峰",
+        peakWindowSummary: "最活跃的窗口是",
+        sessionsSuffix: "个 sessions。",
+        activityLongest: "最长连续",
+        activityCurrent: "当前连续",
+        activityActive: "活跃",
+        activityDays: "天",
+        activityLess: "少",
+        activityMore: "多",
+        biggestSession: "最大会话",
+        busiestDay: "最忙的一天",
+        longestStreak: "最长连续天数",
+        uninterrupted: "和 AI 连续协作，没有中断。",
+        translateLabel: "换算一下",
+        translateDesc: "如果按每页 3 turns 来算，大概相当于一本 4,237 页的对话书。",
+      }
+    : {
+        generatedAt: "Generated",
+        tokenLabel: "Tokens created through AI collaboration",
+        signatureHeading: "The build that best represents this stretch",
+        signatureWhy: "Why it matters",
+        promptStyle: "Prompt style",
+        sessionRhythm: "Session rhythm",
+        toolPreference: "Tool preference",
+        agentLoyalty: "Agent loyalty",
+        toolDistribution: "Tool distribution",
+        sessions: "Sessions",
+        turns: "Turns",
+        avgTurns: "Avg Turns",
+        toolCalls: "Tool Calls",
+        roleLens: "Read the roles, not just the split",
+        peakSentence: "is the strongest peak",
+        peakWindowSummary: "The busiest window is",
+        sessionsSuffix: "sessions.",
+        activityLongest: "Longest streak",
+        activityCurrent: "Current streak",
+        activityActive: "Active",
+        activityDays: "days",
+        activityLess: "Less",
+        activityMore: "More",
+        biggestSession: "Biggest session",
+        busiestDay: "Busiest day",
+        longestStreak: "Longest streak",
+        uninterrupted: "Consecutive days of building with AI, without a break.",
+        translateLabel: "Put it in perspective",
+        translateDesc: "At roughly 3 turns per page, this works out to a 4,237-page conversation book.",
+      };
+}
+
 function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
+  const lang = preview.lang === "en" ? "en" : "zh";
   const busiestDay = preview.highlights.busiestDay;
   const biggestSession = preview.highlights.biggestSession;
   const eraTitles = preview.eras
     .map((era) => era?.title)
     .filter(Boolean)
     .slice(0, 3)
-    .join("、");
+    .join(lang === "zh" ? "、" : ", ");
   const fastAgent =
-    preview.agentRoles.find((agent) => /快|执行/.test(agent.role)) ||
+    preview.agentRoles.find((agent) => /快|执行|fast|execution|iter/i.test(agent.role)) ||
     preview.agentRoles[1] ||
     preview.agentRoles[0];
   const deepAgent =
-    preview.agentRoles.find((agent) => /深/.test(agent.role)) ||
+    preview.agentRoles.find((agent) => /深|deep/i.test(agent.role)) ||
     preview.agentRoles[0] ||
     preview.agentRoles[1];
   const name = preview.name;
-  const dateLabel = busiestDay.date || preview.dateRange || "这段时间";
+  const dateLabel = busiestDay.date || preview.dateRange || (lang === "zh" ? "这段时间" : "this period");
   const socialCurrencySummary =
     preview.socialCurrency.summary ||
-    `${formatCompact(preview.totalTokens)} tokens、${preview.stats[0].value} 个会话和 ${preview.stats[1].value} turns，说明这已经是持续而深入的 AI 协作，而不是偶尔试用。`;
+    (lang === "zh"
+      ? `${formatCompact(preview.totalTokens)} tokens、${preview.stats[0].value} 个会话和 ${preview.stats[1].value} turns，说明这已经是持续而深入的 AI 协作，而不是偶尔试用。`
+      : `${formatCompact(preview.totalTokens)} tokens, ${preview.stats[0].value} sessions, and ${preview.stats[1].value} turns point to sustained, deep AI collaboration rather than occasional experimentation.`);
 
   return {
     badgeLabel: preview.label,
@@ -538,32 +608,65 @@ function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
     recap: preview.recap,
     trustNote: preview.trust.note,
     socialCurrencySummary,
-    socialCurrencyBadge: "协作强度",
-    highMomentsHeading: `${dateLabel} 是 ${name} 这段时间最容易被人记住的一次高峰。`,
-    signatureMovesHeading: `这些反复出现的习惯，基本就是 ${name} 和 AI 协作时最稳定的做法。`,
-    projectsHeading: `这些项目最能说明 ${name} 这段时间到底在持续构建什么。`,
+    socialCurrencyBadge: lang === "zh" ? "协作强度" : "Collaboration scale",
+    highMomentsHeading:
+      lang === "zh"
+        ? `${dateLabel} 是 ${name} 这段时间最容易被人记住的一次高峰。`
+        : `${dateLabel} is the moment most likely to stick in people's minds from this stretch of ${name}'s work.`,
+    signatureMovesHeading:
+      lang === "zh"
+        ? `这些反复出现的习惯，基本就是 ${name} 和 AI 协作时最稳定的做法。`
+        : `These recurring habits are the clearest signature of how ${name} works with AI.`,
+    projectsHeading:
+      lang === "zh"
+        ? `这些项目最能说明 ${name} 这段时间到底在持续构建什么。`
+        : `These projects are the clearest proof of what ${name} kept building during this stretch.`,
     agentComparisonHeading:
       fastAgent && deepAgent && fastAgent.name !== deepAgent.name
-        ? `${fastAgent.name} 扛速度，${deepAgent.name} 扛深度，这个分工已经很稳定。`
-        : `这些 agent 使用轨迹，基本勾勒出了 ${name} 的协作方式。`,
-    agentRolesHeading: `不同的 Agent 在 ${name} 这里有很明确的分工。`,
-    agentRolesSummary: `重要的不是谁用得更多，而是 ${name} 会把不同 agent 放在不同任务里。`,
+        ? lang === "zh"
+          ? `${fastAgent.name} 扛速度，${deepAgent.name} 扛深度，这个分工已经很稳定。`
+          : `${fastAgent.name} carries speed while ${deepAgent.name} carries depth, and that split is already very stable.`
+        : lang === "zh"
+          ? `这些 agent 使用轨迹，基本勾勒出了 ${name} 的协作方式。`
+          : `These agent traces outline the way ${name} collaborates with AI.`,
+    agentRolesHeading:
+      lang === "zh"
+        ? `不同的 Agent 在 ${name} 这里有很明确的分工。`
+        : `Different agents have clearly defined jobs in ${name}'s workflow.`,
+    agentRolesSummary:
+      lang === "zh"
+        ? `重要的不是谁用得更多，而是 ${name} 会把不同 agent 放在不同任务里。`
+        : `What matters is not who shows up more often, but how ${name} assigns different agents to different kinds of work.`,
     erasHeading: eraTitles
-      ? `${eraTitles} 连在一起，能清楚看见 ${name} 这段时间的轨迹怎么一步步变化。`
-      : `这条时间线能清楚看见 ${name} 这段时间的轨迹怎么一步步变化。`,
-    evidenceHeading: "这些判断背后，都能找到对应的日志证据。",
+      ? lang === "zh"
+        ? `${eraTitles} 连在一起，能清楚看见 ${name} 这段时间的轨迹怎么一步步变化。`
+        : `${eraTitles} together show how ${name}'s trajectory changed step by step across the period.`
+      : lang === "zh"
+        ? `这条时间线能清楚看见 ${name} 这段时间的轨迹怎么一步步变化。`
+        : `This timeline shows how ${name}'s trajectory changed step by step across the period.`,
+    evidenceHeading: lang === "zh" ? "这些判断背后，都能找到对应的日志证据。" : "Each of these claims can be traced back to log evidence.",
     evidenceStatus: preview.evidence.coverage.status,
     evidenceSummary:
       preview.evidence.coverage.summary ||
-      `从 ${preview.whenIbuild.peakHour} 的时间高峰，到 ${busiestDay.date} 的忙碌峰值，再到 ${fastAgent.name} / ${deepAgent.name} 的角色分工，这些结论都能在原始日志里找到对应证据。`,
+      (lang === "zh"
+        ? `从 ${preview.whenIbuild.peakHour} 的时间高峰，到 ${busiestDay.date} 的忙碌峰值，再到 ${fastAgent.name} / ${deepAgent.name} 的角色分工，这些结论都能在原始日志里找到对应证据。`
+        : `From the ${preview.whenIbuild.peakHour} time peak, to the busiest day on ${busiestDay.date}, to the ${fastAgent.name} / ${deepAgent.name} role split, each conclusion maps back to the raw logs.`),
     evidenceNote:
       preview.evidence.coverage.note ||
-      `最大单次会话达到 ${formatNumber(biggestSession.turns)} turns，最长连续协作 ${preview.highlights.longestStreak} 天；从最大会话到连续协作天数，这些结论都能回到原始 sessions。`,
-    activityHeading: `${preview.activity.activeDays} 个活跃日，把 ${name} 这段时间的构建节奏完整留了下来。`,
-    receiptsHeading: "这些高光不是包装出来的，而是可以直接回到真实历史里的事实。",
-    ctaHeading: "也做一页属于你自己的 BuilderBio。",
+      (lang === "zh"
+        ? `最大单次会话达到 ${formatNumber(biggestSession.turns)} turns，最长连续协作 ${preview.highlights.longestStreak} 天；从最大会话到连续协作天数，这些结论都能回到原始 sessions。`
+        : `The biggest session reached ${formatNumber(biggestSession.turns)} turns and the longest streak lasted ${preview.highlights.longestStreak} days; from the biggest session to the streak count, these conclusions all trace back to real sessions.`),
+    activityHeading:
+      lang === "zh"
+        ? `${preview.activity.activeDays} 个活跃日，把 ${name} 这段时间的构建节奏完整留了下来。`
+        : `${preview.activity.activeDays} active days preserve the full rhythm of how ${name} built during this stretch.`,
+    receiptsHeading:
+      lang === "zh"
+        ? "这些高光不是包装出来的，而是可以直接回到真实历史里的事实。"
+        : "These standout moments are not packaging; they are facts that can be traced directly back to the real history.",
+    ctaHeading: "Make your own BuilderBio.",
     ctaSummary:
-      "把你本地 coding agent 的历史交给 BuilderBio，它会把项目主线、协作方式和高光时刻整理成一页能分享的 Builder 画像。",
+      "Give BuilderBio the history of your local coding agents and it will turn your project arcs, collaboration patterns, and standout moments into a shareable builder profile.",
   };
 }
 
@@ -578,6 +681,8 @@ export default async function BuilderBioPreviewPage() {
   }
 
   const preview = (loaded?.recap ?? previewFallback) as typeof previewFallback;
+  const lang = preview.lang === "en" ? "en" : "zh";
+  const ui = getUiCopy(lang);
   const themeStyle = (loaded?.themeStyle ?? {}) as CSSProperties;
   const pageCopy = buildPageCopy(preview, liveProfile);
   const hourEntries = Array.from({ length: 24 }, (_, hour) => ({
@@ -681,7 +786,7 @@ export default async function BuilderBioPreviewPage() {
                     </span>
                   ) : null}
                   <span className="rounded-full border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-text-secondary">
-                    生成于 {preview.trust.generatedAt}
+                    {ui.generatedAt} {preview.trust.generatedAt}
                   </span>
                 </div>
 
@@ -764,7 +869,7 @@ export default async function BuilderBioPreviewPage() {
                       <div className="mt-2 text-3xl font-black leading-none text-text-primary sm:text-5xl">
                         {formatCompact(preview.totalTokens)}
                       </div>
-                      <p className="mt-2 text-sm font-semibold text-text-primary/90">与 AI 协作产生的 tokens</p>
+                      <p className="mt-2 text-sm font-semibold text-text-primary/90">{ui.tokenLabel}</p>
                     </div>
                     <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-accent">
                       {pageCopy.socialCurrencyBadge}
@@ -812,7 +917,7 @@ export default async function BuilderBioPreviewPage() {
                   {preview.signatureBuild.stage}
                 </span>
                 <span className="text-xs uppercase tracking-[0.2em] text-text-muted">
-                  这段时间最能代表他的作品
+                  {ui.signatureHeading}
                 </span>
               </div>
 
@@ -828,7 +933,7 @@ export default async function BuilderBioPreviewPage() {
 
               <div className="mt-6 rounded-2xl border border-border bg-bg-primary/60 p-4">
                 <p className="mb-3 text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                  为什么它重要
+                  {ui.signatureWhy}
                 </p>
                 <div className="space-y-3">
                   {preview.signatureBuild.proof.map((item) => (
@@ -951,7 +1056,7 @@ export default async function BuilderBioPreviewPage() {
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border bg-bg-primary/55 p-4">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                    Prompt 风格
+                    {ui.promptStyle}
                   </div>
                   <div className="mt-2 text-lg font-black text-text-primary">
                     {preview.howIbuild.promptStyle}
@@ -962,7 +1067,7 @@ export default async function BuilderBioPreviewPage() {
                 </div>
                 <div className="rounded-2xl border border-border bg-bg-primary/55 p-4">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                    会话节奏
+                    {ui.sessionRhythm}
                   </div>
                   <div className="mt-2 text-lg font-black text-text-primary">
                     {preview.howIbuild.sessionRhythm}
@@ -973,7 +1078,7 @@ export default async function BuilderBioPreviewPage() {
                 </div>
                 <div className="rounded-2xl border border-border bg-bg-primary/55 p-4">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                    工具偏好
+                    {ui.toolPreference}
                   </div>
                   <div className="mt-2 text-lg font-black text-text-primary">
                     {preview.howIbuild.toolPreference}
@@ -984,7 +1089,7 @@ export default async function BuilderBioPreviewPage() {
                 </div>
                 <div className="rounded-2xl border border-border bg-bg-primary/55 p-4">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                    Agent 忠诚度
+                    {ui.agentLoyalty}
                   </div>
                   <div className="mt-2 text-lg font-black text-text-primary">
                     {preview.howIbuild.agentLoyalty}
@@ -997,7 +1102,7 @@ export default async function BuilderBioPreviewPage() {
 
               <div className="mt-6 rounded-2xl border border-border bg-bg-primary/60 p-4">
                 <div className="mb-3 text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                  工具分布
+                  {ui.toolDistribution}
                 </div>
                 <div className="flex h-4 overflow-hidden rounded-full bg-bg-primary">
                   {preview.howIbuild.toolTotals.map((tool) => {
@@ -1068,7 +1173,7 @@ export default async function BuilderBioPreviewPage() {
                         <div className="rounded-xl border border-border bg-bg-secondary px-3 py-3 text-center">
                           <div className="text-xl font-black text-text-primary">{agent.sessions}</div>
                           <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-text-muted">
-                            会话
+                            {ui.sessions}
                           </div>
                         </div>
                         <div className="rounded-xl border border-border bg-bg-secondary px-3 py-3 text-center">
@@ -1076,13 +1181,13 @@ export default async function BuilderBioPreviewPage() {
                             {formatNumber(agent.totalTurns)}
                           </div>
                           <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-text-muted">
-                            轮对话
+                            {ui.turns}
                           </div>
                         </div>
                         <div className="rounded-xl border border-border bg-bg-secondary px-3 py-3 text-center">
                           <div className="text-xl font-black text-text-primary">{agent.avgTurns}</div>
                           <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-text-muted">
-                            平均 turns
+                            {ui.avgTurns}
                           </div>
                         </div>
                         <div className="rounded-xl border border-border bg-bg-secondary px-3 py-3 text-center">
@@ -1090,7 +1195,7 @@ export default async function BuilderBioPreviewPage() {
                             {formatNumber(agent.totalToolCalls)}
                           </div>
                           <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-text-muted">
-                            工具调用
+                            {ui.toolCalls}
                           </div>
                         </div>
                       </div>
@@ -1148,7 +1253,7 @@ export default async function BuilderBioPreviewPage() {
                       </p>
                     </div>
                     <span className="rounded-full border border-border px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-text-muted">
-                      看角色，不只看占比
+                      {ui.roleLens}
                     </span>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-text-secondary">{agent.summary}</p>
@@ -1302,11 +1407,11 @@ export default async function BuilderBioPreviewPage() {
                 </div>
                 <div className="mt-5 rounded-2xl border border-border bg-bg-primary/60 p-4">
                   <div className="text-xl font-black text-text-primary">
-                    {preview.whenIbuild.peakHour} 是最强高峰
+                    {preview.whenIbuild.peakHour} {ui.peakSentence}
                   </div>
                   <p className="mt-2 text-sm leading-6 text-text-secondary">
-                    最活跃的窗口是 {preview.whenIbuild.peakWindow}，一共出现了{" "}
-                    {preview.whenIbuild.peakWindowSessions} 个 sessions。
+                    {ui.peakWindowSummary} {preview.whenIbuild.peakWindow}.{" "}
+                    {preview.whenIbuild.peakWindowSessions} {ui.sessionsSuffix}
                   </p>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-3">
@@ -1319,7 +1424,7 @@ export default async function BuilderBioPreviewPage() {
                       <div className="mt-3 text-2xl font-black text-text-primary">
                         {period.sessions}
                       </div>
-                      <div className="text-xs text-text-muted">会话</div>
+                      <div className="text-xs text-text-muted">{ui.sessions}</div>
                       <div className="mt-2 text-xs text-text-secondary">
                         {formatNumber(period.turns)} turns
                       </div>
@@ -1351,26 +1456,26 @@ export default async function BuilderBioPreviewPage() {
               </div>
               <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-text-secondary">
                 <span>
-                  最长连续: <strong className="text-text-primary">{preview.activity.longestStreak} 天</strong>
+                  {ui.activityLongest}: <strong className="text-text-primary">{preview.activity.longestStreak} {ui.activityDays}</strong>
                 </span>
                 <span>
-                  当前连续: <strong className="text-text-primary">{preview.activity.currentStreak} 天</strong>
+                  {ui.activityCurrent}: <strong className="text-text-primary">{preview.activity.currentStreak} {ui.activityDays}</strong>
                 </span>
                 <span>
-                  活跃:{" "}
+                  {ui.activityActive}:{" "}
                   <strong className="text-text-primary">
-                    {preview.activity.activeDays}/{preview.activity.totalDays} 天
+                    {preview.activity.activeDays}/{preview.activity.totalDays} {ui.activityDays}
                   </strong>
                 </span>
               </div>
               <div className="mt-4 flex items-center gap-2 text-xs text-text-muted">
-                <span>少</span>
+                <span>{ui.activityLess}</span>
                 <span className="h-3 w-3 rounded-[3px] bg-bg-primary" />
                 <span className="h-3 w-3 rounded-[3px] bg-[#18362f]" />
                 <span className="h-3 w-3 rounded-[3px] bg-[#1f6b58]" />
                 <span className="h-3 w-3 rounded-[3px] bg-[#27a783]" />
                 <span className="h-3 w-3 rounded-[3px] bg-[#34D399]" />
-                <span>多</span>
+                <span>{ui.activityMore}</span>
               </div>
             </div>
 
@@ -1384,7 +1489,7 @@ export default async function BuilderBioPreviewPage() {
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border bg-bg-primary/55 p-4">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                    最大会话
+                    {ui.biggestSession}
                   </div>
                   <div className="mt-2 text-3xl font-black text-text-primary">
                     {formatNumber(preview.highlights.biggestSession.turns)}
@@ -1395,36 +1500,36 @@ export default async function BuilderBioPreviewPage() {
                 </div>
                 <div className="rounded-2xl border border-border bg-bg-primary/55 p-4">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                    最忙的一天
+                    {ui.busiestDay}
                   </div>
                   <div className="mt-2 text-2xl font-black text-text-primary">
                     {preview.highlights.busiestDay.date}
                   </div>
                   <p className="mt-2 text-xs leading-5 text-text-secondary">
-                    {preview.highlights.busiestDay.sessions} 个 sessions ·{" "}
+                    {preview.highlights.busiestDay.sessions} {ui.sessions} ·{" "}
                     {formatNumber(preview.highlights.busiestDay.turns)} turns
                   </p>
                 </div>
                 <div className="rounded-2xl border border-border bg-bg-primary/55 p-4">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                    最长连续天数
+                    {ui.longestStreak}
                   </div>
                   <div className="mt-2 text-3xl font-black text-text-primary">
-                    {preview.highlights.longestStreak} 天
+                    {preview.highlights.longestStreak} {ui.activityDays}
                   </div>
                   <p className="mt-2 text-xs leading-5 text-text-secondary">
-                    和 AI 连续协作，没有中断。
+                    {ui.uninterrupted}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-border bg-bg-primary/55 p-4">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                    换算一下
+                    {ui.translateLabel}
                   </div>
                   <div className="mt-2 text-3xl font-black text-text-primary">
                     {formatNumber(12711)}
                   </div>
                   <p className="mt-2 text-xs leading-5 text-text-secondary">
-                    如果按每页 3 turns 来算，大概相当于一本 4,237 页的对话书。
+                    {ui.translateDesc}
                   </p>
                 </div>
               </div>

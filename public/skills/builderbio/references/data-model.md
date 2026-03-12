@@ -20,7 +20,7 @@ Primary parser output:
 
 ```json
 {
-  "scanner_version": "0.7.0",
+  "scanner_version": "0.7.2",
   "scan_audit": {
     "summary": {
       "status": "partial",
@@ -214,6 +214,8 @@ Semantics:
 
 `Unfiltered` is a trust badge, not a narrative claim.
 
+`profile.lang` should store the dominant language from the builder's real local conversations with coding agents. Narrative copy inside modules should follow this language. Module titles, product badges, and the `Make your own` CTA stay English.
+
 ### Recommended `D` shape
 
 ```json
@@ -229,7 +231,7 @@ Semantics:
     "total_turns": 12711,
     "total_tool_calls": 8800,
     "total_tokens": 9990000000,
-    "scanner_version": "0.7.0",
+    "scanner_version": "0.7.2",
     "scan_status": "partial",
     "scan_recommendation": "Re-run BuilderBio if you recently used an unsupported editor-hosted agent.",
     "generated_at": "2026-03-10",

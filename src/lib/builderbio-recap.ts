@@ -51,6 +51,8 @@ type ActivitySummary = {
   heatmap: AnyRecord;
 };
 
+type CopyLang = "zh" | "en";
+
 function asObject(value: unknown): AnyRecord {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as AnyRecord)
@@ -72,6 +74,64 @@ function asNumber(value: unknown, fallback = 0): number {
     if (Number.isFinite(parsed)) return parsed;
   }
   return fallback;
+}
+
+function inLang<T>(lang: CopyLang, zh: T, en: T): T {
+  return lang === "zh" ? zh : en;
+}
+
+function normalizeCopyLang(value: unknown): CopyLang | null {
+  const raw = asString(value)?.toLowerCase();
+  if (!raw) return null;
+  if (raw.startsWith("zh")) return "zh";
+  if (raw.startsWith("en")) return "en";
+  return null;
+}
+
+function countChineseChars(value: string): number {
+  const matches = value.match(/[\u3400-\u9fff]/g);
+  return matches ? matches.length : 0;
+}
+
+function countLatinWords(value: string): number {
+  const matches = value.match(/[A-Za-z]+/g);
+  return matches ? matches.length : 0;
+}
+
+function detectContentLanguage(profile: AnyRecord, D: AnyRecord, E: AnyRecord): CopyLang {
+  const explicit =
+    normalizeCopyLang(profile.lang) ??
+    normalizeCopyLang(profile.language) ??
+    normalizeCopyLang(asObject(D.narrative)?.lang) ??
+    normalizeCopyLang(asObject(E.insights)?.lang);
+  if (explicit) return explicit;
+
+  const candidates = [
+    asString(profile.summary),
+    asString(profile.builder_thesis),
+    asString(asObject(D.highlights).favorite_prompt),
+    ...asArray<AnyRecord>(D.projects)
+      .slice(0, 3)
+      .flatMap((project) => [asString(project.summary), asString(project.description), asString(project.name)]),
+    asString(E.comparison_insight),
+    asString(E.evolution_insight),
+    asString(asObject(E.time).peak_detail),
+  ].filter(Boolean) as string[];
+
+  const combined = candidates.join("\n");
+  const chineseChars = countChineseChars(combined);
+  const latinWords = countLatinWords(combined);
+
+  if (chineseChars >= 8 && chineseChars >= latinWords) return "zh";
+  return "en";
+}
+
+function joinHuman(items: string[], lang: CopyLang): string {
+  const clean = items.filter(Boolean);
+  if (clean.length <= 1) return clean[0] || "";
+  if (lang === "zh") return clean.join("、");
+  if (clean.length === 2) return `${clean[0]} and ${clean[1]}`;
+  return `${clean.slice(0, -1).join(", ")}, and ${clean[clean.length - 1]}`;
 }
 
 function uniq(values: string[]): string[] {
@@ -179,13 +239,20 @@ function projectScore(project: AnyRecord): number {
   );
 }
 
-function normalizeProjectStatus(status: string, signatureName: string, projectName: string): string {
-  if (projectName === signatureName) return "代表作";
+function normalizeProjectStatus(
+  lang: CopyLang,
+  status: string,
+  signatureName: string,
+  projectName: string
+): string {
+  if (projectName === signatureName) return inLang(lang, "代表作", "Signature build");
   const normalized = status.toLowerCase();
-  if (normalized.includes("progress")) return "进行中";
-  if (normalized.includes("ship") || normalized.includes("done") || normalized.includes("complete")) return "已完成";
-  if (normalized.includes("explore")) return "已探索";
-  return status || "进行中";
+  if (normalized.includes("progress")) return inLang(lang, "进行中", "In progress");
+  if (normalized.includes("ship") || normalized.includes("done") || normalized.includes("complete")) {
+    return inLang(lang, "已完成", "Completed");
+  }
+  if (normalized.includes("explore")) return inLang(lang, "已探索", "Explored");
+  return status || inLang(lang, "进行中", "In progress");
 }
 
 async function computeVerificationHash(D: AnyRecord): Promise<string> {
@@ -221,25 +288,31 @@ function deriveTasteSignals(profile: AnyRecord, D: AnyRecord, E: AnyRecord): str
   return uniq(signals).slice(0, 6);
 }
 
-function deriveProfileTitle(techLabels: string[], agentCount: number): string {
+function deriveProfileTitle(lang: CopyLang, techLabels: string[], agentCount: number): string {
   const lower = techLabels.map((item) => item.toLowerCase());
 
   if (lower.some((item) => /(product|strategy|saas)/.test(item))) {
-    return "产品驱动型创作者 · AI Native Builder";
+    return inLang(lang, "产品驱动型创作者 · AI Native Builder", "Product-led creator · AI-Native Builder");
   }
   if (lower.some((item) => /(research|analysis|content|translation)/.test(item))) {
-    return "研究型创作者 · AI Native Builder";
+    return inLang(lang, "研究型创作者 · AI Native Builder", "Research-driven creator · AI-Native Builder");
   }
   if (lower.some((item) => /(react|next|typescript|javascript|frontend|web)/.test(item))) {
-    return "全栈构建者 · AI Native Builder";
+    return inLang(lang, "全栈构建者 · AI Native Builder", "Full-stack builder · AI-Native Builder");
   }
   if (agentCount >= 3) {
-    return "多 Agent Builder · AI Native Builder";
+    return inLang(lang, "多 Agent Builder · AI Native Builder", "Multi-agent builder · AI-Native Builder");
   }
-  return "AI Native Builder";
+  return "AI-Native Builder";
 }
 
-function deriveBuilderThesis(name: string, profile: AnyRecord, D: AnyRecord, E: AnyRecord): string {
+function deriveBuilderThesis(
+  lang: CopyLang,
+  name: string,
+  profile: AnyRecord,
+  D: AnyRecord,
+  E: AnyRecord
+): string {
   const explicit = asString(profile.summary);
   if (explicit) return explicit;
 
@@ -251,15 +324,27 @@ function deriveBuilderThesis(name: string, profile: AnyRecord, D: AnyRecord, E: 
     .map(([label]) => humanizeTag(label));
 
   if (signature && topTech.length) {
-    return `${name} 会把 ${topTech.join("、")} 持续做成能落地的东西，而 ${signature.name} 是最明显的代表。`;
+    return inLang(
+      lang,
+      `${name} 会把 ${joinHuman(topTech, "zh")} 持续做成能落地的东西，而 ${signature.name} 是最明显的代表。`,
+      `${name} keeps turning ${joinHuman(topTech, "en")} into things that ship, and ${signature.name} is the clearest proof.`
+    );
   }
   if (signature) {
-    return `${name} 会反复回到 ${signature.name} 这类项目上，把想法真正磨成成品。`;
+    return inLang(
+      lang,
+      `${name} 会反复回到 ${signature.name} 这类项目上，把想法真正磨成成品。`,
+      `${name} keeps coming back to projects like ${signature.name} until the idea turns into something real.`
+    );
   }
-  return `${name} 的日志里，明显能看到一种更偏向持续构建、而不是浅尝辄止的 AI 协作方式。`;
+  return inLang(
+    lang,
+    `${name} 的日志里，明显能看到一种更偏向持续构建、而不是浅尝辄止的 AI 协作方式。`,
+    `${name}'s logs show a pattern of sustained building with AI rather than occasional experimentation.`
+  );
 }
 
-function deriveManagementStyle(D: AnyRecord, E: AnyRecord, profile: AnyRecord) {
+function deriveManagementStyle(lang: CopyLang, D: AnyRecord, E: AnyRecord, profile: AnyRecord) {
   const style = asObject(D.style);
   const prompt = asString(style.prompt_type_label || style.prompt_type);
   const rhythm = asString(style.rhythm_label || style.session_rhythm);
@@ -268,12 +353,22 @@ function deriveManagementStyle(D: AnyRecord, E: AnyRecord, profile: AnyRecord) {
     asString(style.style_sub) ||
     asString(E.comparison_insight) ||
     asString(E.evolution_insight) ||
-    deriveBuilderThesis(asString(profile.display_name || profile.username || "这位 Builder"), profile, D, E);
+    deriveBuilderThesis(
+      lang,
+      asString(profile.display_name || profile.username || inLang(lang, "这位 Builder", "this builder")),
+      profile,
+      D,
+      E
+    );
   const commandRatio = Math.round(asNumber(style.command_ratio) * 100);
   const traits = [
     asString(style.prompt_type_desc),
-    commandRatio >= 25 ? `${commandRatio}% 的工具调用通过命令行完成。` : "",
-    Object.keys(asObject(profile.agents_used)).length > 1 ? "不同 agent 会被放到不同任务里，而不是做同一份工作。" : "",
+    commandRatio >= 25
+      ? inLang(lang, `${commandRatio}% 的工具调用通过命令行完成。`, `${commandRatio}% of tool calls are completed through command-line flows.`)
+      : "",
+    Object.keys(asObject(profile.agents_used)).length > 1
+      ? inLang(lang, "不同 agent 会被放到不同任务里，而不是做同一份工作。", "Different agents are assigned to different kinds of work instead of duplicating the same job.")
+      : "",
     asString(asObject(E.time).peak_detail),
   ].filter(Boolean);
 
@@ -285,7 +380,7 @@ function deriveManagementStyle(D: AnyRecord, E: AnyRecord, profile: AnyRecord) {
   };
 }
 
-function deriveHowIbuild(D: AnyRecord, E: AnyRecord, profile: AnyRecord) {
+function deriveHowIbuild(lang: CopyLang, D: AnyRecord, E: AnyRecord, profile: AnyRecord) {
   const style = asObject(D.style);
   const dist = asObject(style.session_length_distribution);
   const short = asNumber(dist.short);
@@ -302,24 +397,26 @@ function deriveHowIbuild(D: AnyRecord, E: AnyRecord, profile: AnyRecord) {
     summary:
       asString(style.style_sub) ||
       asString(E.comparison_insight) ||
-      "会在高频推进和深度协作之间切换，并且清楚知道什么时候该让不同 agent 接手。",
-    promptStyle: asString(style.prompt_type_label || style.prompt_type) || "直接指令",
-    promptDetail: asString(style.prompt_type_desc) || "更偏向直接给出任务和约束，而不是写很长的需求文档。",
-    sessionRhythm: asString(style.rhythm_label || style.session_rhythm) || "持续推进",
-    sessionDetail: `${short} 个短会话 · ${medium} 个中会话 · ${long} 个长会话`,
-    toolPreference: asString(style.tool_pref_label || style.tool_preference) || "命令行优先",
-    toolDetail: `${commandRatio}% 的工具调用是命令行或 shell 驱动`,
+      inLang(lang, "会在高频推进和深度协作之间切换，并且清楚知道什么时候该让不同 agent 接手。", "They switch between high-frequency execution and deeper collaboration, and clearly know when a different agent should take over."),
+    promptStyle: asString(style.prompt_type_label || style.prompt_type) || inLang(lang, "直接指令", "Direct instruction"),
+    promptDetail: asString(style.prompt_type_desc) || inLang(lang, "更偏向直接给出任务和约束，而不是写很长的需求文档。", "They prefer giving direct tasks and constraints instead of writing long requirement docs."),
+    sessionRhythm: asString(style.rhythm_label || style.session_rhythm) || inLang(lang, "持续推进", "Steady iteration"),
+    sessionDetail: inLang(lang, `${short} 个短会话 · ${medium} 个中会话 · ${long} 个长会话`, `${short} short · ${medium} medium · ${long} long sessions`),
+    toolPreference: asString(style.tool_pref_label || style.tool_preference) || inLang(lang, "命令行优先", "Command-line first"),
+    toolDetail: inLang(lang, `${commandRatio}% 的工具调用是命令行或 shell 驱动`, `${commandRatio}% of tool calls are command-line or shell driven`),
     agentLoyalty:
-      Object.keys(asObject(profile.agents_used)).length > 1 ? "多 Agent 协作" : "单 Agent 深挖",
+      Object.keys(asObject(profile.agents_used)).length > 1
+        ? inLang(lang, "多 Agent 协作", "Multi-agent collaboration")
+        : inLang(lang, "单 Agent 深挖", "Single-agent depth"),
     agentDetail:
       asString(style.loyalty_desc) ||
       asString(E.comparison_insight) ||
-      "不同 agent 会根据任务类型承担不同角色。",
+      inLang(lang, "不同 agent 会根据任务类型承担不同角色。", "Different agents take on different roles depending on the task."),
     toolTotals,
   };
 }
 
-function deriveAgentRoles(E: AnyRecord): AgentRoleEntry[] {
+function deriveAgentRoles(lang: CopyLang, E: AnyRecord): AgentRoleEntry[] {
   const comparison = asObject(E.comparison);
   return Object.entries(comparison)
     .sort((a, b) => asNumber(asObject(b[1]).total_turns) - asNumber(asObject(a[1]).total_turns))
@@ -330,21 +427,21 @@ function deriveAgentRoles(E: AnyRecord): AgentRoleEntry[] {
       const sessions = asNumber(stats.sessions);
       const turns = asNumber(stats.total_turns);
       const tools = asNumber(stats.total_tool_calls);
-      let role = "稳定推进";
-      let summary = "承担了大量日常推进、反复迭代和持续交付的工作。";
+      let role = inLang(lang, "稳定推进", "Steady delivery");
+      let summary = inLang(lang, "承担了大量日常推进、反复迭代和持续交付的工作。", "Handles a large share of day-to-day progress, iteration, and repeated delivery.");
 
       if (avg >= 100) {
-        role = "深度协作";
-        summary = "更适合需要长上下文、重构和结构化推进的工作。";
+        role = inLang(lang, "深度协作", "Deep work");
+        summary = inLang(lang, "更适合需要长上下文、重构和结构化推进的工作。", "Better suited to long-context work, refactors, and structured problem solving.");
       } else if (sessions >= 40 && tools >= turns) {
-        role = "快速执行";
-        summary = "更偏向命令驱动、工具密集和快速推进。";
+        role = inLang(lang, "快速执行", "Fast execution");
+        summary = inLang(lang, "更偏向命令驱动、工具密集和快速推进。", "More command-driven, tool-heavy, and optimized for fast progress.");
       } else if (sessions >= 40) {
-        role = "迭代推进";
-        summary = "会频繁回来做跟进、清理和短回路交付。";
+        role = inLang(lang, "迭代推进", "Iteration loop");
+        summary = inLang(lang, "会频繁回来做跟进、清理和短回路交付。", "Keeps returning for follow-ups, cleanup, and short-loop delivery.");
       } else if (tools >= turns) {
-        role = "执行密集";
-        summary = "更偏向命令、编辑和明确执行，而不是长会话讨论。";
+        role = inLang(lang, "执行密集", "Execution-heavy");
+        summary = inLang(lang, "更偏向命令、编辑和明确执行，而不是长会话讨论。", "Leans more toward commands, edits, and concrete execution than long discussion threads.");
       }
 
       const topTool = asArray(stats.top_tools)[0];
@@ -354,13 +451,17 @@ function deriveAgentRoles(E: AnyRecord): AgentRoleEntry[] {
         name: agentLabel(agent, stats),
         role,
         summary,
-        evidence: `${formatNumber(sessions)} 个 sessions · ${formatNumber(turns)} turns · ${formatNumber(tools)} 次工具调用${topToolName ? ` · 常用 ${topToolName}` : ""}`,
+        evidence: inLang(
+          lang,
+          `${formatNumber(sessions)} 个 sessions · ${formatNumber(turns)} turns · ${formatNumber(tools)} 次工具调用${topToolName ? ` · 常用 ${topToolName}` : ""}`,
+          `${formatNumber(sessions)} sessions · ${formatNumber(turns)} turns · ${formatNumber(tools)} tool calls${topToolName ? ` · frequent ${topToolName}` : ""}`
+        ),
         color: agentColor(agent),
       };
     });
 }
 
-function deriveComparison(E: AnyRecord): ComparisonEntry[] {
+function deriveComparison(lang: CopyLang, E: AnyRecord): ComparisonEntry[] {
   const comparison = asObject(E.comparison);
   return Object.entries(comparison)
     .sort((a, b) => asNumber(asObject(b[1]).total_turns) - asNumber(asObject(a[1]).total_turns))
@@ -386,12 +487,16 @@ function deriveComparison(E: AnyRecord): ComparisonEntry[] {
         totalToolCalls: asNumber(stats.total_tool_calls),
         avgTurns: asNumber(stats.avg_turns),
         topTools,
-        distribution: `${asNumber(distribution.short)} 短 · ${asNumber(distribution.medium)} 中 · ${asNumber(distribution.long)} 长`,
+        distribution: inLang(
+          lang,
+          `${asNumber(distribution.short)} 短 · ${asNumber(distribution.medium)} 中 · ${asNumber(distribution.long)} 长`,
+          `${asNumber(distribution.short)} S · ${asNumber(distribution.medium)} M · ${asNumber(distribution.long)} L`
+        ),
       };
     });
 }
 
-function deriveSignatureMoves(D: AnyRecord, E: AnyRecord, profile: AnyRecord): SignatureMove[] {
+function deriveSignatureMoves(lang: CopyLang, D: AnyRecord, E: AnyRecord, profile: AnyRecord): SignatureMove[] {
   const style = asObject(D.style);
   const commandRatio = Math.round(asNumber(style.command_ratio) * 100);
   const projects = asArray<AnyRecord>(D.projects);
@@ -403,32 +508,52 @@ function deriveSignatureMoves(D: AnyRecord, E: AnyRecord, profile: AnyRecord): S
   const moves = [
     commandRatio >= 25
       ? {
-          title: "把循环留在终端里",
-          summary: `${commandRatio}% 的工具调用来自 Bash、shell command 或 stdin 驱动，推进方式很明显偏向终端。`,
+          title: inLang(lang, "把循环留在终端里", "Keep the loop in the terminal"),
+          summary: inLang(
+            lang,
+            `${commandRatio}% 的工具调用来自 Bash、shell command 或 stdin 驱动，推进方式很明显偏向终端。`,
+            `${commandRatio}% of tool calls come from Bash, shell commands, or stdin-driven flows, so the work clearly stays terminal-first.`
+          ),
         }
       : null,
     Object.keys(asObject(profile.agents_used)).length > 1
       ? {
-          title: "按角色分配 Agent",
-          summary: "不同 agent 会被放到不同任务类型里，而不是争抢同一份工作。",
+          title: inLang(lang, "按角色分配 Agent", "Assign agents by role"),
+          summary: inLang(
+            lang,
+            "不同 agent 会被放到不同任务类型里，而不是争抢同一份工作。",
+            "Different agents are placed into different task types instead of competing for the same job."
+          ),
         }
       : null,
     signature
       ? {
-          title: "会回到一条主线项目上",
-          summary: `${signature.name} 一直在把 turns、工具调用和注意力重新聚拢到一起。`,
+          title: inLang(lang, "会回到一条主线项目上", "Keep returning to one main line"),
+          summary: inLang(
+            lang,
+            `${signature.name} 一直在把 turns、工具调用和注意力重新聚拢到一起。`,
+            `${signature.name} keeps pulling turns, tool calls, and attention back into one central line of work.`
+          ),
         }
       : null,
     topTech.some((label) => /(Product|Research|Strategy|Content|AI)/i.test(label))
       ? {
-          title: "把思考直接做成产物",
-          summary: `${topTech.join("、")} 会一起出现在同一段 build history 里，而不是分散在不同工具中。`,
+          title: inLang(lang, "把思考直接做成产物", "Turn thinking directly into output"),
+          summary: inLang(
+            lang,
+            `${joinHuman(topTech, "zh")} 会一起出现在同一段 build history 里，而不是分散在不同工具中。`,
+            `${joinHuman(topTech, "en")} show up in the same build history instead of being scattered across disconnected tools.`
+          ),
         }
       : null,
     asString(asObject(E.time).peak_text)
       ? {
-          title: "有很明显的工作节奏",
-          summary: `${asString(asObject(E.time).peak_text)} 不是偶然出现，而是整个周期里反复出现的工作高峰。`,
+          title: inLang(lang, "有很明显的工作节奏", "Show a clear working rhythm"),
+          summary: inLang(
+            lang,
+            `${asString(asObject(E.time).peak_text)} 不是偶然出现，而是整个周期里反复出现的工作高峰。`,
+            `${asString(asObject(E.time).peak_text)} is not a one-off spike; it keeps returning as the recurring high-energy window.`
+          ),
         }
       : null,
   ].filter((move): move is SignatureMove => Boolean(move));
@@ -436,7 +561,7 @@ function deriveSignatureMoves(D: AnyRecord, E: AnyRecord, profile: AnyRecord): S
   return moves.slice(0, 4);
 }
 
-function deriveHighMoments(D: AnyRecord, E: AnyRecord): HighMoment[] {
+function deriveHighMoments(lang: CopyLang, D: AnyRecord, E: AnyRecord): HighMoment[] {
   const highlights = asObject(D.highlights);
   const evolution = asArray<AnyRecord>(E.evolution);
   const time = asObject(E.time);
@@ -447,43 +572,59 @@ function deriveHighMoments(D: AnyRecord, E: AnyRecord): HighMoment[] {
   return [
     peakWeek
       ? {
-          label: "峰值周",
+          label: inLang(lang, "峰值周", "Peak week"),
           value: `${formatCompact(asNumber(peakWeek.turns))} turns`,
-          detail: `${asString(peakWeek.week)} 这一周的 turns 最高，说明当时明显进入了强输出阶段。`,
+          detail: inLang(
+            lang,
+            `${asString(peakWeek.week)} 这一周的 turns 最高，说明当时明显进入了强输出阶段。`,
+            `${asString(peakWeek.week)} had the highest turn volume of the cycle, which points to a clear output surge.`
+          ),
         }
       : null,
     busiestDay
       ? {
-          label: "最忙的一天",
+          label: inLang(lang, "最忙的一天", "Busiest day"),
           value: asString(busiestDay.date),
-          detail: `${asNumber(busiestDay.sessions)} 个 sessions · ${formatNumber(asNumber(busiestDay.turns))} turns`,
+          detail: inLang(
+            lang,
+            `${asNumber(busiestDay.sessions)} 个 sessions · ${formatNumber(asNumber(busiestDay.turns))} turns`,
+            `${asNumber(busiestDay.sessions)} sessions · ${formatNumber(asNumber(busiestDay.turns))} turns`
+          ),
         }
       : null,
     asString(time.peak_text)
       ? {
-          label: "高峰时段",
+          label: inLang(lang, "高峰时段", "Peak window"),
           value: asString(time.peak_text),
-          detail: asString(time.peak_detail) || "一天里最稳定的高能时段会反复出现在这里。",
+          detail:
+            asString(time.peak_detail) ||
+            inLang(lang, "一天里最稳定的高能时段会反复出现在这里。", "The most reliable high-energy stretch of the day keeps appearing here."),
         }
       : biggestSession
         ? {
-            label: "最大会话",
+            label: inLang(lang, "最大会话", "Biggest session"),
             value: `${formatNumber(asNumber(biggestSession.turns))} turns`,
-            detail: asString(biggestSession.display) || "这是整个周期里最深的一次单线程推进。",
+            detail:
+              asString(biggestSession.display) ||
+              inLang(lang, "这是整个周期里最深的一次单线程推进。", "This was the deepest single-thread push in the whole cycle."),
           }
         : null,
   ].filter((moment): moment is HighMoment => Boolean(moment));
 }
 
-function deriveEras(E: AnyRecord): EraEntry[] {
+function deriveEras(lang: CopyLang, E: AnyRecord): EraEntry[] {
   const evolution = asArray<AnyRecord>(E.evolution);
   if (!evolution.length) {
     return [
       {
         title: "Active period",
-        period: "扫描周期内",
-        summary: "这段时间里持续有新的 build 轨迹，只是还不足以切出更细的阶段变化。",
-        cue: "持续推进",
+        period: inLang(lang, "扫描周期内", "During the scanned period"),
+        summary: inLang(
+          lang,
+          "这段时间里持续有新的 build 轨迹，只是还不足以切出更细的阶段变化。",
+          "The work stayed active throughout the scan window, but there is not enough signal yet to split it into clearer phases."
+        ),
+        cue: inLang(lang, "持续推进", "Steady progress"),
         bars: [45, 70, 55],
       },
     ];
@@ -495,7 +636,10 @@ function deriveEras(E: AnyRecord): EraEntry[] {
     groups.push(evolution.slice(i, i + size));
   }
 
-  const labels = ["早期探索", "开始变深", "进入输出期"];
+  const labels =
+    lang === "zh"
+      ? ["早期探索", "开始变深", "进入输出期"]
+      : ["Exploration", "Deepening", "Output phase"];
   const maxSessions = Math.max(...groups.map((group) => group.reduce((sum, item) => sum + asNumber(item.sessions), 0)), 1);
   const maxTurns = Math.max(...groups.map((group) => group.reduce((sum, item) => sum + asNumber(item.turns), 0)), 1);
   const maxAvg = Math.max(
@@ -514,16 +658,22 @@ function deriveEras(E: AnyRecord): EraEntry[] {
     const first = asString(group[0]?.week);
     const last = asString(group[group.length - 1]?.week);
 
-    const summaries = [
-      `${formatNumber(sessions)} 个 sessions 把问题铺得更开，重心还在摸索方向和试探路径。`,
-      `平均每个 session 大约 ${Math.round(avg)} turns，说明工作开始从试探转向更深的推进。`,
-      `${formatNumber(turns)} turns 集中在后段，说明输出和交付已经开始形成连续性。`,
-    ];
-    const cues = [
-      "广度更大 · 先摸方向",
-      "开始收束 · 深度上来",
-      "持续输出 · 结果更集中",
-    ];
+    const summaries =
+      lang === "zh"
+        ? [
+            `${formatNumber(sessions)} 个 sessions 把问题铺得更开，重心还在摸索方向和试探路径。`,
+            `平均每个 session 大约 ${Math.round(avg)} turns，说明工作开始从试探转向更深的推进。`,
+            `${formatNumber(turns)} turns 集中在后段，说明输出和交付已经开始形成连续性。`,
+          ]
+        : [
+            `${formatNumber(sessions)} sessions spread the work wider, with the focus still on probing directions and testing paths.`,
+            `At roughly ${Math.round(avg)} turns per session, the work starts shifting from trial runs into deeper execution.`,
+            `${formatNumber(turns)} turns land in the later phase, which means output and delivery have started compounding.`,
+          ];
+    const cues =
+      lang === "zh"
+        ? ["广度更大 · 先摸方向", "开始收束 · 深度上来", "持续输出 · 结果更集中"]
+        : ["Broader search · finding direction", "Narrowing down · depth rises", "Sustained output · results concentrate"];
 
     return {
       title: labels[index] || `阶段 ${index + 1}`,
@@ -540,6 +690,7 @@ function deriveEras(E: AnyRecord): EraEntry[] {
 }
 
 function deriveEvidence(
+  lang: CopyLang,
   D: AnyRecord,
   E: AnyRecord,
   profile: AnyRecord,
@@ -561,32 +712,40 @@ function deriveEvidence(
     coverage: {
       status: isUnfiltered ? "Unfiltered log receipts" : "Published BuilderBio data",
       summary: isUnfiltered
-        ? "核心统计和高光都能回到原始 session 日志。"
-        : "核心统计来自已发布的 BuilderBio 数据，页面按同一套 recap 结构重组呈现。",
+        ? inLang(lang, "核心统计和高光都能回到原始 session 日志。", "Core metrics and standout moments can be traced back to raw session logs.")
+        : inLang(lang, "核心统计来自已发布的 BuilderBio 数据，页面按同一套 recap 结构重组呈现。", "Core metrics come from the published BuilderBio payload and are reorganized into the recap layout."),
       note: isUnfiltered
-        ? "只要页面上展示的结论，就应该能在真实 sessions 里找到对应证据。"
-        : "虽然不是 Unfiltered 状态，但主要统计和项目轨迹仍然来自用户自己的扫描结果。",
+        ? inLang(lang, "只要页面上展示的结论，就应该能在真实 sessions 里找到对应证据。", "If a claim appears on the page, there should be a matching trace in the real sessions.")
+        : inLang(lang, "虽然不是 Unfiltered 状态，但主要统计和项目轨迹仍然来自用户自己的扫描结果。", "Even without Unfiltered status, the main metrics and project trajectory still come from the user's own scan results."),
     },
     receipts: [
       {
-        label: "高峰时段",
+        label: inLang(lang, "高峰时段", "Peak window"),
         value: asString(time.peak_text) || "未标注",
-        detail: asString(time.peak_detail) || "时间分布显示出稳定的工作节奏。",
+        detail:
+          asString(time.peak_detail) ||
+          inLang(lang, "时间分布显示出稳定的工作节奏。", "The time distribution shows a stable work rhythm."),
       },
       {
-        label: "第一工具",
+        label: inLang(lang, "第一工具", "Top tool"),
         value: topTool ? humanizeTag(topTool[0]) : "未标注",
-        detail: topTool ? `整个周期累计 ${formatNumber(asNumber(topTool[1]))} 次调用` : "工具分布数据不足。",
+        detail: topTool
+          ? inLang(lang, `整个周期累计 ${formatNumber(asNumber(topTool[1]))} 次调用`, `${formatNumber(asNumber(topTool[1]))} calls across the scanned period`)
+          : inLang(lang, "工具分布数据不足。", "Tool-distribution data is too sparse."),
       },
       {
-        label: "关键词簇",
+        label: inLang(lang, "关键词簇", "Keyword cluster"),
         value: topTech || "项目主线",
-        detail: topTech ? "这些反复出现的主题，基本就是这段时间的主线。" : "从项目和工作流里能看到明确主线。",
+        detail: topTech
+          ? inLang(lang, "这些反复出现的主题，基本就是这段时间的主线。", "These repeated themes are effectively the main line of work.")
+          : inLang(lang, "从项目和工作流里能看到明确主线。", "The projects and workflow still point to a clear throughline."),
       },
       {
-        label: "Agent 分工",
+        label: inLang(lang, "Agent 分工", "Agent split"),
         value: topAgents.length >= 2 ? `${topAgents[0].sessions} / ${topAgents[1].sessions}` : `${Object.keys(asObject(profile.agents_used)).length}`,
-        detail: topAgents.length >= 2 ? `${topAgents[0].name} 和 ${topAgents[1].name} 承担了不同工作类型。` : "当前主要由一个 agent 承担核心工作。",
+        detail: topAgents.length >= 2
+          ? inLang(lang, `${topAgents[0].name} 和 ${topAgents[1].name} 承担了不同工作类型。`, `${topAgents[0].name} and ${topAgents[1].name} are carrying different kinds of work.`)
+          : inLang(lang, "当前主要由一个 agent 承担核心工作。", "One agent is currently carrying most of the core work."),
       },
     ],
     tech: techEntries,
@@ -594,22 +753,32 @@ function deriveEvidence(
   };
 }
 
-function deriveWhenIbuild(E: AnyRecord) {
+function deriveWhenIbuild(lang: CopyLang, E: AnyRecord) {
   const time = asObject(E.time);
   const distribution = asObject(time.hour_distribution);
   const periods = asObject(time.period_data);
-  const periodLabels: Record<string, string> = {
-    deep_night: "深夜",
-    morning: "上午",
-    afternoon: "下午",
-    evening: "晚上",
-  };
+  const periodLabels: Record<string, string> =
+    lang === "zh"
+      ? {
+          deep_night: "深夜",
+          morning: "上午",
+          afternoon: "下午",
+          evening: "晚上",
+        }
+      : {
+          deep_night: "Late night",
+          morning: "Morning",
+          afternoon: "Afternoon",
+          evening: "Evening",
+        };
 
   return {
-    builderType: asString(time.peak_text) || asString(time.builder_type) || "活跃时间型 Builder",
+    builderType: asString(time.peak_text) || asString(time.builder_type) || inLang(lang, "活跃时间型 Builder", "Time-pattern builder"),
     peakHour:
-      asNumber(time.peak_hour) > 0 ? `${asNumber(time.peak_hour)}:00` : asString(time.peak_text) || "未标注",
-    peakWindow: asString(time.peak_window) || "高峰时段",
+      asNumber(time.peak_hour) > 0
+        ? `${asNumber(time.peak_hour)}:00`
+        : asString(time.peak_text) || inLang(lang, "未标注", "Unspecified"),
+    peakWindow: asString(time.peak_window) || inLang(lang, "高峰时段", "Peak window"),
     peakWindowSessions: Math.max(...Object.values(distribution).map((value) => asNumber(value)), 0),
     hourDistribution: Object.fromEntries(
       Array.from({ length: 24 }, (_, hour) => [hour, asNumber(distribution[String(hour)])])
@@ -697,6 +866,7 @@ export async function loadPublicBuilderBioRecap(username: string) {
   const E = asObject(normalized.E);
   const profile = asObject(D.profile);
   const displayName = asString(profile.display_name) || result.displayName || username;
+  const contentLang = detectContentLanguage(profile, D, E);
   const avatarUrl = asString(profile.avatar_url) || extractPortraitAvatarUrl(result.portrait) || "";
   const dateRange = formatDateRange(asObject(profile.date_range));
   const projects = asArray<AnyRecord>(D.projects).slice().sort((a, b) => projectScore(b) - projectScore(a));
@@ -705,8 +875,8 @@ export async function loadPublicBuilderBioRecap(username: string) {
     .sort((a, b) => asNumber(b[1]) - asNumber(a[1]))
     .slice(0, 4)
     .map(([label]) => humanizeTag(label));
-  const comparison = deriveComparison(E);
-  const agentRoles = deriveAgentRoles(E);
+  const comparison = deriveComparison(contentLang, E);
+  const agentRoles = deriveAgentRoles(contentLang, E);
   const totalSessions = asNumber(profile.total_sessions);
   const totalTurns = asNumber(profile.total_turns);
   const totalToolCalls = asNumber(profile.total_tool_calls);
@@ -716,21 +886,21 @@ export async function loadPublicBuilderBioRecap(username: string) {
     ? result.dataHash === (await computeVerificationHash(D))
     : false;
   const tasteSignals = deriveTasteSignals(profile, D, E);
-  const managementStyle = deriveManagementStyle(D, E, { ...profile, username, display_name: displayName });
-  const howIbuild = deriveHowIbuild(D, E, profile);
+  const managementStyle = deriveManagementStyle(contentLang, D, E, { ...profile, username, display_name: displayName });
+  const howIbuild = deriveHowIbuild(contentLang, D, E, profile);
   const activity = deriveActivity(D);
-  const evidence = deriveEvidence(D, E, profile, comparison, isUnfiltered);
-  const whenIbuild = deriveWhenIbuild(E);
-  const highMoments = deriveHighMoments(D, E);
-  const eras = deriveEras(E);
+  const evidence = deriveEvidence(contentLang, D, E, profile, comparison, isUnfiltered);
+  const whenIbuild = deriveWhenIbuild(contentLang, E);
+  const highMoments = deriveHighMoments(contentLang, D, E);
+  const eras = deriveEras(contentLang, E);
   const socialLinks = asArray<AnyRecord>(profile.social_links).map((item) => ({
     label: {
       x: "X",
       twitter: "X",
       linkedin: "LinkedIn",
       github: "GitHub",
-      website: "网站",
-    }[asString(item.platform).toLowerCase()] || humanizeTag(asString(item.platform)) || "链接",
+      website: "Website",
+    }[asString(item.platform).toLowerCase()] || humanizeTag(asString(item.platform)) || "Link",
     href: asString(item.url),
   })).filter((item) => item.href);
   const favoritePrompt = asString(asObject(D.highlights).favorite_prompt);
@@ -739,27 +909,32 @@ export async function loadPublicBuilderBioRecap(username: string) {
   const recap = {
     label: isUnfiltered ? "Built from real session logs" : "Built from published BuilderBio data",
     sectionLabel: `${displayName} annual recap`,
+    lang: contentLang,
     name: displayName,
     slug: `${username}.builderbio.dev`,
     avatarUrl,
     avatarLetter: (displayName || username || "?")[0]?.toUpperCase() || "?",
-    title: deriveProfileTitle(topTechLabels, comparison.length),
-    thesis: deriveBuilderThesis(displayName, { ...profile, display_name: displayName, username }, D, E),
-    recap: `${dateRange} 这段时间里，${displayName} 主要围绕 ${signatureBuild.name || "核心项目"}、${topTechLabels.slice(0, 2).join(" 和 ") || "主要技术主线"} 持续推进，并把 ${comparison.map((item) => item.name).slice(0, 2).join(" 和 ") || "AI agent"} 放进同一条工作流里。`,
+    title: deriveProfileTitle(contentLang, topTechLabels, comparison.length),
+    thesis: deriveBuilderThesis(contentLang, displayName, { ...profile, display_name: displayName, username }, D, E),
+    recap: inLang(
+      contentLang,
+      `${dateRange} 这段时间里，${displayName} 主要围绕 ${signatureBuild.name || "核心项目"}、${joinHuman(topTechLabels.slice(0, 2), "zh") || "主要技术主线"} 持续推进，并把 ${joinHuman(comparison.map((item) => item.name).slice(0, 2), "zh") || "AI agent"} 放进同一条工作流里。`,
+      `From ${dateRange}, ${displayName} kept pushing on ${signatureBuild.name || "a core project"}, ${joinHuman(topTechLabels.slice(0, 2), "en") || "the main technical throughline"}, and ${joinHuman(comparison.map((item) => item.name).slice(0, 2), "en") || "AI agents"} inside one shared workflow.`
+    ),
     social: socialLinks,
     trust: {
       unfiltered: isUnfiltered,
       generatedAt: result.updatedAt ? result.updatedAt.toISOString().split("T")[0] : "",
       note: isUnfiltered
-        ? "顶部统计和 Unfiltered 标记对应原始 session 日志校验结果。"
-        : "这页基于已发布的 BuilderBio 数据重组为 recap 结构，核心统计仍然来自用户自己的扫描结果。",
+        ? inLang(contentLang, "顶部统计和 Unfiltered 标记对应原始 session 日志校验结果。", "Top-line metrics and the Unfiltered badge are backed by raw session-log verification.")
+        : inLang(contentLang, "这页基于已发布的 BuilderBio 数据重组为 recap 结构，核心统计仍然来自用户自己的扫描结果。", "This page is rebuilt from published BuilderBio data, and the core metrics still come from the user's own scan results."),
     },
     dateRange,
     stats: [
-      { label: "会话", value: formatCompact(totalSessions) },
-      { label: "轮对话", value: formatCompact(totalTurns) },
-      { label: "工具调用", value: formatCompact(totalToolCalls) },
-      { label: "活跃天数", value: formatNumber(activeDays) },
+      { label: "Sessions", value: formatCompact(totalSessions) },
+      { label: "Turns", value: formatCompact(totalTurns) },
+      { label: "Tool Calls", value: formatCompact(totalToolCalls) },
+      { label: "Active Days", value: formatNumber(activeDays) },
     ],
     totalTokens,
     agents: agentRoles.slice(0, 4).map((item) => ({
@@ -785,23 +960,30 @@ export async function loadPublicBuilderBioRecap(username: string) {
       summary:
         asString(signatureBuild.description) ||
         asString(signatureBuild.summary) ||
-        "这条项目线里聚拢了最多的 turns、工具调用和持续注意力。",
+        inLang(contentLang, "这条项目线里聚拢了最多的 turns、工具调用和持续注意力。", "This project line pulled together the most turns, tool calls, and sustained attention."),
       why:
         topTechLabels.length > 0
-          ? `它把 ${topTechLabels.slice(0, 3).join("、")} 和持续推进的项目主线捏在了一起。`
-          : "它最能代表这段时间里反复投入的主线工作。",
+          ? inLang(
+              contentLang,
+              `它把 ${joinHuman(topTechLabels.slice(0, 3), "zh")} 和持续推进的项目主线捏在了一起。`,
+              `It pulls ${joinHuman(topTechLabels.slice(0, 3), "en")} into the same sustained project line.`
+            )
+          : inLang(contentLang, "它最能代表这段时间里反复投入的主线工作。", "It is the clearest representation of the work this builder kept returning to."),
       proof: [
         `${formatCompact(asNumber(signatureBuild.total_turns))} turns`,
         `${formatCompact(asNumber(signatureBuild.total_tool_calls))} tool calls`,
-        `${formatNumber(asNumber(signatureBuild.total_sessions))} 个 sessions`,
+        `${formatNumber(asNumber(signatureBuild.total_sessions))} sessions`,
       ].filter((item) => !item.startsWith("0")),
     },
-    signatureMoves: deriveSignatureMoves(D, E, profile),
+    signatureMoves: deriveSignatureMoves(contentLang, D, E, profile),
     highMoments,
     projects: projects.slice(0, 6).map((project) => ({
       name: asString(project.name) || "Untitled project",
-      status: normalizeProjectStatus(asString(project.status), asString(signatureBuild.name), asString(project.name)),
-      summary: asString(project.description) || asString(project.summary) || "这条项目线里有持续的构建痕迹。",
+      status: normalizeProjectStatus(contentLang, asString(project.status), asString(signatureBuild.name), asString(project.name)),
+      summary:
+        asString(project.description) ||
+        asString(project.summary) ||
+        inLang(contentLang, "这条项目线里有持续的构建痕迹。", "There is a sustained build trail inside this project line."),
       tags: asArray(project.tags).map((item) => humanizeTag(asString(item))).filter(Boolean).slice(0, 4),
       proof: `${formatCompact(asNumber(project.total_turns))} turns · ${formatCompact(asNumber(project.total_tool_calls))} tool calls`,
     })),
@@ -810,11 +992,22 @@ export async function loadPublicBuilderBioRecap(username: string) {
     eras,
     socialCurrency: {
       title: "Collaboration scale",
-      summary: `${formatCompact(totalTokens)} tokens、${formatNumber(totalSessions)} 个会话和 ${formatCompact(totalTurns)} turns，说明这已经是持续而深入的 AI 协作，而不是偶尔试用。`,
+      summary: inLang(
+        contentLang,
+        `${formatCompact(totalTokens)} tokens、${formatNumber(totalSessions)} 个会话和 ${formatCompact(totalTurns)} turns，说明这已经是持续而深入的 AI 协作，而不是偶尔试用。`,
+        `${formatCompact(totalTokens)} tokens, ${formatNumber(totalSessions)} sessions, and ${formatCompact(totalTurns)} turns point to sustained, deep AI collaboration rather than occasional experimentation.`
+      ),
       facts: [
-        { label: "最大会话", value: `${formatNumber(asNumber(asObject(high.biggest_session).turns))} turns` },
-        { label: "最忙的一天", value: `${asNumber(asObject(high.busiest_day).sessions)} 个 sessions · ${formatCompact(asNumber(asObject(high.busiest_day).turns))} turns` },
-        { label: "最长连续天数", value: `${formatNumber(asNumber(high.longest_streak))} 天` },
+        { label: inLang(contentLang, "最大会话", "Biggest session"), value: `${formatNumber(asNumber(asObject(high.biggest_session).turns))} turns` },
+        {
+          label: inLang(contentLang, "最忙的一天", "Busiest day"),
+          value: inLang(
+            contentLang,
+            `${asNumber(asObject(high.busiest_day).sessions)} 个 sessions · ${formatCompact(asNumber(asObject(high.busiest_day).turns))} turns`,
+            `${asNumber(asObject(high.busiest_day).sessions)} sessions · ${formatCompact(asNumber(asObject(high.busiest_day).turns))} turns`
+          ),
+        },
+        { label: inLang(contentLang, "最长连续天数", "Longest streak"), value: inLang(contentLang, `${formatNumber(asNumber(high.longest_streak))} 天`, `${formatNumber(asNumber(high.longest_streak))} days`) },
       ],
     },
     whenIbuild,
@@ -822,7 +1015,9 @@ export async function loadPublicBuilderBioRecap(username: string) {
     highlights: {
       biggestSession: {
         turns: asNumber(asObject(high.biggest_session).turns),
-        display: asString(asObject(high.biggest_session).display) || "这是整个周期里最深的一次单线程推进。",
+        display:
+          asString(asObject(high.biggest_session).display) ||
+          inLang(contentLang, "这是整个周期里最深的一次单线程推进。", "This was the deepest single-thread push in the whole cycle."),
       },
       busiestDay: {
         date: asString(asObject(high.busiest_day).date),

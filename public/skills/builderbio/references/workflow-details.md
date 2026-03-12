@@ -68,7 +68,7 @@ If a source looks relevant but unsupported, record it as a candidate. Do not sil
 Do not prompt for basic identity fields during discovery.
 
 - Display name: default to `whoami`
-- Language: infer from session text
+- Language: infer the dominant language from session text and store it in `D.profile.lang`
 - Time range: default to full history unless the user explicitly asks otherwise
 
 ## Phase 2: Parse
@@ -178,6 +178,9 @@ Rules:
 - Narrative sentences must point at the builder, not at the page
 - Never write meta-product copy such as "this page should..." or "people will remember..."
 - If a sentence can replace the builder's name with any other name and still read the same, it is probably too generic
+- Keep module titles and product UI chrome in English
+- Keep the bottom `Make your own` CTA in English for every user
+- Keep descriptive body copy in the builder's dominant session language from `D.profile.lang`
 
 The page should create both:
 

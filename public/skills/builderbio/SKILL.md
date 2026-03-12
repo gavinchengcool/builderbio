@@ -1,6 +1,6 @@
 ---
 name: builderbio
-version: 0.7.1
+version: 0.7.2
 description: |
   Use this skill when the user wants a BuilderBio, builder recap, builder profile, AI build history, annual-review style coding recap, or a shareable page about how they build with AI agents. It scans local coding-agent logs across Claude Code, Codex, Trae, Cursor-like fallbacks, OpenClaw, Antigravity, Kiro, Windsurf, and other discovered sources; produces a scan audit; derives evidence-backed builder narratives; and publishes a shareable BuilderBio.
 allowed-tools:
@@ -88,6 +88,17 @@ Avoid lines that talk about:
 - narrative instructions that are not about the user
 
 Write about the builder, their work, their agent usage, and their trajectory.
+
+### 3.1 Language contract is part of truth
+
+BuilderBio has two language layers:
+
+- **UI chrome stays English**: module titles, product badges, and the bottom `Make your own` CTA
+- **Narrative copy follows the builder**: the descriptive copy inside modules should use the builder's dominant language from their local agent conversations
+
+The local agent must infer the dominant language from the user's real session text and write it into `D.profile.lang` as a stable language code such as `en` or `zh`.
+
+Do not randomly switch languages across sections.
 
 ### 4. Build for aha, not for dashboard completeness
 
@@ -178,6 +189,7 @@ Carry through:
 - `scanner_version`
 - `scan_audit.summary`
 - `scan_audit.agent_sources_found`
+- `D.profile.lang`
 - per-session provenance fields such as `source_refs`, `parse_mode`, `partial_reasons`
 - stable top-line counts required for verification hashes
 
