@@ -2,7 +2,7 @@
 name: builderbio
 version: 0.6.1
 description: |
-  This skill should be used when the user wants to generate a shareable "BuilderBio" — a profile page showcasing everything they built with AI coding agents (Claude Code, Codex, Trae, Antigravity, Kiro, Windsurf, OpenClaw, Cursor-like fallbacks, and more). It scans all local agent sessions, emits an audit report showing scan completeness, clusters projects, and publishes a personal portfolio. This skill should be used when the user mentions "BuilderBio", "builder bio", "builder profile", "share my builds", "coding history", "AI portfolio", "showcase", "分享", "画像", "展示", "导出", or "profile".
+  This skill should be used when the user wants to generate a shareable "BuilderBio" — a profile page showcasing everything they built with AI coding agents (Claude Code, Codex, Cursor, Trae, Antigravity, Kiro, Windsurf, OpenClaw, and more). It scans all local agent sessions, emits an audit report showing scan completeness, clusters projects, and publishes a personal portfolio. This skill should be used when the user mentions "BuilderBio", "builder bio", "builder profile", "share my builds", "coding history", "AI portfolio", "showcase", "分享", "画像", "展示", "导出", or "profile".
 allowed-tools:
   - Read
   - Write
@@ -43,6 +43,7 @@ The only user input is **choosing a visual style theme** (Phase 3.5). Everything
 | Claude Code | `~/.claude/projects/**/*.jsonl` | JSONL |
 | Claude Code history | `~/.claude/history.jsonl` | JSONL (summaries) |
 | Codex (OpenAI) | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | JSONL |
+| Cursor | `~/Library/Application Support/Cursor/` + `~/.cursor/` | SQLite + JSONL (6 layers) |
 | Trae (ByteDance) | `~/Library/Application Support/Trae/User/**/state.vscdb` | SQLite |
 | Trae CN | `~/Library/Application Support/Trae CN/User/**/state.vscdb` | SQLite |
 | Antigravity (Gemini) | `~/.antigravity_tools/proxy_logs.db` | SQLite |
@@ -66,11 +67,18 @@ For parsing details, see [references/claude-code-format.md](references/claude-co
 
 **Kiro format**: Schema discovery on `.db` files under `~/.kiro/`. Also parses JSON exports from `/chat save`.
 
+**Cursor format**: Cursor stores data across 6 layers, each introduced at different times. The parser extracts sessions from all of them, deduplicating by composerId:
+- **Layer 2**: `~/Library/Application Support/Cursor/User/workspaceStorage/*/state.vscdb` → `ItemTable` key `composer.composerData` — session metadata (composerId, createdAt, unifiedMode, totalLinesAdded/Removed). `workspace.json` maps the hash directory to the actual cwd.
+- **Layer 3**: `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb` → `cursorDiskKV` table keys `composerData:<composerId>` — full conversations with message text, type (1=user, 2=assistant), and token counts from associated `bubbleId` entries.
+- **Layer 4**: Same global `state.vscdb` → `ItemTable` keys `aiCodeTracking.dailyStats.v1.5.<date>` — daily usage stats (tabSuggestedLines, tabAcceptedLines, composerSuggestedLines, composerAcceptedLines). Used for heatmap enrichment.
+- **Layer 5**: `~/.cursor/ai-tracking/ai-code-tracking.db` — tables `ai_code_hashes` (code acceptances with model, file extension, timestamp) and `scored_commits` (AI vs human line counts). Used for profile-level code tracking stats.
+- **Layer 6**: `~/.cursor/projects/*/agent-transcripts/<uuid>/<uuid>.jsonl` — recent agent sessions with full message content in `{role, message}` JSONL format. Subagent files under `subagents/` are excluded.
+
 **Windsurf format**: JSONL transcripts with event types: `user_input`, `planner_response`, `code_action`, `command_action`, `search_action`.
 
 **Generic import**: Place `.json` (pre-formatted session dicts) or `.jsonl` (role-based messages) in a directory and pass via `--import-dir`.
 
-**Weak discovery**: The parser also probes common config roots such as `~/.config`, `~/Library/Application Support`, and editor-specific folders like `~/.cursor`. If it finds chat-like logs without a dedicated parser, it will either parse them with a generic fallback or report them in `scan_audit` instead of silently dropping them.
+**Weak discovery**: The parser also probes common config roots such as `~/.config`, `~/Library/Application Support`, and editor-specific folders. If it finds chat-like logs without a dedicated parser, it will either parse them with a generic fallback or report them in `scan_audit` instead of silently dropping them.
 
 ## Workflow
 
@@ -91,6 +99,12 @@ find ~/.claude/projects -name '*.jsonl' 2>/dev/null | head -200
 
 # Codex — list all session files
 ls -lt ~/.codex/sessions/*/*/*/*.jsonl 2>/dev/null | head -100
+
+# Cursor — check all 6 data layers
+ls -d ~/Library/Application\ Support/Cursor/User/workspaceStorage/*/state.vscdb 2>/dev/null | wc -l
+ls -la ~/Library/Application\ Support/Cursor/User/globalStorage/state.vscdb 2>/dev/null
+ls -la ~/.cursor/ai-tracking/ai-code-tracking.db 2>/dev/null
+find ~/.cursor/projects -name '*.jsonl' -path '*/agent-transcripts/*' 2>/dev/null | head -50
 
 # Trae
 find ~/Library/Application\ Support/Trae/User -name state.vscdb 2>/dev/null | head -50
@@ -121,6 +135,8 @@ Run the parser on ALL session files to extract session summaries:
 python <skill-path>/scripts/parse_sessions.py \
   --claude-dir ~/.claude \
   --codex-dir ~/.codex \
+  --cursor-dir "~/Library/Application Support/Cursor" \
+  --cursor-config-dir ~/.cursor \
   --trae-dir "~/Library/Application Support/Trae" \
   --antigravity-dir ~/.antigravity_tools \
   --kiro-dir ~/.kiro \

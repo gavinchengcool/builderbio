@@ -117,6 +117,8 @@ def main():
     kiro_dir = os.path.expanduser(args.get("kiro_dir", "~/.kiro"))
     windsurf_dir = os.path.expanduser(args.get("windsurf_dir", "~/.windsurf"))
     openclaw_dir = os.path.expanduser(args.get("openclaw_dir", "~/.openclaw"))
+    cursor_dir = os.path.expanduser(args.get("cursor_dir", "~/Library/Application Support/Cursor"))
+    cursor_config_dir = os.path.expanduser(args.get("cursor_config_dir", "~/.cursor"))
     import_dir = args.get("import_dir", "")
     if import_dir:
         import_dir = os.path.expanduser(import_dir)
@@ -133,6 +135,8 @@ def main():
         kiro_dir,
         windsurf_dir,
         openclaw_dir,
+        cursor_dir,
+        cursor_config_dir,
         import_dir,
         history,
         audit,
@@ -152,6 +156,16 @@ def main():
     profile["agent_sources_found"] = audit["agent_sources_found"]
     profile["scan_warnings"] = audit["warnings"][:5]
     heatmap = compute_heatmap(sessions, days)
+
+    # Enrich heatmap with Cursor dailyStats (Layer 4)
+    cursor_enrichment = audit.pop("_cursor_enrichment", None) or {}
+    cursor_daily = cursor_enrichment.get("daily_stats", {})
+    if cursor_daily:
+        for date_str, stats in cursor_daily.items():
+            activity = stats.get("tab_accepted", 0) + stats.get("composer_accepted", 0)
+            if activity > 0:
+                heatmap[date_str] = heatmap.get(date_str, 0) + activity
+
     style = compute_style(sessions)
     highlights = compute_highlights(sessions)
 
@@ -164,9 +178,25 @@ def main():
     evolution = compute_evolution(sessions)
     comparison = compute_agent_comparison(sessions)
 
-    # Strip private _start_hour before output
+    # Strip private fields before output
     for s in sessions:
         s.pop("_start_hour", None)
+        s.pop("_lines_added", None)
+        s.pop("_lines_removed", None)
+        s.pop("_cursor_mode", None)
+
+    # Include Cursor enrichment data for downstream profile analysis
+    cursor_enrichment_output = {}
+    if cursor_enrichment:
+        code_tracking = cursor_enrichment.get("code_tracking", {})
+        if code_tracking:
+            cursor_enrichment_output["code_tracking"] = code_tracking
+        if cursor_daily:
+            cursor_enrichment_output["daily_stats_days"] = len(cursor_daily)
+            total_tab = sum(v.get("tab_accepted", 0) for v in cursor_daily.values())
+            total_composer = sum(v.get("composer_accepted", 0) for v in cursor_daily.values())
+            cursor_enrichment_output["total_tab_accepted_lines"] = total_tab
+            cursor_enrichment_output["total_composer_accepted_lines"] = total_composer
 
     result = {
         "scanner_version": SCANNER_VERSION,
@@ -181,6 +211,7 @@ def main():
         "evolution": evolution,
         "agent_comparison": comparison,
         "scan_audit": audit,
+        "cursor_enrichment": cursor_enrichment_output or None,
         "projects": [],  # Agent fills this via clustering
     }
 
@@ -218,6 +249,8 @@ def init_scan_audit(args, days, cutoff):
             "kiro": args.get("kiro_dir", "~/.kiro"),
             "windsurf": args.get("windsurf_dir", "~/.windsurf"),
             "openclaw": args.get("openclaw_dir", "~/.openclaw"),
+            "cursor": args.get("cursor_dir", "~/Library/Application Support/Cursor"),
+            "cursor_config": args.get("cursor_config_dir", "~/.cursor"),
             "import": args.get("import_dir", ""),
         },
         "agent_sources_found": {},
@@ -337,6 +370,8 @@ def discover_sources(
     kiro_dir,
     windsurf_dir,
     openclaw_dir,
+    cursor_dir,
+    cursor_config_dir,
     import_dir,
     history,
     audit,
@@ -353,6 +388,8 @@ def discover_sources(
             "kiro_dir": kiro_dir,
             "windsurf_dir": windsurf_dir,
             "openclaw_dir": openclaw_dir,
+            "cursor_dir": cursor_dir,
+            "cursor_config_dir": cursor_config_dir,
             "import_dir": import_dir,
             "history_entries": len(history),
         },
@@ -447,6 +484,55 @@ def discover_sources(
                 make_source("openclaw", "openclaw-file", fp, "strong", "openclaw-jsonl", "openclaw_dir"),
                 "strong_sources",
             )
+
+    # Cursor: workspace state.vscdb files (Layer 2 — composer sessions)
+    cursor_ws_dir = os.path.join(cursor_dir, "User", "workspaceStorage")
+    if os.path.isdir(cursor_ws_dir):
+        for entry in os.listdir(cursor_ws_dir):
+            db_path = os.path.join(cursor_ws_dir, entry, "state.vscdb")
+            if os.path.isfile(db_path):
+                add_source(
+                    discovery,
+                    audit,
+                    seen_paths,
+                    make_source("cursor", "cursor-workspace-db", db_path, "strong", "cursor-workspace-vscdb", "cursor_dir"),
+                    "strong_sources",
+                )
+
+    # Cursor: global state.vscdb (Layers 3+4 — cursorDiskKV conversations + dailyStats)
+    cursor_global_db = os.path.join(cursor_dir, "User", "globalStorage", "state.vscdb")
+    if os.path.isfile(cursor_global_db):
+        add_source(
+            discovery,
+            audit,
+            seen_paths,
+            make_source("cursor", "cursor-global-db", cursor_global_db, "strong", "cursor-global-vscdb", "cursor_dir"),
+            "strong_sources",
+        )
+
+    # Cursor: ai-code-tracking.db (Layer 5 — code acceptance + commits)
+    cursor_tracking_db = os.path.join(cursor_config_dir, "ai-tracking", "ai-code-tracking.db")
+    if os.path.isfile(cursor_tracking_db):
+        add_source(
+            discovery,
+            audit,
+            seen_paths,
+            make_source("cursor", "cursor-tracking-db", cursor_tracking_db, "strong", "cursor-ai-tracking-db", "cursor_config_dir"),
+            "strong_sources",
+        )
+
+    # Cursor: agent-transcripts JSONL (Layer 6)
+    cursor_projects_dir = os.path.join(cursor_config_dir, "projects")
+    if os.path.isdir(cursor_projects_dir):
+        for fp in glob.glob(os.path.join(cursor_projects_dir, "*", "agent-transcripts", "*", "*.jsonl")):
+            if "/subagents/" not in fp:
+                add_source(
+                    discovery,
+                    audit,
+                    seen_paths,
+                    make_source("cursor", "cursor-transcript", fp, "strong", "cursor-agent-transcript", "cursor_config_dir"),
+                    "strong_sources",
+                )
 
     if import_dir and os.path.isdir(import_dir):
         for fp in glob.glob(os.path.join(import_dir, "*.json")) + glob.glob(
@@ -736,7 +822,7 @@ def probe_sqlite_source(path, agent_hint):
             }
 
         if "ItemTable" in tables:
-            cur.execute("SELECT key FROM ItemTable LIMIT 50")
+            cur.execute("SELECT key FROM ItemTable LIMIT 100")
             keys = [row["key"] for row in cur.fetchall() if row["key"]]
             conn.close()
             keys_text = " ".join(keys).lower()
@@ -746,6 +832,27 @@ def probe_sqlite_source(path, agent_hint):
                     "agent": "trae",
                     "parser": "trae-db",
                     "probe_hint": "icube-itemtable",
+                    "chat_like": True,
+                    "reason": "",
+                }
+            has_cursor_keys = (
+                "aicodetracking" in keys_text
+                or "aiservice.generations" in keys_text
+                or "composer.composerdata" in keys_text
+            )
+            has_cursor_kv = "cursorDiskKV" in tables
+            if has_cursor_keys or has_cursor_kv:
+                if has_cursor_kv:
+                    parser = "cursor-global-db"
+                    hint = "cursor-global-vscdb"
+                else:
+                    parser = "cursor-workspace-db"
+                    hint = "cursor-workspace-vscdb"
+                return {
+                    "recognized": True,
+                    "agent": "cursor",
+                    "parser": parser,
+                    "probe_hint": hint,
                     "chat_like": True,
                     "reason": "",
                 }
@@ -868,6 +975,20 @@ def parse_discovered_sources(discovery, cutoff, history, audit):
         )
         register_sessions(sessions, openclaw_sessions, seen_session_keys, audit)
         mark_sources_parsed(audit, "openclaw", discovery["strong_sources"], "openclaw-file")
+
+    cursor_dir = discovery["roots"].get("cursor_dir", "")
+    cursor_config_dir = discovery["roots"].get("cursor_config_dir", "")
+    if os.path.isdir(cursor_dir) or os.path.isdir(cursor_config_dir):
+        cursor_sessions, cursor_enrichment = parse_cursor_sessions(
+            cursor_dir, cursor_config_dir, cutoff
+        )
+        register_sessions(sessions, cursor_sessions, seen_session_keys, audit)
+        mark_sources_parsed(audit, "cursor", discovery["strong_sources"], "cursor-workspace-db")
+        mark_sources_parsed(audit, "cursor", discovery["strong_sources"], "cursor-global-db")
+        mark_sources_parsed(audit, "cursor", discovery["strong_sources"], "cursor-tracking-db")
+        mark_sources_parsed(audit, "cursor", discovery["strong_sources"], "cursor-transcript")
+        # Store enrichment data in audit for downstream use
+        audit["_cursor_enrichment"] = cursor_enrichment
 
     if discovery["roots"]["import_dir"] and os.path.isdir(discovery["roots"]["import_dir"]):
         import_sessions = parse_import_sessions(discovery["roots"]["import_dir"], cutoff)
@@ -1755,6 +1876,614 @@ def _parse_trae_db(db_path, cutoff, seen_ids):
     except (sqlite3.Error, OSError):
         pass
     return results
+
+
+# ---------------------------------------------------------------------------
+# Cursor parser — multi-layer extraction
+# ---------------------------------------------------------------------------
+
+def parse_cursor_sessions(cursor_dir, cursor_config_dir, cutoff):
+    """Parse Cursor sessions from all 6 data storage layers.
+
+    Layer 2: workspace state.vscdb → composer.composerData (session metadata + cwd)
+    Layer 3: global state.vscdb → cursorDiskKV composerData:* (full conversations)
+    Layer 4: global state.vscdb → aiCodeTracking.dailyStats (daily activity stats)
+    Layer 5: ai-code-tracking.db → code acceptances + scored commits
+    Layer 6: agent-transcripts JSONL (recent agent sessions)
+
+    Returns (sessions, enrichment) where enrichment contains daily_stats and
+    code_tracking data for profile-level augmentation.
+    """
+    sessions = []
+    seen_ids = set()
+    enrichment = {"daily_stats": {}, "code_tracking": {}}
+
+    # Layer 6 first: agent-transcripts have the richest recent data (full messages)
+    transcripts_sessions = _parse_cursor_agent_transcripts(
+        cursor_config_dir, cutoff, seen_ids
+    )
+    sessions.extend(transcripts_sessions)
+
+    # Layer 3: cursorDiskKV composerData entries (full early-period conversations)
+    global_db = os.path.join(cursor_dir, "User", "globalStorage", "state.vscdb")
+    if os.path.isfile(global_db):
+        kv_sessions = _parse_cursor_kv_conversations(global_db, cutoff, seen_ids)
+        sessions.extend(kv_sessions)
+
+    # Layer 2 last: workspace composers are metadata-only, fill gaps
+    ws_dir = os.path.join(cursor_dir, "User", "workspaceStorage")
+    if os.path.isdir(ws_dir):
+        ws_sessions = _parse_cursor_workspace_composers(ws_dir, cutoff, seen_ids)
+        sessions.extend(ws_sessions)
+
+    # Layer 4: dailyStats for enrichment
+    if os.path.isfile(global_db):
+        enrichment["daily_stats"] = _parse_cursor_daily_stats(global_db)
+
+    # Layer 5: ai-code-tracking.db
+    tracking_db = os.path.join(cursor_config_dir, "ai-tracking", "ai-code-tracking.db")
+    if os.path.isfile(tracking_db):
+        enrichment["code_tracking"] = _parse_cursor_ai_tracking(tracking_db)
+
+    return sessions, enrichment
+
+
+def _parse_cursor_kv_conversations(global_db_path, cutoff, seen_ids):
+    """Layer 3: Extract sessions from cursorDiskKV composerData entries.
+
+    Each composerData:<composerId> entry contains a full conversation with
+    messages (type 1=user, 2=assistant), timestamps, and metadata.
+    """
+    results = []
+    try:
+        conn = sqlite3.connect(f"file:{global_db_path}?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT key, value FROM cursorDiskKV WHERE key LIKE 'composerData:%'"
+        )
+        for row in cur.fetchall():
+            try:
+                val = row["value"]
+                if isinstance(val, (bytes, bytearray)):
+                    val = val.decode("utf-8", errors="replace")
+                data = json.loads(val)
+            except (json.JSONDecodeError, TypeError, UnicodeDecodeError):
+                continue
+
+            composer_id = data.get("composerId", "")
+            if not composer_id or composer_id in seen_ids:
+                continue
+
+            conversation = data.get("conversation", [])
+            if not conversation:
+                continue
+
+            created_at = data.get("createdAt")
+            start_ts = parse_ts(created_at)
+            if start_ts and start_ts < cutoff:
+                continue
+
+            user_turns = 0
+            assistant_turns = 0
+            first_user_msg = ""
+            end_ts = start_ts
+            tool_calls = 0
+            tools = Counter()
+            total_input_tokens = 0
+            total_output_tokens = 0
+
+            for msg in conversation:
+                if not isinstance(msg, dict):
+                    continue
+                msg_type = msg.get("type")
+                if msg_type == 1:
+                    user_turns += 1
+                    if not first_user_msg:
+                        text = msg.get("text", "")
+                        if isinstance(text, str):
+                            first_user_msg = text[:200]
+                elif msg_type == 2:
+                    assistant_turns += 1
+
+            if user_turns == 0 and assistant_turns == 0:
+                continue
+
+            # Extract token counts from bubble data if referenced
+            bubble_ids_in_conv = [
+                m.get("bubbleId") for m in conversation
+                if isinstance(m, dict) and m.get("bubbleId")
+            ]
+            if bubble_ids_in_conv:
+                try:
+                    placeholders = ",".join("?" for _ in bubble_ids_in_conv[:50])
+                    bubble_keys = [
+                        f"bubbleId:{composer_id}:{bid}" for bid in bubble_ids_in_conv[:50]
+                    ]
+                    cur2 = conn.cursor()
+                    cur2.execute(
+                        f"SELECT value FROM cursorDiskKV WHERE key IN ({placeholders})",
+                        bubble_keys,
+                    )
+                    for brow in cur2.fetchall():
+                        try:
+                            bval = brow["value"]
+                            if isinstance(bval, (bytes, bytearray)):
+                                bval = bval.decode("utf-8", errors="replace")
+                            bdata = json.loads(bval)
+                            tc = bdata.get("tokenCount", {})
+                            total_input_tokens += tc.get("inputTokens", 0) or 0
+                            total_output_tokens += tc.get("outputTokens", 0) or 0
+                            ti = bdata.get("timingInfo", {})
+                            bubble_ts = parse_ts(ti.get("clientRpcSendTime"))
+                            if bubble_ts:
+                                if end_ts is None or bubble_ts > end_ts:
+                                    end_ts = bubble_ts
+                                if start_ts is None or bubble_ts < start_ts:
+                                    start_ts = bubble_ts
+                            if bdata.get("toolResults"):
+                                for tr in bdata["toolResults"]:
+                                    if isinstance(tr, dict):
+                                        tool_calls += 1
+                                        tool_name = tr.get("name", tr.get("toolName", "unknown"))
+                                        tools[tool_name] += 1
+                        except (json.JSONDecodeError, TypeError):
+                            pass
+                except sqlite3.Error:
+                    pass
+
+            seen_ids.add(composer_id)
+            total_tokens = total_input_tokens + total_output_tokens
+
+            duration = 0
+            date_str = ""
+            if start_ts:
+                date_str = start_ts.strftime("%Y-%m-%d")
+                if end_ts and end_ts > start_ts:
+                    duration = max(0, int((end_ts - start_ts).total_seconds()))
+
+            partial_reasons = []
+            if total_tokens == 0:
+                partial_reasons.append("tokens_incomplete")
+
+            results.append({
+                "id": composer_id,
+                "agent": "cursor",
+                "model": "",
+                "version": "",
+                "date": date_str,
+                "display": first_user_msg[:100],
+                "first_msg": first_user_msg[:200],
+                "turns": user_turns + assistant_turns,
+                "user_turns": user_turns,
+                "assistant_turns": assistant_turns,
+                "tool_calls": tool_calls,
+                "tools": dict(tools),
+                "tokens": total_tokens,
+                "duration_seconds": duration,
+                "cwd": "",
+                "git_branch": "",
+                "_start_hour": start_ts.hour if start_ts else None,
+                "source_refs": [shorten_path(global_db_path)],
+                "parser": "cursor-kv-conversation",
+                "parse_mode": "partial" if partial_reasons else "complete",
+                "partial_reasons": partial_reasons,
+                "discovery_strength": "strong",
+                "probe_hint": "cursor-composerData-kv",
+            })
+
+        conn.close()
+    except (sqlite3.Error, OSError):
+        pass
+    return results
+
+
+def _parse_cursor_workspace_composers(ws_dir, cutoff, seen_ids):
+    """Layer 2: Extract composer session metadata from workspace state.vscdb files.
+
+    Each workspace has composer.composerData with allComposers containing session
+    headers (composerId, createdAt, unifiedMode, totalLinesAdded/Removed).
+    workspace.json maps the hash directory to the actual project folder path.
+    """
+    results = []
+    try:
+        entries = os.listdir(ws_dir)
+    except OSError:
+        return results
+
+    for entry in entries:
+        ws_path = os.path.join(ws_dir, entry)
+        db_path = os.path.join(ws_path, "state.vscdb")
+        if not os.path.isfile(db_path):
+            continue
+
+        cwd = ""
+        ws_json = os.path.join(ws_path, "workspace.json")
+        if os.path.isfile(ws_json):
+            try:
+                with open(ws_json, "r", encoding="utf-8") as f:
+                    ws_data = json.load(f)
+                folder = ws_data.get("folder", "")
+                if folder.startswith("file://"):
+                    cwd = folder[7:]
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        try:
+            conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+
+            cur.execute(
+                "SELECT value FROM ItemTable WHERE key='composer.composerData'"
+            )
+            row = cur.fetchone()
+            if not row:
+                conn.close()
+                continue
+
+            val = row["value"]
+            if isinstance(val, (bytes, bytearray)):
+                val = val.decode("utf-8", errors="replace")
+            data = json.loads(val)
+            composers = data.get("allComposers", [])
+
+            for comp in composers:
+                if not isinstance(comp, dict):
+                    continue
+                composer_id = comp.get("composerId", "")
+                if not composer_id or composer_id in seen_ids:
+                    continue
+
+                created_at = comp.get("createdAt")
+                start_ts = parse_ts(created_at)
+                if start_ts and start_ts < cutoff:
+                    continue
+
+                mode = comp.get("unifiedMode", "")
+                lines_added = comp.get("totalLinesAdded", 0) or 0
+                lines_removed = comp.get("totalLinesRemoved", 0) or 0
+
+                seen_ids.add(composer_id)
+                date_str = start_ts.strftime("%Y-%m-%d") if start_ts else ""
+
+                results.append({
+                    "id": composer_id,
+                    "agent": "cursor",
+                    "model": "",
+                    "version": "",
+                    "date": date_str,
+                    "display": f"Cursor {mode}" if mode else "Cursor session",
+                    "first_msg": "",
+                    "turns": 1,
+                    "user_turns": 1,
+                    "assistant_turns": 0,
+                    "tool_calls": 0,
+                    "tools": {},
+                    "tokens": 0,
+                    "duration_seconds": 0,
+                    "cwd": cwd,
+                    "git_branch": "",
+                    "_start_hour": start_ts.hour if start_ts else None,
+                    "_lines_added": lines_added,
+                    "_lines_removed": lines_removed,
+                    "_cursor_mode": mode,
+                    "source_refs": [shorten_path(db_path)],
+                    "parser": "cursor-workspace-composer",
+                    "parse_mode": "partial",
+                    "partial_reasons": ["metadata_only", "no_message_content"],
+                    "discovery_strength": "strong",
+                    "probe_hint": "cursor-workspace-vscdb",
+                })
+
+            conn.close()
+        except (sqlite3.Error, OSError, json.JSONDecodeError):
+            pass
+
+    return results
+
+
+def _parse_cursor_daily_stats(global_db_path):
+    """Layer 4: Extract dailyStats from global state.vscdb ItemTable.
+
+    Returns dict of {date_str: {tabAcceptedLines, composerAcceptedLines, ...}}.
+    """
+    stats = {}
+    try:
+        conn = sqlite3.connect(f"file:{global_db_path}?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT key, value FROM ItemTable WHERE key LIKE 'aiCodeTracking.dailyStats%'"
+        )
+        for row in cur.fetchall():
+            try:
+                val = row["value"]
+                if isinstance(val, (bytes, bytearray)):
+                    val = val.decode("utf-8", errors="replace")
+                data = json.loads(val)
+                date_str = data.get("date", "")
+                if date_str:
+                    stats[date_str] = {
+                        "tab_suggested": data.get("tabSuggestedLines", 0) or 0,
+                        "tab_accepted": data.get("tabAcceptedLines", 0) or 0,
+                        "composer_suggested": data.get("composerSuggestedLines", 0) or 0,
+                        "composer_accepted": data.get("composerAcceptedLines", 0) or 0,
+                    }
+            except (json.JSONDecodeError, TypeError):
+                pass
+        conn.close()
+    except (sqlite3.Error, OSError):
+        pass
+    return stats
+
+
+def _parse_cursor_ai_tracking(tracking_db_path):
+    """Layer 5: Extract code acceptance and commit stats from ai-code-tracking.db."""
+    result = {
+        "code_acceptances": 0,
+        "scored_commits": 0,
+        "models_used": {},
+        "file_extensions": {},
+        "date_range": {"start": "", "end": ""},
+        "ai_lines_added": 0,
+        "human_lines_added": 0,
+    }
+    try:
+        conn = sqlite3.connect(f"file:{tracking_db_path}?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        cur.execute("SELECT count(*) as c FROM ai_code_hashes")
+        result["code_acceptances"] = cur.fetchone()["c"]
+
+        cur.execute("SELECT min(createdAt) as mn, max(createdAt) as mx FROM ai_code_hashes")
+        row = cur.fetchone()
+        if row["mn"]:
+            mn_dt = parse_ts(row["mn"])
+            mx_dt = parse_ts(row["mx"])
+            if mn_dt:
+                result["date_range"]["start"] = mn_dt.strftime("%Y-%m-%d")
+            if mx_dt:
+                result["date_range"]["end"] = mx_dt.strftime("%Y-%m-%d")
+
+        cur.execute(
+            "SELECT model, count(*) as c FROM ai_code_hashes "
+            "WHERE model IS NOT NULL AND model != '' GROUP BY model ORDER BY c DESC LIMIT 10"
+        )
+        for row in cur.fetchall():
+            result["models_used"][row["model"]] = row["c"]
+
+        cur.execute(
+            "SELECT fileExtension, count(*) as c FROM ai_code_hashes "
+            "WHERE fileExtension IS NOT NULL AND fileExtension != '' "
+            "GROUP BY fileExtension ORDER BY c DESC LIMIT 15"
+        )
+        for row in cur.fetchall():
+            result["file_extensions"][row["fileExtension"]] = row["c"]
+
+        cur.execute("SELECT count(*) as c FROM scored_commits")
+        result["scored_commits"] = cur.fetchone()["c"]
+
+        cur.execute(
+            "SELECT sum(composerLinesAdded) as ca, sum(tabLinesAdded) as ta, "
+            "sum(humanLinesAdded) as ha FROM scored_commits "
+            "WHERE composerLinesAdded IS NOT NULL"
+        )
+        row = cur.fetchone()
+        if row:
+            result["ai_lines_added"] = (row["ca"] or 0) + (row["ta"] or 0)
+            result["human_lines_added"] = row["ha"] or 0
+
+        conn.close()
+    except (sqlite3.Error, OSError):
+        pass
+    return result
+
+
+def _parse_cursor_agent_transcripts(config_dir, cutoff, seen_ids):
+    """Layer 6: Parse agent-transcript JSONL files from ~/.cursor/projects/."""
+    results = []
+    projects_dir = os.path.join(config_dir, "projects")
+    if not os.path.isdir(projects_dir):
+        return results
+
+    for project_entry in os.listdir(projects_dir):
+        transcripts_dir = os.path.join(
+            projects_dir, project_entry, "agent-transcripts"
+        )
+        if not os.path.isdir(transcripts_dir):
+            continue
+
+        cwd = _cursor_project_entry_to_cwd(project_entry)
+
+        for session_dir in os.listdir(transcripts_dir):
+            session_path = os.path.join(transcripts_dir, session_dir)
+            if not os.path.isdir(session_path):
+                continue
+            jsonl_file = os.path.join(session_path, f"{session_dir}.jsonl")
+            if not os.path.isfile(jsonl_file):
+                continue
+            if session_dir in seen_ids:
+                continue
+
+            session = _parse_cursor_transcript_file(jsonl_file, session_dir, cwd, cutoff)
+            if session:
+                seen_ids.add(session_dir)
+                results.append(session)
+
+    return results
+
+
+def _cursor_project_entry_to_cwd(project_entry):
+    """Convert Cursor project directory name back to a path hint.
+
+    Cursor encodes paths as 'Users-seth-Desktop-GIL-study-center'. The heuristic
+    reconstructs the path by greedily matching against the actual filesystem from
+    $HOME downward, preserving hyphens within directory names that exist on disk.
+    Falls back to single-segment splitting for deleted/renamed directories.
+    """
+    home = str(Path.home())
+    username = os.path.basename(home)
+
+    prefix = f"Users-{username}-"
+    if not project_entry.startswith(prefix):
+        return project_entry
+
+    remainder = project_entry[len(prefix):]
+    parts = remainder.split("-")
+
+    # Reconstruct path greedily: start from home, and try to match existing directories
+    candidate = home
+    i = 0
+    while i < len(parts):
+        # Try progressively longer hyphenated names (longest first)
+        matched = False
+        for end in range(len(parts), i, -1):
+            segment = "-".join(parts[i:end])
+            test_path = os.path.join(candidate, segment)
+            if os.path.isdir(test_path):
+                candidate = test_path
+                i = end
+                matched = True
+                break
+        if not matched:
+            # Fall back to single part
+            candidate = os.path.join(candidate, parts[i])
+            i += 1
+
+    return candidate
+
+
+def _parse_cursor_transcript_file(filepath, session_id, cwd, cutoff):
+    """Parse a single Cursor agent-transcript JSONL file."""
+    user_turns = 0
+    assistant_turns = 0
+    first_user_msg = ""
+    tool_calls = 0
+    tools = Counter()
+    start_ts = None
+    end_ts = None
+
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+
+                role = entry.get("role", "")
+                ts = parse_ts(entry.get("timestamp"))
+                if ts:
+                    if start_ts is None or ts < start_ts:
+                        start_ts = ts
+                    if end_ts is None or ts > end_ts:
+                        end_ts = ts
+
+                if role == "user":
+                    user_turns += 1
+                    if not first_user_msg:
+                        msg = entry.get("message", "")
+                        if isinstance(msg, dict):
+                            content = msg.get("content", "")
+                            if isinstance(content, list):
+                                for block in content:
+                                    if isinstance(block, dict) and block.get("type") == "text":
+                                        text = block.get("text", "")
+                                        cleaned = _strip_cursor_xml_wrapper(text)
+                                        if cleaned:
+                                            first_user_msg = cleaned[:200]
+                                            break
+                            elif isinstance(content, str):
+                                first_user_msg = content[:200]
+                        elif isinstance(msg, str):
+                            first_user_msg = msg[:200]
+                elif role == "assistant":
+                    assistant_turns += 1
+                    msg = entry.get("message", "")
+                    if isinstance(msg, dict):
+                        content = msg.get("content", [])
+                        if isinstance(content, list):
+                            for block in content:
+                                if isinstance(block, dict) and block.get("type") == "tool_use":
+                                    tool_calls += 1
+                                    tools[block.get("name", "unknown")] += 1
+
+    except OSError:
+        return None
+
+    if user_turns == 0 and assistant_turns == 0:
+        return None
+
+    # Fall back to file mtime if no timestamp in JSONL
+    if not start_ts:
+        try:
+            mtime = os.path.getmtime(filepath)
+            start_ts = datetime.fromtimestamp(mtime, tz=timezone.utc)
+        except OSError:
+            pass
+        # Also try creation time from the directory structure
+        if not start_ts:
+            try:
+                ctime = os.path.getctime(filepath)
+                start_ts = datetime.fromtimestamp(ctime, tz=timezone.utc)
+            except OSError:
+                pass
+
+    if start_ts and start_ts < cutoff:
+        return None
+
+    duration = 0
+    date_str = ""
+    if start_ts:
+        date_str = start_ts.strftime("%Y-%m-%d")
+        if end_ts and end_ts > start_ts:
+            duration = max(0, int((end_ts - start_ts).total_seconds()))
+
+    return {
+        "id": session_id,
+        "agent": "cursor",
+        "model": "",
+        "version": "",
+        "date": date_str,
+        "display": first_user_msg[:100],
+        "first_msg": first_user_msg[:200],
+        "turns": user_turns + assistant_turns,
+        "user_turns": user_turns,
+        "assistant_turns": assistant_turns,
+        "tool_calls": tool_calls,
+        "tools": dict(tools),
+        "tokens": 0,
+        "duration_seconds": duration,
+        "cwd": cwd,
+        "git_branch": "",
+        "_start_hour": start_ts.hour if start_ts else None,
+        "source_refs": [shorten_path(filepath)],
+        "parser": "cursor-agent-transcript",
+        "parse_mode": "partial",
+        "partial_reasons": ["tokens_unavailable"],
+        "discovery_strength": "strong",
+        "probe_hint": "cursor-agent-transcript",
+    }
+
+
+def _strip_cursor_xml_wrapper(text):
+    """Strip <user_query> XML wrapper that Cursor adds around user messages."""
+    if not text:
+        return text
+    stripped = text.strip()
+    if stripped.startswith("<user_query>"):
+        stripped = stripped[len("<user_query>"):]
+    if stripped.endswith("</user_query>"):
+        stripped = stripped[:-len("</user_query>")]
+    return stripped.strip()
 
 
 # ---------------------------------------------------------------------------
@@ -3083,6 +3812,10 @@ def parse_args():
             result["openclaw_dir"] = argv[i + 1]; i += 2
         elif argv[i] == "--import-dir" and i + 1 < len(argv):
             result["import_dir"] = argv[i + 1]; i += 2
+        elif argv[i] == "--cursor-dir" and i + 1 < len(argv):
+            result["cursor_dir"] = argv[i + 1]; i += 2
+        elif argv[i] == "--cursor-config-dir" and i + 1 < len(argv):
+            result["cursor_config_dir"] = argv[i + 1]; i += 2
         elif argv[i] == "--days" and i + 1 < len(argv):
             result["days"] = argv[i + 1]; i += 2
         elif argv[i] == "--output" and i + 1 < len(argv):
