@@ -174,6 +174,43 @@ section{padding:60px 0}
 .fp-label{font-size:10.5px;color:var(--ac);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:12px}
 .fp-text{font-size:14px;line-height:1.8;color:var(--t2);font-family:"SF Mono","Fira Code","JetBrains Mono",monospace;white-space:pre-wrap;word-break:break-word}
 
+/* RECAP */
+.recap-grid,.spotlight-grid,.role-grid,.move-grid{display:grid;gap:16px}
+.recap-grid{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}
+.spotlight-grid,.role-grid,.move-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.recap-card,.spotlight-card,.role-card,.move-card{background:var(--s1);border:1px solid var(--bd);border-radius:18px;padding:24px;position:relative;overflow:hidden}
+.recap-card::before,.spotlight-card::before,.role-card::before,.move-card::before{content:'';position:absolute;top:-40px;right:-20px;width:140px;height:140px;border-radius:50%;filter:blur(46px);opacity:.08;pointer-events:none;background:var(--ac)}
+.recap-kicker{font-size:10.5px;color:var(--ac);text-transform:uppercase;letter-spacing:.16em;font-weight:700;margin-bottom:12px}
+.recap-title{font-size:32px;font-weight:800;letter-spacing:-.04em;line-height:1.03;color:var(--t)}
+.recap-body{font-size:14px;line-height:1.75;color:var(--t2);margin-top:14px}
+.signal-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.signal-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:var(--s2);border:1px solid var(--bd);font-size:11px;color:var(--t2);font-weight:600}
+.signal-chip .signal-dot{width:6px;height:6px;border-radius:999px;background:var(--ac)}
+.scale-value{font-size:42px;font-weight:800;letter-spacing:-.05em;line-height:1;color:var(--t)}
+.scale-sub{font-size:13px;color:var(--tm);margin-top:10px;line-height:1.6}
+.scale-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+.scale-stat{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.scale-stat .sv{font-size:20px;font-weight:800;color:var(--t)}
+.scale-stat .sl{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.12em;margin-top:4px}
+.spotlight-title{font-size:24px;font-weight:800;letter-spacing:-.03em;color:var(--t)}
+.spotlight-meta{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:var(--acb);border:1px solid rgba(255,107,53,.18);font-size:10px;color:var(--ac);text-transform:uppercase;letter-spacing:.16em;font-weight:700;margin-bottom:12px}
+.spotlight-text{font-size:14px;line-height:1.75;color:var(--t2);margin-top:12px}
+.spotlight-proof{margin-top:16px;display:grid;gap:10px}
+.proof-pill{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:12px;background:var(--s2);border:1px solid var(--bd);font-size:12px;color:var(--t2);line-height:1.55}
+.proof-pill .proof-dot{width:7px;height:7px;border-radius:999px;background:var(--g);margin-top:6px;flex-shrink:0}
+.role-name{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;color:var(--t)}
+.role-name .dot{width:10px;height:10px;border-radius:999px}
+.role-tag{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:var(--s2);border:1px solid var(--bd);font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.14em;font-weight:700;margin:14px 0 10px}
+.role-text{font-size:13px;line-height:1.7;color:var(--t2)}
+.role-evidence{margin-top:14px;font-size:12px;color:var(--tm)}
+.move-title{font-size:18px;font-weight:800;color:var(--t)}
+.move-text{font-size:13px;line-height:1.7;color:var(--t2);margin-top:10px}
+.move-proof{margin-top:14px;font-size:11px;color:var(--tm);letter-spacing:.02em}
+
+@media(max-width:900px){
+  .recap-grid,.spotlight-grid,.role-grid,.move-grid{grid-template-columns:1fr}
+}
+
 /* CTA */
 .cta{padding:24px;background:var(--s1);border:1px solid rgba(255,107,53,.3);border-radius:8px;margin-top:8px;text-align:left}
 .cta-title{font-size:16px;font-weight:700;color:var(--t);margin-bottom:16px}
@@ -215,6 +252,16 @@ section{padding:60px 0}
   .agent-row{gap:8px;margin-top:24px}
   .agent-chip{font-size:12px;padding:6px 14px}
   .agent-since{font-size:10px}
+
+  .recap-card,.spotlight-card,.role-card,.move-card{padding:20px}
+  .recap-title{font-size:28px;line-height:1.08}
+  .scale-value{font-size:34px}
+  .scale-grid{grid-template-columns:1fr 1fr}
+  .spotlight-title{font-size:21px}
+  .role-name{font-size:18px}
+  .move-title{font-size:17px}
+  .signal-row{gap:6px}
+  .signal-chip{font-size:10px;padding:6px 10px}
 
   /* Projects — one card at a time, stack vertically */
   .pgrid{grid-template-columns:1fr;gap:16px}
@@ -365,6 +412,34 @@ section{padding:60px 0}
 </section>
 <div class="divider" id="divider-after-hero"></div>
 
+<section id="section-recap">
+  <div class="recap-grid">
+    <div class="recap-card" id="builder-thesis"></div>
+    <div class="recap-card" id="collaboration-scale"></div>
+  </div>
+</section>
+<div class="divider" id="divider-after-recap"></div>
+
+<section id="section-spotlight">
+  <div class="spotlight-grid">
+    <div class="spotlight-card" id="signature-build"></div>
+    <div class="spotlight-card" id="management-style"></div>
+  </div>
+</section>
+<div class="divider" id="divider-after-spotlight"></div>
+
+<section id="section-agentroles">
+  <div class="sh"><h2>Agent Roles</h2><p>How different agents fit into the work</p></div>
+  <div class="role-grid" id="agent-roles"></div>
+</section>
+<div class="divider" id="divider-after-agentroles"></div>
+
+<section id="section-moves">
+  <div class="sh"><h2>Signature Moves</h2><p>Patterns that make this builder feel like themselves</p></div>
+  <div class="move-grid" id="signature-moves"></div>
+</section>
+<div class="divider" id="divider-after-moves"></div>
+
 <section id="section-projects"><div class="sh"><h2 id="sh-projects"></h2><p id="shp-projects"></p></div><div class="pgrid" id="projects"></div></section>
 <div class="divider" id="divider-after-projects"></div>
 
@@ -415,6 +490,141 @@ function hasEntries(v){
   if(Array.isArray(v))return v.length>0;
   if(v&&typeof v==='object')return Object.keys(v).length>0;
   return !!v;
+}
+function humanizeId(v){
+  return String(v||'').split(/[-_]+/).filter(Boolean).map(function(part){
+    const low=part.toLowerCase();
+    const specials={ai:'AI',api:'API',cli:'CLI',ux:'UX',ui:'UI',mcp:'MCP',saas:'SaaS',devops:'DevOps',html:'HTML',css:'CSS',sql:'SQL'};
+    if(specials[low])return specials[low];
+    return low.charAt(0).toUpperCase()+low.slice(1);
+  }).join(' ');
+}
+function uniq(values){
+  const seen={};return(values||[]).filter(function(v){
+    const clean=String(v||'').trim();if(!clean)return false;
+    const key=clean.toLowerCase();if(seen[key])return false;seen[key]=1;return true;
+  });
+}
+function agentLabel(agent,stats){
+  const explicit=stats&&stats.display_name;
+  if(explicit)return explicit;
+  const labels={'claude-code':'Claude Code','codex':'Codex','openclaw':'OpenClaw','cursor':'Cursor','windsurf':'Windsurf','trae':'Trae','trae-cn':'Trae','claude':'Claude'};
+  return labels[agent]||humanizeId(agent);
+}
+function agentColor(agent,i){
+  const colors={'claude-code':'var(--ac)','codex':'var(--g)','openclaw':'var(--p)','cursor':'var(--y)','trae':'var(--o)','windsurf':'var(--b)'};
+  const fallbacks=['var(--ac)','var(--g)','var(--y)','var(--b)','var(--p)','var(--o)','var(--pk)'];
+  return colors[agent]||fallbacks[i%fallbacks.length];
+}
+function topTechEntries(){
+  return Object.entries(E.tech||{}).sort(function(a,b){return (b[1]||0)-(a[1]||0);});
+}
+function projectScore(p){
+  return (Number(p.total_turns)||0)*1.5+(Number(p.total_tool_calls)||0)+(Number(p.total_sessions)||0)*45;
+}
+function pickSignatureProject(){
+  if(!Array.isArray(D.projects)||!D.projects.length)return null;
+  return D.projects.slice().sort(function(a,b){return projectScore(b)-projectScore(a);})[0]||null;
+}
+function getBuilderThesis(){
+  const p=D.profile||{};
+  if(p.summary)return p.summary;
+  const sig=pickSignatureProject();
+  const topTech=topTechEntries().slice(0,2).map(function(entry){return entry[0];});
+  if(sig&&topTech.length){
+    return (p.display_name||'This builder')+' keeps turning '+topTech.join(' + ')+' into shippable work, with "'+sig.name+'" as the clearest proof.';
+  }
+  if(sig){
+    return (p.display_name||'This builder')+' keeps coming back to "'+sig.name+'" as the strongest expression of their build taste.';
+  }
+  return (p.display_name||'This builder')+' has a log full of AI-assisted work that leans more toward shipping than passive experimentation.';
+}
+function getTasteSignals(){
+  const p=D.profile||{};
+  const st=D.style||{};
+  const signals=[];
+  if(st.style_label)signals.push(st.style_label);
+  if(E.time&&E.time.peak_text)signals.push(E.time.peak_text);
+  topTechEntries().slice(0,3).forEach(function(entry){signals.push(entry[0]);});
+  const agents=Object.keys(p.agents_used||{});
+  if(agents.length>1)signals.push(agents.map(function(agent){return agentLabel(agent,(E.comparison||{})[agent]);}).join(' + '));
+  else if(agents.length===1)signals.push(agentLabel(agents[0],(E.comparison||{})[agents[0]]));
+  const commandRatio=Number(st.command_ratio)||0;
+  if(commandRatio>=0.45)signals.push('terminal-heavy');
+  else if(commandRatio>=0.25)signals.push('CLI-first');
+  if(Array.isArray(D.projects)&&D.projects.length>=4)signals.push('multi-project');
+  return uniq(signals).slice(0,6);
+}
+function getCollaborationScale(){
+  const p=D.profile||{};
+  const agents=Object.keys(p.agents_used||{});
+  const projects=Array.isArray(D.projects)?D.projects.length:0;
+  return {
+    value:fN(p.total_tokens||0),
+    copy:(p.total_tokens?fN(p.total_tokens)+' tokens logged':'Token volume unavailable')+' across '+fN(p.total_sessions||0)+' sessions'+(p.date_range&&p.date_range.start&&p.date_range.end?' · '+p.date_range.start+' → '+p.date_range.end:'')+'.',
+    stats:[
+      {value:fN(p.total_sessions||0),label:'Sessions'},
+      {value:fN(p.total_turns||0),label:'Turns'},
+      {value:String(projects),label:'Projects'},
+      {value:String(agents.length||0),label:'Agents'},
+    ]
+  };
+}
+function deriveManagementStyle(){
+  const st=D.style||{};
+  const p=D.profile||{};
+  const label=st.style_label||[st.prompt_type_label||st.prompt_type,st.rhythm_label||st.session_rhythm].filter(Boolean).join(' × ')||'Builder operating model';
+  const summary=st.style_sub||E.comparison_insight||E.evolution_insight||getBuilderThesis();
+  const commandRatio=Math.round((Number(st.command_ratio)||0)*100);
+  const traits=[];
+  if(st.prompt_type_desc)traits.push(st.prompt_type_desc);
+  if(commandRatio>=25)traits.push(commandRatio+'% of recorded tool usage runs through terminal-style tools.');
+  if(Object.keys(p.agents_used||{}).length>1)traits.push('Different agents are used for different jobs instead of forcing one model to do everything.');
+  if(E.time&&E.time.peak_detail)traits.push(E.time.peak_detail);
+  if(!traits.length&&st.loyalty_desc)traits.push(st.loyalty_desc);
+  return {label:label,summary:summary,traits:uniq(traits).slice(0,3)};
+}
+function deriveAgentRoles(){
+  const cmp=E.comparison||{};
+  return Object.entries(cmp).sort(function(a,b){return (b[1].total_turns||0)-(a[1].total_turns||0);}).map(function(entry,i){
+    const agent=entry[0];const data=entry[1]||{};
+    const avg=Number(data.avg_turns)||0;const sessions=Number(data.sessions)||0;const turns=Number(data.total_turns)||0;const tools=Number(data.total_tool_calls)||0;
+    let role='Main workhorse';let summary='Handles the bulk of everyday delivery and repeated build loops.';
+    if(avg>=100){role='Deep work bench';summary='Used when the work needs longer context windows, deeper restructuring, and more time inside one thread.';}
+    else if(sessions>=40&&tools>=turns){role='Fast operator';summary='Best at tool-heavy execution, quick iteration, and keeping shipping momentum high.';}
+    else if(sessions>=40){role='Iteration engine';summary='Returns often for fast follow-ups, cleanup, and pushing projects forward in short loops.';}
+    else if(tools>=turns){role='Execution partner';summary='Leans more toward getting commands and edits done than holding long conversational context.';}
+    const topTool=Array.isArray(data.top_tools)&&data.top_tools[0]?data.top_tools[0][0]:'';
+    return{
+      name:agentLabel(agent,data),
+      role:role,
+      summary:summary,
+      evidence:fN(sessions)+' sessions · '+fN(turns)+' turns · '+fN(tools)+' tool calls'+(topTool?' · top tool '+topTool:''),
+      color:agentColor(agent,i)
+    };
+  }).slice(0,4);
+}
+function deriveSignatureMoves(){
+  const st=D.style||{};const p=D.profile||{};const sig=pickSignatureProject();
+  const commandRatio=Math.round((Number(st.command_ratio)||0)*100);
+  const moves=[];
+  if(commandRatio>=25)moves.push({title:'Keeps the loop in the terminal',text:commandRatio+'% of recorded tool usage runs through Bash, shell commands, or stdin-driven execution.',proof:'Tool distribution'});
+  if(Object.keys(p.agents_used||{}).length>1)moves.push({title:'Splits agents by role',text:'Different agents are used for different kinds of work instead of competing for the exact same job.',proof:'Agent comparison'});
+  if(sig)moves.push({title:'Returns to a flagship build',text:'"'+sig.name+'" carries the clearest concentration of turns, tools, and attention in this BuilderBio.',proof:(sig.tags||[]).slice(0,3).join(' · ')||'Project clustering'});
+  const techLabels=topTechEntries().slice(0,3).map(function(entry){return entry[0];});
+  if(techLabels.some(function(label){return /(product|research|strategy|content)/i.test(label);})){
+    moves.push({title:'Turns thinking into artifacts',text:'Research, product shaping, and execution show up inside the same build history instead of living in separate tools.',proof:techLabels.join(' · ')});
+  }
+  if(E.time&&E.time.peak_text)moves.push({title:'Builds around a recognizable rhythm',text:'The activity pattern is distinct enough that the working hours themselves become part of the profile.',proof:E.time.peak_text});
+  return moves.slice(0,4);
+}
+function buildSignatureProofs(project){
+  const proofs=[];
+  if(project.total_turns)proofs.push(fN(project.total_turns)+' turns clustered around this build');
+  if(project.total_tool_calls)proofs.push(fN(project.total_tool_calls)+' tool calls supporting it');
+  if(project.total_sessions)proofs.push(fN(project.total_sessions)+' sessions touched this project');
+  if(Array.isArray(project.tags)&&project.tags.length)proofs.push('Core tags: '+project.tags.slice(0,3).join(' · '));
+  return proofs.slice(0,3);
 }
 
 // === SAFE SECTION RUNNER ===
@@ -898,6 +1108,94 @@ safeRun('hero',function(){
   }
 });
 
+// === RECAP ===
+safeRun('recap',function(){
+  const p=D.profile||{};
+  const thesis=getBuilderThesis();
+  const story=uniq([E.comparison_insight,E.evolution_insight,p.tagline]).filter(function(text){return text&&text!==thesis;})[0]||'';
+  const tasteSignals=getTasteSignals();
+  const topKeywords=(Array.isArray(E.keywords)?E.keywords:[]).slice(0,3).map(function(entry){return Array.isArray(entry)?entry[0]:(entry&&entry.word)||'';}).filter(Boolean);
+  const scale=getCollaborationScale();
+  if(!thesis&&!Number(p.total_tokens||0)){hideSection('recap');return}
+
+  document.getElementById('builder-thesis').innerHTML=`
+    <div class="recap-kicker">Builder Thesis</div>
+    <div class="recap-title">${esc(thesis)}</div>
+    ${story?`<div class="recap-body">${esc(story)}</div>`:''}
+    ${tasteSignals.length?`<div class="signal-row">${tasteSignals.map(function(signal,index){return`<span class="signal-chip"><span class="signal-dot" style="background:${index%2===0?'var(--ac)':'var(--g)'}"></span>${esc(signal)}</span>`;}).join('')}</div>`:''}
+    ${topKeywords.length?`<div class="signal-row">${topKeywords.map(function(keyword){return`<span class="signal-chip">${esc(keyword)}</span>`;}).join('')}</div>`:''}
+  `;
+
+  document.getElementById('collaboration-scale').innerHTML=`
+    <div class="recap-kicker">Collaboration Scale</div>
+    <div class="scale-value">${esc(scale.value)}</div>
+    <div class="scale-sub">${esc(scale.copy)}</div>
+    <div class="scale-grid">${scale.stats.map(function(item){return`<div class="scale-stat"><div class="sv">${esc(item.value)}</div><div class="sl">${esc(item.label)}</div></div>`;}).join('')}</div>
+  `;
+});
+
+safeRun('spotlight',function(){
+  const spotlight=document.getElementById('section-spotlight');
+  const signatureCard=document.getElementById('signature-build');
+  const managementCard=document.getElementById('management-style');
+  const signatureProject=pickSignatureProject();
+  const management=deriveManagementStyle();
+
+  if(signatureProject){
+    const proofs=buildSignatureProofs(signatureProject);
+    signatureCard.innerHTML=`
+      <div class="spotlight-meta">Signature Build</div>
+      <div class="spotlight-title">${esc(signatureProject.name)}</div>
+      <div class="spotlight-text">${esc(signatureProject.description||signatureProject.summary||'This project carries the clearest concentration of work in the current BuilderBio.')}</div>
+      <div class="spotlight-text">${esc('Why it matters: '+(signatureProject.tags&&signatureProject.tags.length?'it pulls together '+signatureProject.tags.slice(0,3).join(', ')+' and the biggest share of repeated effort.':'it is where the work most clearly stops looking like experiments and starts looking like a real product.'))}</div>
+      ${proofs.length?`<div class="spotlight-proof">${proofs.map(function(item){return`<div class="proof-pill"><span class="proof-dot"></span><span>${esc(item)}</span></div>`;}).join('')}</div>`:''}
+    `;
+  }else{
+    signatureCard.style.display='none';
+  }
+
+  if(management.label||management.summary){
+    managementCard.innerHTML=`
+      <div class="spotlight-meta">AI Management Style</div>
+      <div class="spotlight-title">${esc(management.label)}</div>
+      <div class="spotlight-text">${esc(management.summary)}</div>
+      ${management.traits.length?`<div class="spotlight-proof">${management.traits.map(function(item){return`<div class="proof-pill"><span class="proof-dot"></span><span>${esc(item)}</span></div>`;}).join('')}</div>`:''}
+    `;
+  }else{
+    managementCard.style.display='none';
+  }
+
+  if(signatureCard.style.display==='none'&&managementCard.style.display==='none'){
+    hideSection('spotlight');
+  }
+});
+
+safeRun('agentroles',function(){
+  const roles=deriveAgentRoles();
+  if(!roles.length){hideSection('agentroles');return}
+  document.getElementById('agent-roles').innerHTML=roles.map(function(role){
+    return`<div class="role-card">
+      <div class="role-name"><span class="dot" style="background:${role.color}"></span>${esc(role.name)}</div>
+      <div class="role-tag">${esc(role.role)}</div>
+      <div class="role-text">${esc(role.summary)}</div>
+      <div class="role-evidence">${esc(role.evidence)}</div>
+    </div>`;
+  }).join('');
+});
+
+safeRun('moves',function(){
+  const moves=deriveSignatureMoves();
+  if(!moves.length){hideSection('moves');return}
+  document.getElementById('signature-moves').innerHTML=moves.map(function(move,index){
+    return`<div class="move-card">
+      <div class="recap-kicker">Move ${index+1}</div>
+      <div class="move-title">${esc(move.title)}</div>
+      <div class="move-text">${esc(move.text)}</div>
+      ${move.proof?`<div class="move-proof">${esc(move.proof)}</div>`:''}
+    </div>`;
+  }).join('');
+});
+
 // === PROJECTS ===
 safeRun('projects',function(){
   if(!Array.isArray(D.projects)||D.projects.length===0){hideSection('projects');return}
@@ -906,7 +1204,7 @@ safeRun('projects',function(){
   document.getElementById('projects').innerHTML=(D.projects||[]).map(p=>{
     const tags=(p.tags||[]).map(t=>`<span class="ptag">${esc(t)}</span>`).join('');
     const sessionCount=typeof p.total_sessions==='number'?p.total_sessions:(Array.isArray(p.sessions)?p.sessions.length:0);
-    return`<div class="pcard"><div class="pcard-top"><div class="pname">${esc(p.name)}</div><span class="pstatus ${sl[p.status]||'ps-explored'}">${sn[p.status]||p.status}</span></div><div class="pdesc">${esc(p.description)}</div><div class="ptags">${tags}</div><div class="pmeta"><span><strong>${sessionCount}</strong> ${t('p_sessions')}</span><span><strong>${fN(p.total_turns)}</strong> ${t('p_turns')}</span><span><strong>${fN(p.total_tool_calls)}</strong> ${t('p_tools')}</span></div></div>`;
+    return`<div class="pcard"><div class="pcard-top"><div class="pname">${esc(p.name)}</div><span class="pstatus ${sl[p.status]||'ps-explored'}">${sn[p.status]||p.status}</span></div><div class="pdesc">${esc(p.description||p.summary||'')}</div><div class="ptags">${tags}</div><div class="pmeta"><span><strong>${sessionCount}</strong> ${t('p_sessions')}</span><span><strong>${fN(p.total_turns)}</strong> ${t('p_turns')}</span><span><strong>${fN(p.total_tool_calls)}</strong> ${t('p_tools')}</span></div></div>`;
   }).join('');
 });
 

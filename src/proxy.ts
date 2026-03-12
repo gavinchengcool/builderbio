@@ -25,13 +25,11 @@ export function proxy(req: NextRequest) {
       return NextResponse.next();
     }
 
-    // Static HTML profiles: rewrite to API route that serves the file
+    // Special built-by profile
     const staticProfiles = ["gavin"];
     if (staticProfiles.includes(subdomain)) {
       if (req.nextUrl.pathname === "/" || req.nextUrl.pathname === "") {
-        return NextResponse.rewrite(
-          new URL(`/api/static-profile/${subdomain}`, req.url)
-        );
+        return NextResponse.rewrite(new URL("/builderbio-preview", req.url));
       }
       return NextResponse.next();
     }

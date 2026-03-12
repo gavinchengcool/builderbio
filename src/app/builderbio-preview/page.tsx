@@ -1,15 +1,44 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Titlebar from "@/components/Titlebar";
 import InstallCommandBox from "@/components/InstallCommandBox";
 
-export const metadata: Metadata = {
-  title: "BuilderBio Preview",
-  description: "Local preview of the next BuilderBio annual-recap direction.",
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+async function isLiveGavinHost() {
+  const headerStore = await headers();
+  const host = (headerStore.get("host") || "").split(":")[0];
+  return host === "gavin.builderbio.dev";
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const live = await isLiveGavinHost();
+
+  if (live) {
+    return {
+      title: "Gavin's BuilderBio — What I Built with AI",
+      description:
+        "230 sessions, 12.7K turns, 34 active days of building with Claude Code and Codex. See how Gavin works with AI coding agents.",
+      alternates: {
+        canonical: "https://gavin.builderbio.dev",
+      },
+      robots: {
+        index: true,
+        follow: true,
+      },
+    };
+  }
+
+  return {
+    title: "BuilderBio Preview",
+    description: "Local preview of the next BuilderBio annual-recap direction.",
+    alternates: {
+      canonical: "https://builderbio.dev/builderbio-preview",
+    },
+    robots: {
+      index: false,
+      follow: false,
+    },
+  };
+}
 
 const preview = {
   label: "Local preview · not deployed",
@@ -441,7 +470,18 @@ function hourColor(hour: number) {
   return "#FF6B35";
 }
 
-export default function BuilderBioPreviewPage() {
+export default async function BuilderBioPreviewPage() {
+  const liveGavin = await isLiveGavinHost();
+  const heroRecap = liveGavin
+    ? "这个页面直接使用 Gavin 当前公开 BuilderBio 的真实内容，但会用更清晰的方式去讲：他是什么样的 Builder、他怎么管理 AI，以及哪些作品最能代表他的 taste。"
+    : preview.recap;
+  const evidenceCoverage = liveGavin
+    ? {
+        status: "Live Gavin data",
+        summary: "直接使用 gavin.builderbio.dev 当前公开内容，再重组到这套更适合分享的年终回顾结构里。",
+        note: "这里不是占位数据，所有核心内容都来自 Gavin 当前公开页面里的真实 BuilderBio 信息。",
+      }
+    : preview.evidence.coverage;
   const hourEntries = Array.from({ length: 24 }, (_, hour) => ({
     hour,
     sessions:
@@ -470,7 +510,7 @@ export default function BuilderBioPreviewPage() {
 
   return (
     <>
-      <Titlebar />
+      <Titlebar forceBuiltByActive={liveGavin} />
       <div className="relative overflow-hidden pt-12">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,107,53,0.18),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(52,211,153,0.12),transparent_30%)]" />
 
@@ -478,10 +518,10 @@ export default function BuilderBioPreviewPage() {
           <section className="mb-10 rounded-3xl border border-accent/20 bg-bg-secondary/70 p-6 shadow-[0_0_0_1px_rgba(255,107,53,0.06)] backdrop-blur sm:p-8">
             <div className="mb-6 flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
-                {preview.label}
+                {liveGavin ? "Built by Gavin" : preview.label}
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
-                {preview.sectionLabel}
+                {liveGavin ? "Annual recap edition" : preview.sectionLabel}
               </span>
             </div>
 
@@ -543,7 +583,7 @@ export default function BuilderBioPreviewPage() {
                   {preview.thesis}
                 </h2>
                 <p className="mt-5 max-w-3xl text-sm leading-7 text-text-secondary sm:text-base">
-                  {preview.recap}
+                  {heroRecap}
                 </p>
                 <p className="mt-3 max-w-3xl text-xs leading-6 text-text-muted">
                   {preview.trust.note}
@@ -1070,15 +1110,15 @@ export default function BuilderBioPreviewPage() {
                   </h2>
                 </div>
                 <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-bold text-accent">
-                  {preview.evidence.coverage.status}
+                  {evidenceCoverage.status}
                 </span>
               </div>
 
               <p className="mt-4 text-sm leading-6 text-text-secondary">
-                {preview.evidence.coverage.summary}
+                {evidenceCoverage.summary}
               </p>
               <p className="mt-2 text-sm leading-6 text-text-primary/85">
-                {preview.evidence.coverage.note}
+                {evidenceCoverage.note}
               </p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">

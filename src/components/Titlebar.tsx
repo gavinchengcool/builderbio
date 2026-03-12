@@ -2,10 +2,11 @@
 
 import { usePathname } from "next/navigation";
 
-export default function Titlebar() {
+export default function Titlebar({ forceBuiltByActive = false }: { forceBuiltByActive?: boolean }) {
   const pathname = usePathname();
   const isTasteBoard = pathname.startsWith("/taste-board");
   const isHome = pathname === "/";
+  const isBuiltBy = forceBuiltByActive;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-bg-secondary/80 backdrop-blur-sm">
@@ -25,7 +26,10 @@ export default function Titlebar() {
             /taste-board
           </a>
           <span className="text-text-muted">·</span>
-          <a href="https://gavin.builderbio.dev" className="hover:text-accent transition-colors">
+          <a
+            href="https://gavin.builderbio.dev"
+            className={isBuiltBy ? "text-accent" : "hover:text-accent transition-colors"}
+          >
             /built-by
           </a>
         </nav>
