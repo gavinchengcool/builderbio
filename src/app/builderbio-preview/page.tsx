@@ -472,16 +472,6 @@ function hourColor(hour: number) {
 
 export default async function BuilderBioPreviewPage() {
   const liveGavin = await isLiveGavinHost();
-  const heroRecap = liveGavin
-    ? "这个页面直接使用 Gavin 当前公开 BuilderBio 的真实内容，但会用更清晰的方式去讲：他是什么样的 Builder、他怎么管理 AI，以及哪些作品最能代表他的 taste。"
-    : preview.recap;
-  const evidenceCoverage = liveGavin
-    ? {
-        status: "Live Gavin data",
-        summary: "直接使用 gavin.builderbio.dev 当前公开内容，再重组到这套更适合分享的年终回顾结构里。",
-        note: "这里不是占位数据，所有核心内容都来自 Gavin 当前公开页面里的真实 BuilderBio 信息。",
-      }
-    : preview.evidence.coverage;
   const hourEntries = Array.from({ length: 24 }, (_, hour) => ({
     hour,
     sessions:
@@ -518,10 +508,10 @@ export default async function BuilderBioPreviewPage() {
           <section className="mb-10 rounded-3xl border border-accent/20 bg-bg-secondary/70 p-6 shadow-[0_0_0_1px_rgba(255,107,53,0.06)] backdrop-blur sm:p-8">
             <div className="mb-6 flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
-                {liveGavin ? "Built by Gavin" : preview.label}
+                {preview.label}
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
-                {liveGavin ? "Annual recap edition" : preview.sectionLabel}
+                {preview.sectionLabel}
               </span>
             </div>
 
@@ -583,7 +573,7 @@ export default async function BuilderBioPreviewPage() {
                   {preview.thesis}
                 </h2>
                 <p className="mt-5 max-w-3xl text-sm leading-7 text-text-secondary sm:text-base">
-                  {heroRecap}
+                  {preview.recap}
                 </p>
                 <p className="mt-3 max-w-3xl text-xs leading-6 text-text-muted">
                   {preview.trust.note}
@@ -1110,15 +1100,15 @@ export default async function BuilderBioPreviewPage() {
                   </h2>
                 </div>
                 <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-bold text-accent">
-                  {evidenceCoverage.status}
+                  {preview.evidence.coverage.status}
                 </span>
               </div>
 
               <p className="mt-4 text-sm leading-6 text-text-secondary">
-                {evidenceCoverage.summary}
+                {preview.evidence.coverage.summary}
               </p>
               <p className="mt-2 text-sm leading-6 text-text-primary/85">
-                {evidenceCoverage.note}
+                {preview.evidence.coverage.note}
               </p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
