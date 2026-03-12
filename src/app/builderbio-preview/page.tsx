@@ -47,7 +47,7 @@ const preview = {
   slug: "gavin.builderbio.dev",
   avatarUrl: "/avatar-gavin.jpg",
   avatarLetter: "G",
-  title: "产品型操盘手 · AI Native Builder",
+  title: "产品驱动型创作者 · AI Native Builder",
   thesis: "一个把 Agent 研究、产品策略和实际交付串成同一条工作流的 Builder。",
   recap:
     "这个预览页直接以 Gavin 当前的 BuilderBio 为素材，但会用更清晰的方式去讲：他是什么样的 Builder、他怎么管理 AI、以及哪些作品最能代表他的 taste。",
@@ -70,8 +70,8 @@ const preview = {
   ],
   totalTokens: 9_990_000_000,
   agents: [
-    { name: "Claude Code", role: "深工位", sessions: 51, color: "#FF6B35" },
-    { name: "Codex", role: "快手术刀", sessions: 179, color: "#34D399" },
+    { name: "Claude Code", role: "深度协作", sessions: 51, color: "#FF6B35" },
+    { name: "Codex", role: "快速执行", sessions: 179, color: "#34D399" },
   ],
   tasteSignals: [
     "CLI 优先",
@@ -117,7 +117,7 @@ const preview = {
     stage: "Signature build",
     summary:
       "做了一个 Claude Code skill，能扫描本地 session 日志，并生成一个可分享的 Builder 画像页。",
-    why: "它最能代表 Gavin 这段时间的主线，因为它把真实数据里最反复出现的三件事放到了一起：Agent 研究、产品表达，以及把 AI Native 的工作方式做成别人也能看懂的工具。",
+    why: "它把 Gavin 最近最反复投入的三件事放到了一起：研究 Agent、推进产品，以及把自己的工作流做成别人也能用的工具。",
     proof: [
       "这个项目线累计 2.3K turns",
       "把内部工作流直接做成了公共展示物",
@@ -135,7 +135,7 @@ const preview = {
     },
     {
       title: "先在终端里推进，再长出故事",
-      summary: "先靠高占比 CLI 保住推进速度，等事情成形后，再把它改写成别人能读懂、能使用的东西。",
+      summary: "先在终端里把事情推进到能跑，再回头整理成别人能理解、能使用的产品和表达。",
     },
   ],
   highMoments: [
@@ -208,14 +208,14 @@ const preview = {
   agentRoles: [
     {
       name: "Claude Code",
-      role: "深工位",
+      role: "深度协作",
       summary:
         "当 Gavin 需要在一个问题里待得足够久，直到结构真正长出来时，就会切到 Claude Code。",
       evidence: "51 个 sessions · 6.4K turns · 平均每次 126 turns",
     },
     {
       name: "Codex",
-      role: "快手术刀",
+      role: "快速执行",
       summary:
         "更适合高频执行、终端驱动的推进，以及问完就干的快循环。",
       evidence: "179 个 sessions · 6.3K turns · 平均每次 35 turns",
@@ -486,19 +486,19 @@ function buildPageCopy(liveGavin: boolean) {
     trustNote:
       "顶部统计和 Unfiltered 标记都对应原始 session 日志校验结果。这页展示的是 Gavin 真实的协作轨迹，不是演示稿。",
     socialCurrencySummary: `${formatCompact(preview.totalTokens)} tokens、${preview.stats[0].value} 个会话和 ${preview.stats[1].value} turns 说明，这已经不是偶尔试用 AI，而是把多 Agent 协作真正变成了日常工作流。`,
-    socialCurrencyBadge: "真实协作规模",
+    socialCurrencyBadge: "协作强度",
     highMomentsHeading: `${busiestDay.date} 那天连开 ${busiestDay.sessions} 个 sessions，这些就是 Gavin 这段时间最容易被人记住的高光。`,
     signatureMovesHeading: "研究、策略、执行和表达，经常被他压进同一条连续工作流里。",
     projectsHeading: `从 ${preview.signatureBuild.name} 到产品策略与研究，这 ${preview.projects.length} 个项目就是 Gavin 最近这段 Builder 主线。`,
     agentComparisonHeading: `${fastAgent.name} 扛速度，${deepAgent.name} 扛深度，这个分工已经非常稳定。`,
-    agentRolesHeading: "不同的 Agent 在 Gavin 这里不是替代关系，而是明确分工的不同工位。",
-    agentRolesSummary: "真正重要的不是谁占比更高，而是 Gavin 会把不同 agent 放到不同的任务类型里。",
+    agentRolesHeading: "不同的 Agent 在 Gavin 这里有很明确的分工。",
+    agentRolesSummary: "重要的不是谁用得更多，而是 Gavin 会把不同 agent 放在不同任务里。",
     erasHeading: `${firstEra.title}、${transitionEra.title}、${latestEra.title} 连在一起，能清楚看见 Gavin 这段时间的轨迹怎么一步步变化。`,
-    evidenceHeading: "这页里的判断都应该能回到具体日志，而不是靠包装撑起来。",
+    evidenceHeading: "这些判断背后，都能找到对应的日志证据。",
     evidenceStatus: liveGavin ? "Unfiltered log receipts" : preview.evidence.coverage.status,
     evidenceSummary: `从 ${preview.whenIbuild.peakHour} 的时间高峰，到 ${busiestDay.date} 的忙碌峰值，再到 ${fastAgent.name} / ${deepAgent.name} 的角色分工，这些结论都能在原始日志里找到对应证据。`,
-    evidenceNote: `最大单次会话达到 ${formatNumber(biggestSession.turns)} turns，最长连续协作 ${preview.highlights.longestStreak} 天；只要这一页展示出来的内容，就应该能在真实 sessions 里被追溯到。`,
-    activityHeading: `${preview.activity.activeDays} 个活跃日把 Gavin 的 build 节奏完整留了下来。`,
+    evidenceNote: `最大单次会话达到 ${formatNumber(biggestSession.turns)} turns，最长连续协作 ${preview.highlights.longestStreak} 天；从最大会话到连续协作天数，这些结论都能回到原始 sessions。`,
+    activityHeading: `${preview.activity.activeDays} 个活跃日，把 Gavin 这段时间的构建节奏完整留了下来。`,
     receiptsHeading: "这些高光不是包装出来的，而是可以直接回到真实历史里的事实。",
     ctaHeading: "也做一页属于你自己的 BuilderBio。",
     ctaSummary:
@@ -735,7 +735,7 @@ export default async function BuilderBioPreviewPage() {
                   {preview.signatureBuild.stage}
                 </span>
                 <span className="text-xs uppercase tracking-[0.2em] text-text-muted">
-                  最能解释这个 Builder 的那个作品
+                  这段时间最能代表他的作品
                 </span>
               </div>
 
