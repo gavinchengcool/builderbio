@@ -175,10 +175,21 @@ section{padding:60px 0}
 .fp-text{font-size:14px;line-height:1.8;color:var(--t2);font-family:"SF Mono","Fira Code","JetBrains Mono",monospace;white-space:pre-wrap;word-break:break-word}
 
 /* CTA */
-.cta{text-align:center;padding:48px 32px;background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(52,211,153,.04));border:1px solid var(--bd);border-radius:18px;margin-top:8px}
-.cta h3{font-size:24px;font-weight:800;margin-bottom:8px}.cta p{font-size:14px;color:var(--tm);margin-bottom:20px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.6}
-.cta code{display:inline-block;padding:10px 24px;background:var(--s2);border:1px solid var(--bd);border-radius:10px;font-family:"SF Mono","Fira Code",monospace;font-size:13px;color:var(--ac);user-select:all;cursor:pointer}
-.cta .cta-sub{font-size:11px;color:var(--tm);margin-top:12px}
+.cta{padding:24px;background:var(--s1);border:1px solid rgba(255,107,53,.3);border-radius:8px;margin-top:8px;text-align:left}
+.cta-title{font-size:16px;font-weight:700;color:var(--t);margin-bottom:16px}
+.cta-install-label{font-family:"JetBrains Mono","Fira Code","SF Mono",ui-monospace,monospace;font-size:10px;font-weight:700;letter-spacing:1.4px;line-height:1.6;color:#FF6B35;margin-bottom:12px}
+.cta-badges{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.cta-badge{display:inline-flex;align-items:center;justify-content:center;height:20px;padding:0 8px;border-radius:999px;border:1px solid var(--bd);color:var(--t2);font-size:10px;font-family:"JetBrains Mono","Fira Code","SF Mono",ui-monospace,monospace}
+.cta-badge-more{padding-bottom:3px}
+.cta-cmd{display:grid;grid-template-columns:minmax(0,1fr) 48px;align-items:stretch;width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;overflow:hidden;cursor:pointer}
+.cta-cmd-main{display:flex;align-items:center;gap:10px;min-width:0;padding:16px}
+.cta-dollar{color:#FF6B35;flex-shrink:0;font-family:"JetBrains Mono","Fira Code","SF Mono",ui-monospace,monospace}
+.cta-command-text{min-width:0;font-size:13px;line-height:1.6;color:var(--t);font-family:"JetBrains Mono","Fira Code","SF Mono",ui-monospace,monospace;white-space:nowrap}
+.cta-copy-btn{display:flex;align-items:center;justify-content:center;border:0;border-left:1px solid var(--bd);background:transparent;color:var(--tm);cursor:pointer;transition:color .2s}
+.cta-copy-btn:hover{color:#FF6B35}
+.cta-copy-btn svg{width:16px;height:16px;stroke:currentColor;fill:none}
+.cta-copy-icon,.cta-copied-icon{display:inline-flex;align-items:center;justify-content:center}
+.cta-copied-icon{color:#FF6B35}
 
 .footer{text-align:center;padding:48px 0 40px;font-size:12px;color:var(--tm)}
 
@@ -274,10 +285,12 @@ section{padding:60px 0}
   .fp-text{font-size:13px;line-height:1.6}
 
   /* CTA — clear standalone screen */
-  .cta{padding:40px 24px;min-height:auto}
-  .cta h3{font-size:22px}
-  .cta p{font-size:13px;line-height:1.5}
-  .cta code,.cta-cmd span{font-size:11px!important}
+  .cta{padding:24px 20px;min-height:auto}
+  .cta-title{font-size:15px}
+  .cta-badges{gap:6px}
+  .cta-cmd{grid-template-columns:minmax(0,1fr) 44px}
+  .cta-cmd-main{padding:12px}
+  .cta-command-text{font-size:11px;line-height:1.5;white-space:normal;word-break:break-all}
 
   /* Section headers — breathing room */
   .sh{margin-bottom:24px}
@@ -685,6 +698,20 @@ function copyUrl(){
     },2000);
   });
 }
+const INSTALL_CMD='curl -sfL https://builderbio.dev/install.sh | bash';
+function copyInstallCommand(target){
+  if(!target)return;
+  navigator.clipboard.writeText(INSTALL_CMD).then(function(){
+    var copyIcon=target.querySelector('.cta-copy-icon');
+    var copiedIcon=target.querySelector('.cta-copied-icon');
+    if(copyIcon)copyIcon.style.display='none';
+    if(copiedIcon)copiedIcon.style.display='inline-flex';
+    setTimeout(function(){
+      if(copyIcon)copyIcon.style.display='inline-flex';
+      if(copiedIcon)copiedIcon.style.display='none';
+    },2000);
+  });
+}
 
 // === I18N ===
 const LANG=(D.profile&&D.profile.lang)||'zh';
@@ -1050,12 +1077,24 @@ safeRun('highlights',function(){
 
 // === CTA ===
 document.getElementById('cta-section').innerHTML=`<div class="cta">
-  <h3>Show the world your taste</h3>
-  <p>Send this to your coding agent — get your bio link</p>
-  <div class="cta-cmd" style="display:inline-flex;align-items:center;gap:10px;padding:10px 20px;background:var(--s2);border:1px solid var(--bd);border-radius:10px;cursor:pointer" onclick="navigator.clipboard.writeText('curl -sfL https://builderbio.dev/install.sh | bash');this.querySelector('.cta-copied').style.display='inline';this.querySelector('.cta-copy-icon').style.display='none';setTimeout(()=>{this.querySelector('.cta-copied').style.display='none';this.querySelector('.cta-copy-icon').style.display='inline'},2000)">
-    <span style="color:var(--ac);font-family:'SF Mono','Fira Code',monospace;font-size:13px;user-select:all"><span style="color:var(--tm)">$ </span>curl -sfL https://builderbio.dev/install.sh | bash</span>
-    <span class="cta-copy-icon" style="color:var(--tm);display:inline;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></span>
-    <span class="cta-copied" style="color:var(--g);display:none;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+  <div class="cta-title">Like what you see?</div>
+  <div class="cta-install-label">PASTE INTO YOUR CODING AGENT</div>
+  <div class="cta-badges">
+    <span class="cta-badge">OpenClaw</span>
+    <span class="cta-badge">Codex</span>
+    <span class="cta-badge">Claude Code</span>
+    <span class="cta-badge">Cursor</span>
+    <span class="cta-badge cta-badge-more">...</span>
+  </div>
+  <div class="cta-cmd" onclick="copyInstallCommand(this)">
+    <div class="cta-cmd-main">
+      <span class="cta-dollar">$</span>
+      <span class="cta-command-text">${INSTALL_CMD}</span>
+    </div>
+    <button type="button" class="cta-copy-btn" title="Copy to clipboard" aria-label="Copy to clipboard" onclick="event.stopPropagation();copyInstallCommand(this.closest('.cta-cmd'))">
+      <span class="cta-copy-icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></span>
+      <span class="cta-copied-icon" style="display:none"><svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+    </button>
   </div>
 </div>`;
 

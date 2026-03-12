@@ -53,54 +53,57 @@ export default function InstallCommandBox({
       </div>
 
       <div
-        className={`terminal-block relative w-full pr-14 sm:pr-16 ${
-          isCentered ? "sm:inline-flex sm:w-auto" : ""
+        className={`terminal-block w-full overflow-hidden p-0 ${
+          isCentered ? "sm:mx-auto sm:max-w-[46rem]" : ""
         } ${glow ? "glow-breathe" : ""}`}
       >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <span className="text-accent shrink-0">$</span>
-          <code className="text-[10px] sm:text-sm text-text-primary break-all sm:break-normal min-w-0">
-            {INSTALL_CMD}
-          </code>
+        <div className="grid grid-cols-[minmax(0,1fr)_3rem] items-stretch sm:grid-cols-[minmax(0,1fr)_3.5rem]">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3 px-3 py-3 sm:px-4 sm:py-4">
+            <span className="text-accent shrink-0">$</span>
+            <code className="text-[10px] sm:text-sm text-text-primary break-all sm:break-normal min-w-0">
+              {INSTALL_CMD}
+            </code>
+          </div>
+          <button
+            onClick={handleCopy}
+            type="button"
+            className="flex items-center justify-center border-l border-border text-text-muted transition-colors hover:text-accent"
+            title="Copy to clipboard"
+            aria-label="Copy to clipboard"
+          >
+            {copied ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-accent"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+              </svg>
+            )}
+          </button>
         </div>
-        <button
-          onClick={handleCopy}
-          className="absolute inset-y-0 right-0 w-12 sm:w-14 flex items-center justify-center border-l border-border transition-colors text-text-muted hover:text-accent rounded-r-[7px]"
-          title="Copy to clipboard"
-          aria-label="Copy to clipboard"
-        >
-          {copied ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-accent"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-            </svg>
-          )}
-        </button>
       </div>
     </div>
   );
