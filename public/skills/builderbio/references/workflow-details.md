@@ -102,6 +102,7 @@ Rules:
 - Use `--days 0` for full-history scan
 - Include only flags for roots that actually exist
 - If `~/.antigravity_tools/proxy_logs.db` is missing, still inspect `~/.gemini/antigravity`
+- For Claude Code, treat `~/.claude/projects/**/*.jsonl` as transcript-grade evidence and `~/.claude/todos/*.json` plus `~/.claude/telemetry/*.json` as presence-only activity evidence for start dates and active-day recovery
 - The parser should emit:
   - `scanner_version`
   - `scan_audit.summary`
@@ -165,6 +166,7 @@ Derive facts in a deterministic order:
 Accuracy rules inside fact derivation:
 
 - derive `active_days`, streaks, heatmaps, and time rhythm from all observed activity timestamps or trustworthy session spans, not only from a single session start date
+- use presence-only sidecar traces conservatively: they may extend `date_range`, `active_days`, and agent first-use dates, but they must not inflate sessions, turns, tool calls, or tokens
 - carry `token_coverage` alongside `total_tokens`; if some agents have no reliable local token logs, treat the number as an observed lower bound
 - describe multi-agent usage as collaboration shape unless the evidence clearly supports fixed specialization
 

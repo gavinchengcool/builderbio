@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
       title: "Gavin's BuilderBio — What I Built with AI",
       description:
-        "231 sessions, 25.1K turns, 49 active days of building with Codex and Claude Code since December 12, 2025. See how Gavin works with AI coding agents.",
+        "231 sessions, 25.1K turns, 60 active days of building with Codex and Claude Code since December 5, 2025. See how Gavin works with AI coding agents.",
       alternates: {
         canonical: "https://gavin.builderbio.dev",
       },
@@ -101,16 +101,16 @@ const previewFallback = {
   trust: {
     unfiltered: true,
     generatedAt: "2026-03-13",
-    note: "这次重扫直接把 Gavin 的本地 agent 历史拉回到 2025-12-12。只有当服务器里的校验哈希和 BuilderBio payload 完全一致时，才会显示 Unfiltered。",
+    note: "这次重扫把 Gavin 的 Claude Code 活动痕迹拉回到 2025-12-05，Codex 仍从 2025-12-12 开始。只有当服务器里的校验哈希和 BuilderBio payload 完全一致时，才会显示 Unfiltered。",
   },
-  dateRange: "2025-12-12 → 2026-03-13",
+  dateRange: "2025-12-05 → 2026-03-13",
   stats: [
     { label: "会话", value: "231" },
     { label: "轮对话", value: "25.1K" },
-    { label: "工具调用", value: "16.0K" },
-    { label: "活跃天数", value: "49" },
+    { label: "工具调用", value: "16.1K" },
+    { label: "活跃天数", value: "60" },
   ],
-  totalTokens: 1_626_501_203,
+  totalTokens: 1_636_815_058,
   agents: [
     { name: "Claude Code", role: "深度协作", sessions: 45, color: "#FF6B35" },
     { name: "Codex", role: "快速执行", sessions: 186, color: "#34D399" },
@@ -126,7 +126,7 @@ const previewFallback = {
     label: "AI management style",
     name: "导演型 × 冲刺型",
     summary:
-      "从 2025-12-12 开始，Gavin 一直在高频执行和深度重构之间来回切换：Codex 负责把事情快速往前推，Claude Code 负责把真正复杂的问题拉成长会话啃到底。",
+      "从 2025-12-05 的 Claude Code 活动痕迹和 2025-12-12 的 Codex 会话开始，Gavin 一直在高频执行和深度重构之间来回切换：Codex 负责把事情快速往前推，Claude Code 负责把真正复杂的问题拉成长会话啃到底。",
     traits: [
       "Codex 承担高频执行、终端推进和问完就干的快循环",
       "Claude Code 留给长会话、结构整理和需要待久一点的问题",
@@ -146,11 +146,11 @@ const previewFallback = {
     agentLoyalty: "多 Agent 协作",
     agentDetail: "Codex 负责高频推进，Claude Code 负责长会话收束",
     toolTotals: [
-      { label: "Bash", count: 6357, color: "#FF6B35" },
+      { label: "Bash", count: 6460, color: "#FF6B35" },
       { label: "shell_command", count: 4150, color: "#34D399" },
       { label: "Read", count: 1713, color: "#60a5fa" },
       { label: "Edit", count: 1036, color: "#fbbf24" },
-      { label: "write_stdin", count: 871, color: "#f472b6" },
+      { label: "write_stdin", count: 887, color: "#f472b6" },
       { label: "Write", count: 347, color: "#a78bfa" },
       { label: "TaskUpdate", count: 298, color: "#2dd4bf" },
     ],
@@ -162,7 +162,7 @@ const previewFallback = {
       "BuilderBio 把 Gavin 自己的本地 agent 历史扫出来，再重组成一页能分享的 Builder 年度回顾。",
     why: "它把 Gavin 这段时间投入最深的三件事放到了一起：研究 Agent、推进产品，以及把自己的工作流做成可复用的工具。",
     proof: [
-      "这次全量扫描把时间线直接拉回到了 2025-12-12",
+      "这次全量扫描把 Claude Code 的起点拉回到了 2025-12-05",
       "最大单次会话直接冲到了 4,160 turns",
       "BuilderBio 本身就是 Gavin 这段时间最密集迭代的主线之一",
     ],
@@ -185,7 +185,7 @@ const previewFallback = {
     {
       label: "最忙的一天",
       value: "2026-03-11",
-      detail: "9 个 sessions、5,394 turns，把这次全量扫描里的日强度峰值直接拉满。",
+      detail: "9 个 sessions、5,408 turns，把这次全量扫描里的日强度峰值直接拉满。",
     },
     {
       label: "最大会话",
@@ -254,7 +254,7 @@ const previewFallback = {
       role: "深度协作",
       summary:
         "当 Gavin 需要在一个问题里待得足够久，直到结构真正长出来时，就会切到 Claude Code。",
-      evidence: "45 个 sessions · 17.3K turns · 平均每次 385 turns",
+      evidence: "45 个 sessions · 17.4K turns · 平均每次 386 turns",
       color: "#FF6B35",
     },
     {
@@ -262,7 +262,7 @@ const previewFallback = {
       role: "快速执行",
       summary:
         "更适合高频执行、终端驱动的推进，以及问完就干的快循环。",
-      evidence: "186 个 sessions · 7.7K turns · 平均每次 41 turns",
+      evidence: "186 个 sessions · 7.8K turns · 平均每次 42 turns",
       color: "#34D399",
     },
   ],
@@ -271,11 +271,11 @@ const previewFallback = {
       name: "Claude Code",
       color: "#FF6B35",
       sessions: 45,
-      totalTurns: 17346,
-      totalToolCalls: 6519,
-      avgTurns: 385,
+      totalTurns: 17350,
+      totalToolCalls: 6520,
+      avgTurns: 386,
       topTools: [
-        { label: "Bash", count: 2110, color: "#FF6B35" },
+        { label: "Bash", count: 2111, color: "#FF6B35" },
         { label: "Read", count: 1713, color: "#60a5fa" },
         { label: "Edit", count: 1036, color: "#34D399" },
         { label: "Write", count: 347, color: "#f472b6" },
@@ -286,13 +286,13 @@ const previewFallback = {
       name: "Codex",
       color: "#34D399",
       sessions: 186,
-      totalTurns: 7713,
-      totalToolCalls: 9451,
-      avgTurns: 41,
+      totalTurns: 7751,
+      totalToolCalls: 9569,
+      avgTurns: 42,
       topTools: [
-        { label: "Bash", count: 4247, color: "#FF6B35" },
+        { label: "Bash", count: 4349, color: "#FF6B35" },
         { label: "shell_command", count: 4150, color: "#34D399" },
-        { label: "write_stdin", count: 871, color: "#fbbf24" },
+        { label: "write_stdin", count: 887, color: "#fbbf24" },
         { label: "view_image", count: 68, color: "#a78bfa" },
       ],
       distribution: "113 短 · 58 中 · 15 长",
@@ -301,10 +301,10 @@ const previewFallback = {
   eras: [
     {
       title: "First traces",
-      period: "12 月 12 日 → 1 月 18 日",
+      period: "12 月 5 日 → 1 月 18 日",
       summary:
-        "最开始主要是 Codex 驱动的小步快跑，很多天是零散但持续的终端推进，BuilderBio 的底层节奏就是从这里开始积累起来的。",
-      cue: "起点低频 · Codex 为主 · 开始积累",
+        "最开始先出现的是 Claude Code 的 sidecar 活动痕迹，随后 Codex 会话在 12 月 12 日接进来，很多天是零散但持续的终端推进，BuilderBio 的底层节奏就是从这里开始积累起来的。",
+      cue: "起点更早 · Codex 为主 · Claude 痕迹已出现",
       bars: [42, 58, 24],
     },
     {
@@ -327,13 +327,13 @@ const previewFallback = {
   socialCurrency: {
     title: "Collaboration scale",
     summary:
-      "1.63B tokens、231 个会话和 25.1K turns，把 Gavin 从 2025-12-12 到现在的 AI 协作强度完整拉了出来。",
+      "1.64B tokens、231 个会话和 25.1K turns，把 Gavin 从 2025-12-05 到现在的 AI 协作强度完整拉了出来。",
     tokenLabel: "与 AI 协作产生的 tokens",
     coverageNote: "这些 tokens 来自当前扫描到的全部可计量来源。",
     partial: false,
     facts: [
       { label: "最大会话", value: "4,160 turns" },
-      { label: "最忙的一天", value: "9 个 sessions · 5,394 turns" },
+      { label: "最忙的一天", value: "9 个 sessions · 5,408 turns" },
       { label: "最长连续天数", value: "18 天" },
     ],
   },
@@ -370,42 +370,49 @@ const previewFallback = {
       23: 7,
     },
     periods: [
-      { label: "深夜", emoji: "Moon", sessions: 204, turns: 5454, color: "#a78bfa" },
+      { label: "深夜", emoji: "Moon", sessions: 204, turns: 5456, color: "#a78bfa" },
       { label: "上午", emoji: "Sun", sessions: 235, turns: 14615, color: "#fbbf24" },
-      { label: "下午", emoji: "Bolt", sessions: 107, turns: 4861, color: "#fb923c" },
+      { label: "下午", emoji: "Bolt", sessions: 107, turns: 4901, color: "#fb923c" },
       { label: "晚上", emoji: "Owl", sessions: 37, turns: 129, color: "#FF6B35" },
     ],
   },
   activity: {
     longestStreak: 18,
     currentStreak: 18,
-    activeDays: 49,
-    totalDays: 92,
+    activeDays: 60,
+    totalDays: 99,
     heatmap: {
+      "2025-12-05": 1,
+      "2025-12-06": 0,
+      "2025-12-07": 1,
+      "2025-12-08": 1,
+      "2025-12-09": 1,
+      "2025-12-10": 0,
+      "2025-12-11": 0,
       "2025-12-12": 16,
       "2025-12-13": 0,
       "2025-12-14": 0,
       "2025-12-15": 0,
       "2025-12-16": 0,
-      "2025-12-17": 0,
-      "2025-12-18": 0,
+      "2025-12-17": 1,
+      "2025-12-18": 1,
       "2025-12-19": 0,
       "2025-12-20": 0,
       "2025-12-21": 0,
       "2025-12-22": 0,
-      "2025-12-23": 0,
+      "2025-12-23": 1,
       "2025-12-24": 0,
       "2025-12-25": 9,
       "2025-12-26": 8,
-      "2025-12-27": 0,
-      "2025-12-28": 0,
-      "2025-12-29": 0,
+      "2025-12-27": 1,
+      "2025-12-28": 1,
+      "2025-12-29": 1,
       "2025-12-30": 0,
       "2025-12-31": 0,
       "2026-01-01": 0,
       "2026-01-02": 0,
       "2026-01-03": 0,
-      "2026-01-04": 0,
+      "2026-01-04": 1,
       "2026-01-05": 0,
       "2026-01-06": 0,
       "2026-01-07": 4,
@@ -471,9 +478,9 @@ const previewFallback = {
       "2026-03-08": 284,
       "2026-03-09": 336,
       "2026-03-10": 4869,
-      "2026-03-11": 5394,
-      "2026-03-12": 831,
-      "2026-03-13": 979,
+      "2026-03-11": 5408,
+      "2026-03-12": 845,
+      "2026-03-13": 993,
     },
   },
   highlights: {
@@ -485,7 +492,7 @@ const previewFallback = {
     busiestDay: {
       date: "2026-03-11",
       sessions: 9,
-      turns: 5394,
+      turns: 5408,
     },
     longestStreak: 18,
     favoritePrompt:
@@ -494,12 +501,12 @@ const previewFallback = {
   evidence: {
     coverage: {
       status: "全量历史重扫",
-      summary: "这页顶部的统计、活跃图和高光，直接来自 2025-12-12 到 2026-03-13 的本地 agent session 日志。",
-      note: "这次扫描把 Codex 的起点拉回到 2025-12-12，也把 Claude Code 从首次出现的 2026-02-13 一并接进来了。",
+      summary: "这页顶部的统计、活跃图和高光，直接来自 2025-12-05 到 2026-03-13 的本地 agent session 日志，以及 Claude Code 的 todos / telemetry sidecar 痕迹。",
+      note: "这次扫描把 Claude Code 的起点从 transcript 首次出现的 2026-02-13 回拉到了 2025-12-05；Codex 仍从 2025-12-12 开始。",
     },
     receipts: [
       { label: "高峰窗口", value: "06:00–12:00", detail: "真正的单点峰值出现在凌晨 2 点" },
-      { label: "第一工具", value: "Bash", detail: "整个周期累计 6,357 次调用" },
+      { label: "第一工具", value: "Bash", detail: "整个周期累计 6,460 次调用" },
       { label: "最大会话", value: "4,160 turns", detail: "单次会话里一共跑了 1,565 次工具调用" },
       { label: "Agent 分工", value: "186 / 45", detail: "Codex 负责高频推进，Claude Code 负责长会话" },
     ],
@@ -549,7 +556,7 @@ const previewFallback = {
       summary:
         "白天推进完项目后，晚上会回来把没想清楚的问题重新拆开，直到第二天的方向变得更清楚。",
       why: "它说明这里的 AI 关系不只是在执行任务，也在承担复盘和再组织判断的工作。",
-      proof: ["25.1K turns", "49 个活跃日", "高峰窗口在 06:00–12:00 / 凌晨 2 点单点冲顶"],
+      proof: ["25.1K turns", "60 个活跃日", "高峰窗口在 06:00–12:00 / 凌晨 2 点单点冲顶"],
     },
     recurringThreads: [
       {

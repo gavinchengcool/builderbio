@@ -20,7 +20,7 @@ Primary parser output:
 
 ```json
 {
-  "scanner_version": "0.8.4",
+  "scanner_version": "0.8.5",
   "scan_audit": {
     "summary": {
       "status": "partial",
@@ -37,6 +37,15 @@ Primary parser output:
       "claude-code": 4,
       "trae": 6,
       "cursor": 1
+    },
+    "activity_recovery": {
+      "claude-code": {
+        "active_dates_count": 43,
+        "todo_files": 129,
+        "telemetry_events": 1057,
+        "sources": ["~/.claude/todos", "~/.claude/telemetry"],
+        "note": "Recovered Claude Code presence-only activity from sidecar traces."
+      }
     },
     "agents": {
       "codex": {

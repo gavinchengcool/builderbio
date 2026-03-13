@@ -32,7 +32,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 
-SCANNER_VERSION = "0.8.4"
+SCANNER_VERSION = "0.8.5"
 MAX_AUDIT_ITEMS = 25
 WEAK_SCAN_LIMIT = 400
 COMMON_DISCOVERY_ROOTS = [
@@ -145,20 +145,25 @@ def main():
         audit,
     )
     sessions = parse_discovered_sources(discovery, cutoff, history, audit)
+    auxiliary_activity = collect_auxiliary_activity(
+        claude_dir,
+        cutoff,
+        audit,
+    )
 
     # Sort by date descending
     sessions.sort(key=lambda s: s.get("date", ""), reverse=True)
     summarize_scan_audit(audit, sessions, discovery)
 
     # Compute aggregates
-    profile = compute_profile(sessions, days)
+    profile = compute_profile(sessions, days, auxiliary_activity=auxiliary_activity)
     profile["scanner_version"] = SCANNER_VERSION
     profile["scan_status"] = audit["summary"]["status"]
     profile["scan_confidence"] = audit["summary"]["confidence"]
     profile["scan_recommendation"] = audit["summary"]["recommended_action"]
     profile["agent_sources_found"] = audit["agent_sources_found"]
     profile["scan_warnings"] = audit["warnings"][:5]
-    heatmap = compute_heatmap(sessions, days)
+    heatmap = compute_heatmap(sessions, days, auxiliary_activity=auxiliary_activity)
     style = compute_style(sessions)
     highlights = compute_highlights(sessions)
 
@@ -1261,6 +1266,84 @@ def load_claude_history(claude_dir):
             except (json.JSONDecodeError, KeyError):
                 continue
     return history
+
+
+def collect_auxiliary_activity(claude_dir, cutoff, audit):
+    """Recover conservative activity dates from agent-specific sidecar traces."""
+    recovered = {}
+    claude_activity = collect_claude_auxiliary_activity(claude_dir, cutoff, audit)
+    if claude_activity:
+        recovered["claude-code"] = claude_activity
+    return recovered
+
+
+def collect_claude_auxiliary_activity(claude_dir, cutoff, audit):
+    """Recover Claude Code presence-only dates from todos and telemetry."""
+    if not os.path.isdir(claude_dir):
+        return {}
+
+    todo_dates = set()
+    telemetry_dates = set()
+    todo_files = 0
+    telemetry_events = 0
+
+    todos_dir = os.path.join(claude_dir, "todos")
+    for fp in glob.glob(os.path.join(todos_dir, "*.json")):
+        try:
+            ts = datetime.fromtimestamp(os.path.getmtime(fp), tz=timezone.utc)
+        except OSError:
+            continue
+        if ts < cutoff:
+            continue
+        todo_dates.add(ts.strftime("%Y-%m-%d"))
+        todo_files += 1
+
+    telemetry_dir = os.path.join(claude_dir, "telemetry")
+    for fp in glob.glob(os.path.join(telemetry_dir, "*.json")):
+        try:
+            with open(fp, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        entries = payload if isinstance(payload, list) else [payload]
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            event_data = entry.get("event_data", {})
+            if not isinstance(event_data, dict):
+                continue
+            if event_data.get("client_type") not in {"", None, "cli"}:
+                continue
+            if event_data.get("entrypoint") not in {"", None, "cli"}:
+                continue
+            ts = parse_ts(
+                event_data.get("client_timestamp")
+                or entry.get("client_timestamp")
+                or entry.get("timestamp")
+            )
+            if not ts or ts < cutoff:
+                continue
+            telemetry_dates.add(ts.strftime("%Y-%m-%d"))
+            telemetry_events += 1
+
+    active_dates = sorted(todo_dates | telemetry_dates)
+    if not active_dates:
+        return {}
+
+    audit.setdefault("activity_recovery", {})["claude-code"] = {
+        "active_dates_count": len(active_dates),
+        "todo_files": todo_files,
+        "telemetry_events": telemetry_events,
+        "sources": ["~/.claude/todos", "~/.claude/telemetry"],
+        "note": "Recovered Claude Code presence-only activity from todos and telemetry sidecar files.",
+    }
+
+    return {
+        "active_dates": active_dates,
+        "first_activity": active_dates[0],
+        "evidence_note": "Recovered from Claude Code todos and telemetry sidecar files.",
+    }
 
 
 def infer_claude_session_id(filepath):
@@ -3227,10 +3310,11 @@ def known_token_blind_agent(agent):
     }
 
 
-def compute_profile(sessions, days):
+def compute_profile(sessions, days, auxiliary_activity=None):
     """Compute aggregate profile stats."""
     agents = defaultdict(lambda: {"sessions": 0, "turns": 0, "first_session": ""})
     active_dates = set()
+    agent_active_dates = defaultdict(set)
     total_turns = 0
     total_tools = 0
     total_tokens = 0
@@ -3254,6 +3338,7 @@ def compute_profile(sessions, days):
                 agents[s["agent"]]["first_session"] = first_session_date
         for ds in session_dates:
             active_dates.add(ds)
+            agent_active_dates[s["agent"]].add(ds)
         total_turns += s["turns"]
         total_tools += s["tool_calls"]
         token_value = int(s.get("tokens", 0) or 0)
@@ -3269,6 +3354,25 @@ def compute_profile(sessions, days):
             or (token_value == 0 and known_token_blind_agent(s["agent"]))
         ):
             token_agent["sessions_missing_tokens"] += 1
+
+    for agent, meta in (auxiliary_activity or {}).items():
+        extra_dates = sorted(
+            d
+            for d in meta.get("active_dates", [])
+            if isinstance(d, str) and d and d not in agent_active_dates[agent]
+        )
+        if not extra_dates:
+            continue
+        agents[agent]["presence_only_days"] = len(extra_dates)
+        if meta.get("evidence_note"):
+            agents[agent]["activity_evidence"] = meta["evidence_note"]
+        current_first = agents[agent]["first_session"]
+        first_activity = meta.get("first_activity") or extra_dates[0]
+        if first_activity and (not current_first or first_activity < current_first):
+            agents[agent]["first_session"] = first_activity
+        for ds in extra_dates:
+            active_dates.add(ds)
+            agent_active_dates[agent].add(ds)
 
     dates = sorted(active_dates)
     observed_agents = []
@@ -3319,7 +3423,7 @@ def compute_profile(sessions, days):
     }
 
 
-def compute_heatmap(sessions, days):
+def compute_heatmap(sessions, days, auxiliary_activity=None):
     """Compute daily activity counts for heatmap."""
     daily = defaultdict(int)
     for s in sessions:
@@ -3327,6 +3431,11 @@ def compute_heatmap(sessions, days):
             s.get("turns", 0), session_activity_dates(s)
         ).items():
             daily[date_str] += turns
+
+    for meta in (auxiliary_activity or {}).values():
+        for ds in meta.get("active_dates", []):
+            if isinstance(ds, str) and ds:
+                daily[ds] = max(daily.get(ds, 0), 1)
 
     end = datetime.now(timezone.utc).date()
     if days <= 0 and daily:
