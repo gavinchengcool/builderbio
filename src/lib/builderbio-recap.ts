@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { sha256 } from "@/lib/auth";
 import { normalizeBuilderBioData, extractPortraitAvatarUrl } from "@/lib/builderbio";
 import { db } from "@/lib/db";
@@ -167,6 +167,23 @@ function formatCompact(value: number): string {
     notation: "compact",
     maximumFractionDigits: value >= 1_000_000 ? 1 : 0,
   }).format(value);
+}
+
+function parseDisplayNumber(value: string): number {
+  const raw = value.trim().toUpperCase();
+  if (!raw) return 0;
+  const match = raw.match(/^([0-9]+(?:\.[0-9]+)?)([KMB])?$/);
+  if (!match) return Number(raw.replace(/,/g, "")) || 0;
+
+  const base = Number(match[1]);
+  const suffix = match[2];
+  if (!suffix) return base;
+  const multiplierMap: Record<"K" | "M" | "B", number> = {
+    K: 1_000,
+    M: 1_000_000,
+    B: 1_000_000_000,
+  };
+  return Math.round(base * multiplierMap[suffix as "K" | "M" | "B"]);
 }
 
 function humanizeTag(value: string): string {
@@ -1362,4 +1379,59 @@ export async function loadPublicBuilderBioRecap(username: string) {
       canonical: `https://${username}.builderbio.dev`,
     },
   };
+}
+
+export async function loadPublicBuilderBioRecapGallery(
+  mode: "builder" | "hybrid" | "conversation-first",
+  limit = 8
+) {
+  const rows = await db
+    .select({
+      username: users.username,
+    })
+    .from(users)
+    .innerJoin(profiles, eq(profiles.userId, users.id))
+    .where(and(eq(profiles.isPublic, 1), isNotNull(profiles.builderBioData)))
+    .orderBy(users.username)
+    .limit(50);
+
+  const items = [];
+  for (const row of rows) {
+    const loaded = await loadPublicBuilderBioRecap(row.username);
+    if (!loaded) continue;
+    if (loaded.recap.presentation.chosenMode !== mode) continue;
+
+    const totalSessions = parseDisplayNumber(
+      String(loaded.recap.stats.find((item) => item.label === "Sessions")?.value ?? 0)
+    );
+    const totalTurns = parseDisplayNumber(
+      String(loaded.recap.stats.find((item) => item.label === "Turns")?.value ?? 0)
+    );
+
+    items.push({
+      username: row.username,
+      name: loaded.recap.name,
+      slug: loaded.recap.slug,
+      title: loaded.recap.title,
+      thesis: loaded.recap.thesis,
+      theme: loaded.recap.presentation.chosenTheme,
+      inferredTheme: loaded.recap.presentation.inferredTheme,
+      mode: loaded.recap.presentation.chosenMode,
+      dateRange: loaded.recap.dateRange,
+      totalSessions,
+      totalTurns,
+      totalTokens: loaded.recap.totalTokens,
+      activeDays: parseDisplayNumber(
+        String(loaded.recap.stats.find((item) => item.label === "Active Days")?.value ?? 0)
+      ),
+      sparse:
+        totalSessions === 0 ||
+        totalTurns === 0 ||
+        (!loaded.recap.dateRange && loaded.recap.totalTokens === 0),
+    });
+
+    if (items.length >= limit) break;
+  }
+
+  return items;
 }

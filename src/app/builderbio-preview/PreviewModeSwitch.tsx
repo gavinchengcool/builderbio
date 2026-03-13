@@ -5,6 +5,7 @@ type PreviewModeSwitchProps = {
     | "builder"
     | "hybrid"
     | "conversation-first"
+    | "conversation-live"
     | "conversation-lab"
     | "archetype-lab";
 };
@@ -52,6 +53,14 @@ export default function PreviewModeSwitch({ active }: PreviewModeSwitchProps) {
         )}`}
       >
         Conversation lab
+      </Link>
+      <Link
+        href="/builderbio-preview/conversation-live"
+        className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] transition-colors ${chipClass(
+          active === "conversation-live"
+        )}`}
+      >
+        Conversation live
       </Link>
       <Link
         href="/builderbio-preview/archetype-lab"
