@@ -96,6 +96,10 @@ Each theme should meaningfully vary:
 
 If the only difference is `--accent`, the theme system has failed.
 
+For visual-execution details after mode/theme have been chosen, see [visual-execution.md](visual-execution.md).
+
+General frontend-design references can help with execution quality, but they are downstream of BuilderBio's own presentation logic.
+
 ## 3. Builder-Mode Themes
 
 These themes are for users whose dominant mode is building and shipping.

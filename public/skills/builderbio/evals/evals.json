@@ -1,6 +1,6 @@
 {
   "skill_name": "builderbio",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "benchmark_axes": {
     "coverage": "Discover strong-path logs plus weak-path candidates, never silently dropping unknown sources.",
     "truth": "Produce evidence-backed facts and carry scan transparency through publish.",
@@ -88,6 +88,19 @@
         "Proposes a default visual archetype for the inferred mode before asking for override",
         "Persists inferred and chosen mode/theme values instead of losing the system default after override",
         "Keeps English module titles and Make your own CTA while following the user's dominant content language inside the page"
+      ]
+    },
+    {
+      "id": 7,
+      "axis": ["delight", "truth"],
+      "prompt": "不要只是给不同用户换个颜色。页面样式要真的根据 mode 和 archetype 变化，至少在布局、字体系、信息密度和图表语法上看得出来。",
+      "expected_output": "Keeps BuilderBio's mode-first product logic intact, then applies visual differentiation that changes layout and visual grammar instead of only accent color.",
+      "assertions": [
+        "Keeps interaction mode inference ahead of visual execution decisions",
+        "Uses the correct page skeleton for builder, hybrid, or conversation-first instead of one generic module order",
+        "Changes more than accent color when applying a visual archetype",
+        "Uses typography, density, card grammar, or chart language to reinforce the chosen archetype",
+        "Does not let a general frontend-design reference override BuilderBio's own mode/theme contract"
       ]
     }
   ]

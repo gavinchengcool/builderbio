@@ -1,6 +1,6 @@
 ---
 name: builderbio
-version: 0.8.2
+version: 0.8.3
 description: |
   Use this skill when the user wants a BuilderBio, builder recap, builder profile, AI build history, annual-review style coding recap, or a shareable page about how they build with AI agents. It scans local coding-agent logs across Claude Code, Codex, Trae, Cursor, OpenClaw, Antigravity, Gemini-hosted Antigravity fallbacks, Kiro, Windsurf, and other discovered sources; produces a scan audit; derives evidence-backed builder narratives; and publishes a shareable BuilderBio.
 allowed-tools:
@@ -35,6 +35,7 @@ Before doing anything else, read:
 - [references/data-model.md](references/data-model.md) for the layered evidence/facts/narrative model
 - [references/benchmark-rubric.md](references/benchmark-rubric.md) for pass/fail criteria
 - [references/visual-archetypes.md](references/visual-archetypes.md) for interaction modes and the theme system
+- [references/visual-execution.md](references/visual-execution.md) when working on detail-page design and visual differentiation
 
 Only read format-specific references when needed:
 
@@ -137,6 +138,8 @@ The agent should:
 - infer a default visual archetype
 - explain the default briefly
 - allow override only after a strong default has been proposed
+
+If visual work is required, apply the visual execution rules from [references/visual-execution.md](references/visual-execution.md) only after mode and archetype have been inferred.
 
 Everything else should be discovered, inferred, or recovered automatically.
 
@@ -270,6 +273,15 @@ Legacy themes remain valid for compatibility:
 - `terminal-green`
 - `minimal-light`
 - `cyberpunk`
+
+External frontend-design references may inform visual execution, but they must remain subordinate to BuilderBio's own mode-first and archetype-first contract.
+
+Do not let a general frontend-design skill:
+
+- replace mode inference
+- replace archetype inference
+- flatten all pages into the same skeleton
+- turn the page into a random aesthetic exercise
 
 If the user has no preference, keep the inferred default.
 

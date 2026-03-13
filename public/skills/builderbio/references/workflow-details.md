@@ -212,12 +212,20 @@ Infer two things first:
 1. `interaction_mode`
 2. `style_theme`
 
+Then, if the task includes detail-page design or visual refinement, apply [visual-execution.md](visual-execution.md).
+
 Persist four values:
 
 1. `inferred_interaction_mode`
 2. `chosen_interaction_mode`
 3. `inferred_style_theme`
 4. `chosen_style_theme`
+
+Rules:
+
+- external frontend-design references can improve execution quality, but they must not replace BuilderBio's own mode/theme inference
+- use them after the presentation decision is made, not before
+- if they only change accent color and leave the layout untouched, the result is not good enough
 
 ### Interaction modes
 

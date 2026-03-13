@@ -83,6 +83,8 @@ Make the user feel seen and make the page worth sharing.
 - Builder eras tell a believable arc
 - The listing card feels like a person, not just stats
 - The chosen visual archetype feels fitted to the user rather than like a recolored default
+- The chosen mode changes the page structure in a visible way instead of reusing one generic skeleton
+- Typography, density, card grammar, and chart treatment all reinforce the chosen archetype
 
 ### Failure Signals
 
@@ -90,6 +92,8 @@ Make the user feel seen and make the page worth sharing.
 - Summary text is generic ("full-stack builder", "AI developer")
 - Summary text talks about "the page" instead of the builder
 - Every user gets the same visual treatment except for accent color
+- A general frontend-design pass overrides BuilderBio's mode-first presentation logic
+- `builder`, `hybrid`, and `conversation-first` all render the same module order with only cosmetic changes
 - All charts are equally weighted and nothing stands out
 - A stranger cannot tell why the builder is interesting
 
