@@ -32,7 +32,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 
-SCANNER_VERSION = "0.8.3"
+SCANNER_VERSION = "0.8.4"
 MAX_AUDIT_ITEMS = 25
 WEAK_SCAN_LIMIT = 400
 COMMON_DISCOVERY_ROOTS = [
@@ -184,9 +184,11 @@ def main():
     profile["theme_candidates"] = presentation["theme_candidates"]
     style["theme_candidates"] = presentation["theme_candidates"]
 
-    # Strip private _start_hour before output
+    # Strip private activity markers before output
     for s in sessions:
         s.pop("_start_hour", None)
+        s.pop("_activity_dates", None)
+        s.pop("_activity_hours", None)
 
     result = {
         "scanner_version": SCANNER_VERSION,
@@ -1387,7 +1389,7 @@ def finalize_claude_session(acc):
         duration = int((acc["end_ts"] - acc["start_ts"]).total_seconds())
         date_str = acc["start_ts"].strftime("%Y-%m-%d")
 
-    return {
+    return attach_activity_markers({
         "id": acc["id"],
         "agent": "claude-code",
         "model": acc["model"],
@@ -1411,7 +1413,7 @@ def finalize_claude_session(acc):
         "partial_reasons": [],
         "discovery_strength": "strong",
         "probe_hint": "claude-jsonl",
-    }
+    }, start_ts=acc["start_ts"], end_ts=acc["end_ts"])
 
 
 def parse_claude_code_sessions(claude_dir, cutoff, history):
@@ -1533,7 +1535,7 @@ def parse_claude_code_session(filepath, session_id, history):
         duration = int((end_ts - start_ts).total_seconds())
         date_str = start_ts.strftime("%Y-%m-%d")
 
-    return {
+    return attach_activity_markers({
         "id": session_id,
         "agent": "claude-code",
         "model": model,
@@ -1557,7 +1559,7 @@ def parse_claude_code_session(filepath, session_id, history):
         "partial_reasons": [],
         "discovery_strength": "strong",
         "probe_hint": "claude-jsonl",
-    }
+    }, start_ts=start_ts, end_ts=end_ts)
 
 
 def extract_codex_token_total(snapshot):
@@ -1706,7 +1708,7 @@ def parse_codex_session(filepath):
         else fallback_token_total
     )
 
-    return {
+    return attach_activity_markers({
         "id": session_id or Path(filepath).stem,
         "agent": "codex",
         "model": model,
@@ -1730,7 +1732,7 @@ def parse_codex_session(filepath):
         "partial_reasons": [],
         "discovery_strength": "strong",
         "probe_hint": "codex-jsonl",
-    }
+    }, start_ts=start_ts, end_ts=end_ts)
 
 
 # ---------------------------------------------------------------------------
@@ -1839,7 +1841,7 @@ def _parse_trae_db(db_path, cutoff, seen_ids):
                     duration = max(0, int((end_ts - start_ts).total_seconds()))
                     date_str = start_ts.strftime("%Y-%m-%d")
 
-                results.append({
+                results.append(attach_activity_markers({
                     "id": sid,
                     "agent": "trae",
                     "model": chat.get("model", ""),
@@ -1863,7 +1865,7 @@ def _parse_trae_db(db_path, cutoff, seen_ids):
                     "partial_reasons": ["tokens_unavailable"],
                     "discovery_strength": "strong",
                     "probe_hint": "trae-state-vscdb",
-                })
+                }, start_ts=start_ts, end_ts=end_ts))
 
         conn.close()
     except (sqlite3.Error, OSError):
@@ -2030,7 +2032,7 @@ def parse_antigravity_sessions(antigravity_dir, cutoff):
         duration = max(0, int((end_ts - start_ts).total_seconds()))
         date_str = start_ts.strftime("%Y-%m-%d")
 
-        sessions.append({
+        sessions.append(attach_activity_markers({
             "id": sid,
             "agent": "antigravity",
             "model": model,
@@ -2054,7 +2056,7 @@ def parse_antigravity_sessions(antigravity_dir, cutoff):
             "partial_reasons": [],
             "discovery_strength": "strong",
             "probe_hint": "proxy-logs-db",
-        })
+        }, start_ts=start_ts, end_ts=end_ts, timestamps=timestamps))
 
     return sessions
 
@@ -2140,7 +2142,7 @@ def parse_antigravity_gemini_sessions(gemini_dir, cutoff):
             display = f"Antigravity session {cid[:8]}"
 
         sessions.append(
-            {
+            attach_activity_markers({
                 "id": f"ag-gemini-{cid[:12]}",
                 "agent": "antigravity",
                 "model": "gemini",
@@ -2166,7 +2168,7 @@ def parse_antigravity_gemini_sessions(gemini_dir, cutoff):
                 "partial_reasons": ["encrypted-pb-metadata-only"],
                 "discovery_strength": "strong",
                 "probe_hint": "gemini-conversations",
-            }
+            }, start_ts=created_at, end_ts=updated_at)
         )
 
     return sessions
@@ -2338,7 +2340,7 @@ def _parse_cursor_db(db_path, cutoff, seen_ids, tracking, cwd):
                     seen_ids.add(cid)
                     subtitle = composer.get("subtitle", "")
                     results.append(
-                        {
+                        attach_activity_markers({
                             "id": f"cursor-{cid[:16]}",
                             "agent": "cursor",
                             "model": model_str,
@@ -2362,7 +2364,7 @@ def _parse_cursor_db(db_path, cutoff, seen_ids, tracking, cwd):
                             "partial_reasons": partial_reasons,
                             "discovery_strength": "strong",
                             "probe_hint": "cursor-state-vscdb",
-                        }
+                        }, start_ts=start_ts, end_ts=end_ts)
                     )
 
         if not results and gen_count > 0:
@@ -2750,7 +2752,7 @@ def _parse_windsurf_file(filepath, session_id):
         duration = max(0, int((end_ts - start_ts).total_seconds()))
         date_str = start_ts.strftime("%Y-%m-%d")
 
-    return {
+    return attach_activity_markers({
         "id": session_id,
         "agent": "windsurf",
         "model": model,
@@ -2774,7 +2776,7 @@ def _parse_windsurf_file(filepath, session_id):
         "partial_reasons": ["tokens_unavailable"],
         "discovery_strength": "strong",
         "probe_hint": "windsurf-jsonl",
-    }
+    }, start_ts=start_ts, end_ts=end_ts)
 
 
 # ---------------------------------------------------------------------------
@@ -2884,7 +2886,7 @@ def _parse_openclaw_file(filepath, session_id):
         duration = max(0, int((end_ts - start_ts).total_seconds()))
         date_str = start_ts.strftime("%Y-%m-%d")
 
-    return {
+    return attach_activity_markers({
         "id": session_id,
         "agent": "openclaw",
         "model": model,
@@ -2908,7 +2910,7 @@ def _parse_openclaw_file(filepath, session_id):
         "partial_reasons": [],
         "discovery_strength": "strong",
         "probe_hint": "openclaw-jsonl",
-    }
+    }, start_ts=start_ts, end_ts=end_ts)
 
 
 # ---------------------------------------------------------------------------
@@ -3049,7 +3051,7 @@ def _parse_import_jsonl(filepath, cutoff, agent_override="imported"):
         duration = max(0, int((end_ts - start_ts).total_seconds()))
         date_str = start_ts.strftime("%Y-%m-%d")
 
-    return {
+    return attach_activity_markers({
         "id": Path(filepath).stem,
         "agent": agent_override or "imported",
         "model": "",
@@ -3073,7 +3075,7 @@ def _parse_import_jsonl(filepath, cutoff, agent_override="imported"):
         "partial_reasons": ["imported_session"],
         "discovery_strength": "strong",
         "probe_hint": "role-jsonl",
-    }
+    }, start_ts=start_ts, end_ts=end_ts)
 
 
 # ---------------------------------------------------------------------------
@@ -3100,6 +3102,131 @@ def parse_ts(ts):
     return None
 
 
+def derive_activity_markers(start_ts=None, end_ts=None, timestamps=None):
+    """Derive distinct active dates and hour buckets from observed timestamps."""
+    dates = set()
+    hour_counts = Counter()
+    seen_hour_marks = set()
+
+    def mark(ts):
+        if not ts:
+            return
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        dates.add(ts.strftime("%Y-%m-%d"))
+        hour_key = f"{ts.strftime('%Y-%m-%d')}:{ts.hour:02d}"
+        if hour_key not in seen_hour_marks:
+            seen_hour_marks.add(hour_key)
+            hour_counts[ts.hour] += 1
+
+    for ts in timestamps or []:
+        mark(ts)
+
+    if start_ts:
+        mark(start_ts)
+    if end_ts:
+        mark(end_ts)
+
+    if start_ts and end_ts:
+        day_span = (end_ts.date() - start_ts.date()).days
+        if 0 < day_span <= 7:
+            current_day = start_ts.date()
+            while current_day <= end_ts.date():
+                dates.add(current_day.isoformat())
+                current_day += timedelta(days=1)
+
+        hour_span = int((end_ts - start_ts).total_seconds() // 3600)
+        if 0 < hour_span <= 18:
+            current_hour = start_ts.replace(minute=0, second=0, microsecond=0)
+            end_hour = end_ts.replace(minute=0, second=0, microsecond=0)
+            while current_hour <= end_hour:
+                mark(current_hour)
+                current_hour += timedelta(hours=1)
+
+    return sorted(dates), {str(hour): count for hour, count in sorted(hour_counts.items())}
+
+
+def attach_activity_markers(session, start_ts=None, end_ts=None, timestamps=None):
+    """Annotate a session with internal activity dates and hour buckets."""
+    if not session:
+        return session
+    activity_dates, activity_hours = derive_activity_markers(
+        start_ts=start_ts,
+        end_ts=end_ts,
+        timestamps=timestamps,
+    )
+    if activity_dates:
+        session["_activity_dates"] = activity_dates
+    if activity_hours:
+        session["_activity_hours"] = activity_hours
+    return session
+
+
+def session_activity_dates(session):
+    """Return the most complete set of active dates known for a session."""
+    dates = session.get("_activity_dates")
+    if isinstance(dates, list) and dates:
+        return [d for d in dates if isinstance(d, str) and d]
+    if session.get("date"):
+        return [session["date"]]
+    return []
+
+
+def session_activity_hours(session):
+    """Return hour bucket activity for a session, falling back to _start_hour."""
+    hours = session.get("_activity_hours")
+    if isinstance(hours, dict) and hours:
+        normalized = {}
+        for raw_hour, raw_count in hours.items():
+            try:
+                hour = int(raw_hour)
+            except (TypeError, ValueError):
+                continue
+            if 0 <= hour <= 23:
+                normalized[hour] = max(1, int(raw_count or 0))
+        if normalized:
+            return normalized
+
+    start_hour = session.get("_start_hour")
+    if isinstance(start_hour, int) and 0 <= start_hour <= 23:
+        return {start_hour: 1}
+    return {}
+
+
+def distribute_turns_across_dates(turns, dates):
+    """Spread a session's turns across its active dates without inflating totals."""
+    clean_dates = [d for d in dates if isinstance(d, str) and d]
+    if not clean_dates:
+        return {}
+
+    total = max(0, int(turns or 0))
+    if total == 0:
+        return {clean_dates[0]: 0}
+
+    base = total // len(clean_dates)
+    remainder = total % len(clean_dates)
+    result = {}
+    for index, date_str in enumerate(clean_dates):
+        result[date_str] = base + (1 if index < remainder else 0)
+    return result
+
+
+def known_token_blind_agent(agent):
+    return agent in {
+        "trae",
+        "trae-cn",
+        "cursor",
+        "antigravity",
+        "kiro",
+        "windsurf",
+        "cline",
+        "roo-code",
+        "augment",
+        "continue",
+        "goose",
+    }
+
+
 def compute_profile(sessions, days):
     """Compute aggregate profile stats."""
     agents = defaultdict(lambda: {"sessions": 0, "turns": 0, "first_session": ""})
@@ -3107,21 +3234,63 @@ def compute_profile(sessions, days):
     total_turns = 0
     total_tools = 0
     total_tokens = 0
+    token_agents = defaultdict(
+        lambda: {
+            "sessions": 0,
+            "sessions_with_tokens": 0,
+            "sessions_missing_tokens": 0,
+            "total_tokens": 0,
+        }
+    )
 
     for s in sessions:
         agents[s["agent"]]["sessions"] += 1
         agents[s["agent"]]["turns"] += s["turns"]
-        if s["date"]:
+        session_dates = session_activity_dates(s)
+        first_session_date = session_dates[0] if session_dates else s.get("date", "")
+        if first_session_date:
             current_first = agents[s["agent"]]["first_session"]
-            if not current_first or s["date"] < current_first:
-                agents[s["agent"]]["first_session"] = s["date"]
-        if s["date"]:
-            active_dates.add(s["date"])
+            if not current_first or first_session_date < current_first:
+                agents[s["agent"]]["first_session"] = first_session_date
+        for ds in session_dates:
+            active_dates.add(ds)
         total_turns += s["turns"]
         total_tools += s["tool_calls"]
-        total_tokens += s.get("tokens", 0)
+        token_value = int(s.get("tokens", 0) or 0)
+        total_tokens += token_value
 
-    dates = [s["date"] for s in sessions if s["date"]]
+        token_agent = token_agents[s["agent"]]
+        token_agent["sessions"] += 1
+        if token_value > 0:
+            token_agent["sessions_with_tokens"] += 1
+            token_agent["total_tokens"] += token_value
+        if (
+            "tokens_unavailable" in (s.get("partial_reasons") or [])
+            or (token_value == 0 and known_token_blind_agent(s["agent"]))
+        ):
+            token_agent["sessions_missing_tokens"] += 1
+
+    dates = sorted(active_dates)
+    observed_agents = []
+    missing_agents = []
+    complete_agents = []
+    observed_sessions = 0
+    missing_sessions = 0
+    for agent, stats in token_agents.items():
+        if stats["sessions_with_tokens"] > 0:
+            observed_agents.append(agent)
+            observed_sessions += stats["sessions_with_tokens"]
+        if stats["sessions_missing_tokens"] > 0:
+            missing_agents.append(agent)
+            missing_sessions += stats["sessions_missing_tokens"]
+        if (
+            stats["sessions"] > 0
+            and stats["sessions_with_tokens"] == stats["sessions"]
+            and stats["sessions_missing_tokens"] == 0
+        ):
+            complete_agents.append(agent)
+
+    token_coverage_status = "partial" if missing_agents else "complete"
     return {
         "date_range": {
             "start": min(dates) if dates else "",
@@ -3133,6 +3302,20 @@ def compute_profile(sessions, days):
         "total_tool_calls": total_tools,
         "total_tokens": total_tokens,
         "agents_used": dict(agents),
+        "token_coverage": {
+            "status": token_coverage_status,
+            "observed_sessions": observed_sessions,
+            "total_sessions": len(sessions),
+            "observed_agents": sorted(observed_agents),
+            "missing_agents": sorted(missing_agents),
+            "complete_agents": sorted(complete_agents),
+            "note": (
+                "Token totals include all scanned agents."
+                if token_coverage_status == "complete"
+                else "Token totals are a lower bound because some scanned agents do not expose reliable local token logs."
+            ),
+            "missing_sessions": missing_sessions,
+        },
     }
 
 
@@ -3140,8 +3323,10 @@ def compute_heatmap(sessions, days):
     """Compute daily activity counts for heatmap."""
     daily = defaultdict(int)
     for s in sessions:
-        if s["date"]:
-            daily[s["date"]] += s["turns"]
+        for date_str, turns in distribute_turns_across_dates(
+            s.get("turns", 0), session_activity_dates(s)
+        ).items():
+            daily[date_str] += turns
 
     end = datetime.now(timezone.utc).date()
     if days <= 0 and daily:
@@ -3442,14 +3627,18 @@ def compute_highlights(sessions):
     # Busiest day
     daily_activity = defaultdict(lambda: {"sessions": 0, "turns": 0})
     for s in sessions:
-        if s["date"]:
-            daily_activity[s["date"]]["sessions"] += 1
-            daily_activity[s["date"]]["turns"] += s["turns"]
+        activity_dates = session_activity_dates(s)
+        if not activity_dates:
+            continue
+        distributed_turns = distribute_turns_across_dates(s.get("turns", 0), activity_dates)
+        for date_str in activity_dates:
+            daily_activity[date_str]["sessions"] += 1
+            daily_activity[date_str]["turns"] += distributed_turns.get(date_str, 0)
 
     busiest_day = max(daily_activity.items(), key=lambda x: x[1]["turns"]) if daily_activity else ("", {"sessions": 0, "turns": 0})
 
     # Longest streak
-    dates_active = sorted(set(s["date"] for s in sessions if s["date"]))
+    dates_active = sorted({d for s in sessions for d in session_activity_dates(s)})
     longest_streak = 0
     current_streak = 0
     prev = None
@@ -3474,16 +3663,49 @@ def compute_highlights(sessions):
     # Marathon session (longest duration)
     marathon = max(sessions, key=lambda s: s.get("duration_seconds", 0))
 
-    # Most interesting first prompt (longest non-trivial one)
-    interesting_prompts = [
-        s for s in sessions
-        if s.get("first_msg", "")
-        and not s["first_msg"].startswith("[")
-        and not s["first_msg"].startswith("<")
-        and not s["first_msg"].startswith("This session")
-        and len(s["first_msg"]) > 30
-    ]
-    favorite = max(interesting_prompts, key=lambda s: len(s["first_msg"])) if interesting_prompts else None
+    # Most representative prompt (recurring / high-signal, not just the longest)
+    prompt_groups = {}
+    for s in sessions:
+        prompt = (s.get("first_msg", "") or "").strip()
+        if (
+            not prompt
+            or prompt.startswith("[")
+            or prompt.startswith("<")
+            or prompt.startswith("This session")
+            or len(prompt) < 24
+            or prompt.lower().startswith("http")
+        ):
+            continue
+        normalized = " ".join(prompt.lower().split())
+        entry = prompt_groups.setdefault(
+            normalized,
+            {
+                "text": prompt,
+                "sessions": 0,
+                "turns": 0,
+                "tool_calls": 0,
+                "active_days": set(),
+            },
+        )
+        if len(prompt) > len(entry["text"]):
+            entry["text"] = prompt
+        entry["sessions"] += 1
+        entry["turns"] += int(s.get("turns", 0) or 0)
+        entry["tool_calls"] += int(s.get("tool_calls", 0) or 0)
+        entry["active_days"].update(session_activity_dates(s))
+
+    favorite = None
+    if prompt_groups:
+        favorite = max(
+            prompt_groups.values(),
+            key=lambda item: (
+                item["sessions"],
+                len(item["active_days"]),
+                item["turns"],
+                item["tool_calls"],
+                min(len(item["text"]), 180),
+            ),
+        )
 
     return {
         "biggest_session": {
@@ -3504,7 +3726,7 @@ def compute_highlights(sessions):
             "duration_seconds": marathon.get("duration_seconds", 0),
             "display": marathon["display"],
         },
-        "favorite_prompt": favorite["first_msg"] if favorite else "",
+        "favorite_prompt": favorite["text"] if favorite else "",
     }
 
 
@@ -3521,12 +3743,13 @@ def compute_time_distribution(sessions, agent_dirs):
     codex_dir = agent_dirs.get("codex", "")
 
     for s in sessions:
-        hour = s.get("_start_hour")
+        activity_hours = session_activity_hours(s)
 
         # Legacy file-based extraction for Claude Code and Codex
-        if hour is None:
+        if not activity_hours:
             sid = s["id"]
             agent = s["agent"]
+            hour = s.get("_start_hour")
 
             if agent == "claude-code" and claude_dir:
                 pattern = os.path.join(claude_dir, "projects", "*", f"{sid}.jsonl")
@@ -3574,9 +3797,14 @@ def compute_time_distribution(sessions, agent_dirs):
                         except OSError:
                             pass
 
-        if hour is not None:
-            hour_counts[hour] += 1
-            hour_turns[hour] += s["turns"]
+            if hour is not None:
+                activity_hours = {int(hour): 1}
+
+        if activity_hours:
+            total_marks = sum(activity_hours.values()) or 1
+            for hour, count in activity_hours.items():
+                hour_counts[hour] += count
+                hour_turns[hour] += (s["turns"] * count) / total_marks
 
     # Period aggregation
     periods = {
@@ -3588,24 +3816,38 @@ def compute_time_distribution(sessions, agent_dirs):
     period_data = {}
     for name, (start, end) in periods.items():
         period_data[name] = {
-            "sessions": sum(hour_counts[h] for h in range(start, end)),
-            "turns": sum(hour_turns[h] for h in range(start, end)),
+            "sessions": int(round(sum(hour_counts[h] for h in range(start, end)))),
+            "turns": int(round(sum(hour_turns[h] for h in range(start, end)))),
         }
 
-    peak_hour = max(hour_counts.items(), key=lambda x: x[1])[0] if hour_counts else 0
-    max_period = max(period_data.items(), key=lambda x: x[1]["sessions"])
+    weighted_hours = hour_turns if any(value > 0 for value in hour_turns.values()) else hour_counts
+    peak_hour = max(weighted_hours.items(), key=lambda x: x[1])[0] if weighted_hours else 0
+    max_period = max(
+        period_data.items(),
+        key=lambda x: (x[1]["turns"], x[1]["sessions"]),
+    )
     type_labels = {
         "deep_night": "\u6df1\u591c\u578b Builder",
         "morning": "\u4e0a\u5348\u578b Builder",
         "afternoon": "\u4e0b\u5348\u578b Builder",
         "evening": "\u591c\u732b\u5b50\u578b Builder",
     }
+    window_labels = {
+        "deep_night": "00:00-06:00",
+        "morning": "06:00-12:00",
+        "afternoon": "12:00-18:00",
+        "evening": "18:00-24:00",
+    }
+    peak_window = window_labels.get(max_period[0], "")
 
     return {
-        "hour_distribution": {str(h): hour_counts[h] for h in range(24)},
+        "hour_distribution": {str(h): int(round(hour_counts[h])) for h in range(24)},
         "period_data": period_data,
         "builder_type": type_labels.get(max_period[0], "\u5168\u5929\u578b Builder"),
         "peak_hour": peak_hour,
+        "peak_window": peak_window,
+        "peak_text": peak_window,
+        "peak_detail": f"Peak around {peak_hour:02d}:00" if weighted_hours else "",
     }
 
 

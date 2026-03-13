@@ -251,6 +251,20 @@ function agentLabel(agent: string, stats?: AnyRecord): string {
   );
 }
 
+const TOKEN_BLIND_AGENTS = new Set([
+  "trae",
+  "trae-cn",
+  "cursor",
+  "antigravity",
+  "kiro",
+  "windsurf",
+  "cline",
+  "roo-code",
+  "augment",
+  "continue",
+  "goose",
+]);
+
 function formatDateRange(range: AnyRecord): string {
   const start = asString(range?.start);
   const end = asString(range?.end);
@@ -413,7 +427,7 @@ function deriveManagementStyle(lang: CopyLang, D: AnyRecord, E: AnyRecord, profi
       ? inLang(lang, `${commandRatio}% 的工具调用通过命令行完成。`, `${commandRatio}% of tool calls are completed through command-line flows.`)
       : "",
     Object.keys(asObject(profile.agents_used)).length > 1
-      ? inLang(lang, "不同 agent 会被放到不同任务里，而不是做同一份工作。", "Different agents are assigned to different kinds of work instead of duplicating the same job.")
+      ? inLang(lang, "多个 agent 会在同一条工作流里轮换出现，切换更多是为了继续推进，而不是固定死分工。", "Multiple agents keep rotating through the same workflow; the switching looks more like keeping momentum than locking each one into a fixed specialty.")
       : "",
     asString(asObject(E.time).peak_detail),
   ].filter(Boolean);
@@ -443,7 +457,7 @@ function deriveHowIbuild(lang: CopyLang, D: AnyRecord, E: AnyRecord, profile: An
     summary:
       asString(style.style_sub) ||
       asString(E.comparison_insight) ||
-      inLang(lang, "会在高频推进和深度协作之间切换，并且清楚知道什么时候该让不同 agent 接手。", "They switch between high-frequency execution and deeper collaboration, and clearly know when a different agent should take over."),
+      inLang(lang, "会在高频推进和长上下文推进之间切换，多个 agent 经常被放进同一条工作流里。", "They move between fast iteration and longer-context sessions, and several agents keep showing up inside the same overall workflow."),
     promptStyle: asString(style.prompt_type_label || style.prompt_type) || inLang(lang, "直接指令", "Direct instruction"),
     promptDetail: asString(style.prompt_type_desc) || inLang(lang, "更偏向直接给出任务和约束，而不是写很长的需求文档。", "They prefer giving direct tasks and constraints instead of writing long requirement docs."),
     sessionRhythm: asString(style.rhythm_label || style.session_rhythm) || inLang(lang, "持续推进", "Steady iteration"),
@@ -457,7 +471,7 @@ function deriveHowIbuild(lang: CopyLang, D: AnyRecord, E: AnyRecord, profile: An
     agentDetail:
       asString(style.loyalty_desc) ||
       asString(E.comparison_insight) ||
-      inLang(lang, "不同 agent 会根据任务类型承担不同角色。", "Different agents take on different roles depending on the task."),
+      inLang(lang, "不同 agent 的会话形态和密度有差异，但不代表它们只负责完全不同的任务。", "The agents show different session shapes and densities, but that does not automatically mean each one owns a completely separate job."),
     toolTotals,
   };
 }
@@ -473,21 +487,21 @@ function deriveAgentRoles(lang: CopyLang, E: AnyRecord): AgentRoleEntry[] {
       const sessions = asNumber(stats.sessions);
       const turns = asNumber(stats.total_turns);
       const tools = asNumber(stats.total_tool_calls);
-      let role = inLang(lang, "稳定推进", "Steady delivery");
-      let summary = inLang(lang, "承担了大量日常推进、反复迭代和持续交付的工作。", "Handles a large share of day-to-day progress, iteration, and repeated delivery.");
+      let role = inLang(lang, "持续推进", "Steady cadence");
+      let summary = inLang(lang, "会反复被拉回来继续同一条工作流，更多体现的是使用节奏，而不是固定职责。", "Keeps getting pulled back into the same workflow. This says more about usage cadence than a fixed job title.");
 
       if (avg >= 100) {
-        role = inLang(lang, "深度协作", "Deep work");
-        summary = inLang(lang, "更适合需要长上下文、重构和结构化推进的工作。", "Better suited to long-context work, refactors, and structured problem solving.");
+        role = inLang(lang, "长上下文", "Long-context");
+        summary = inLang(lang, "平均单次会话更长，说明它经常被用在需要连续上下文的推进里。", "The average session runs longer, which suggests it is often used when the work needs sustained context.");
       } else if (sessions >= 40 && tools >= turns) {
-        role = inLang(lang, "快速执行", "Fast execution");
-        summary = inLang(lang, "更偏向命令驱动、工具密集和快速推进。", "More command-driven, tool-heavy, and optimized for fast progress.");
+        role = inLang(lang, "工具密集", "Tool-heavy");
+        summary = inLang(lang, "工具调用密度更高，说明它经常出现在需要快速执行和验证的回路里。", "Tool density is higher here, which suggests it often shows up in faster execution-and-verification loops.");
       } else if (sessions >= 40) {
-        role = inLang(lang, "迭代推进", "Iteration loop");
-        summary = inLang(lang, "会频繁回来做跟进、清理和短回路交付。", "Keeps returning for follow-ups, cleanup, and short-loop delivery.");
+        role = inLang(lang, "高频回访", "Frequent return");
+        summary = inLang(lang, "被频繁重新叫回来继续推进，说明它在整个周期里出现得很稳定。", "It keeps getting called back in, which shows up as a very stable presence across the period.");
       } else if (tools >= turns) {
-        role = inLang(lang, "执行密集", "Execution-heavy");
-        summary = inLang(lang, "更偏向命令、编辑和明确执行，而不是长会话讨论。", "Leans more toward commands, edits, and concrete execution than long discussion threads.");
+        role = inLang(lang, "执行偏重", "Execution-weighted");
+        summary = inLang(lang, "更多落在命令、编辑和直接执行上，而不是长时间来回讨论。", "It leans more toward commands, edits, and direct execution than long back-and-forth discussion.");
       }
 
       const topTool = asArray(stats.top_tools)[0];
@@ -564,11 +578,11 @@ function deriveSignatureMoves(lang: CopyLang, D: AnyRecord, E: AnyRecord, profil
       : null,
     Object.keys(asObject(profile.agents_used)).length > 1
       ? {
-          title: inLang(lang, "按角色分配 Agent", "Assign agents by role"),
+          title: inLang(lang, "在多个 Agent 之间轮换推进", "Rotate across agents to keep momentum"),
           summary: inLang(
             lang,
-            "不同 agent 会被放到不同任务类型里，而不是争抢同一份工作。",
-            "Different agents are placed into different task types instead of competing for the same job."
+            "多个 agent 会在同一条工作流里交替出现，切换更多是为了继续推进，而不是固定死某个工具只做一种事。",
+            "Several agents keep appearing inside the same workflow. The switching looks more like preserving momentum than pinning each tool to one narrow job."
           ),
         }
       : null,
@@ -641,10 +655,16 @@ function deriveHighMoments(lang: CopyLang, D: AnyRecord, E: AnyRecord): HighMome
     asString(time.peak_text)
       ? {
           label: inLang(lang, "高峰时段", "Peak window"),
-          value: asString(time.peak_text),
+          value: asString(time.peak_window) || asString(time.peak_text),
           detail:
-            asString(time.peak_detail) ||
-            inLang(lang, "一天里最稳定的高能时段会反复出现在这里。", "The most reliable high-energy stretch of the day keeps appearing here."),
+            asNumber(time.peak_hour) > 0
+              ? inLang(
+                  lang,
+                  `最稳定的活跃窗口落在 ${asString(time.peak_window) || asString(time.peak_text)}，最密集的单点大约在 ${asNumber(time.peak_hour)}:00。`,
+                  `The most stable activity window lands in ${asString(time.peak_window) || asString(time.peak_text)}, with the single densest point around ${asNumber(time.peak_hour)}:00.`
+                )
+              : asString(time.peak_detail) ||
+                inLang(lang, "一天里最稳定的高能时段会反复出现在这里。", "The most reliable high-energy stretch of the day keeps appearing here."),
         }
       : biggestSession
         ? {
@@ -951,11 +971,11 @@ function deriveEvidence(
           : inLang(lang, "从项目和工作流里能看到明确主线。", "The projects and workflow still point to a clear throughline."),
       },
       {
-        label: inLang(lang, "Agent 分工", "Agent split"),
+        label: inLang(lang, "Agent 混合", "Agent mix"),
         value: topAgents.length >= 2 ? `${topAgents[0].sessions} / ${topAgents[1].sessions}` : `${Object.keys(asObject(profile.agents_used)).length}`,
         detail: topAgents.length >= 2
-          ? inLang(lang, `${topAgents[0].name} 和 ${topAgents[1].name} 承担了不同工作类型。`, `${topAgents[0].name} and ${topAgents[1].name} are carrying different kinds of work.`)
-          : inLang(lang, "当前主要由一个 agent 承担核心工作。", "One agent is currently carrying most of the core work."),
+          ? inLang(lang, `${topAgents[0].name} 和 ${topAgents[1].name} 是出现频率最高的两条协作线，但这更像使用形态差异，不是固定职责划分。`, `${topAgents[0].name} and ${topAgents[1].name} are the two strongest collaboration traces here, but that looks more like usage shape than a rigid division of labor.`)
+          : inLang(lang, "当前主要由一个 agent 承担大部分可见协作。", "One agent is carrying most of the visible collaboration right now."),
       },
     ],
     tech: techEntries,
@@ -983,12 +1003,12 @@ function deriveWhenIbuild(lang: CopyLang, E: AnyRecord) {
         };
 
   return {
-    builderType: asString(time.peak_text) || asString(time.builder_type) || inLang(lang, "活跃时间型 Builder", "Time-pattern builder"),
+    builderType: asString(time.builder_type) || asString(time.peak_text) || inLang(lang, "活跃时间型 Builder", "Time-pattern builder"),
     peakHour:
       asNumber(time.peak_hour) > 0
         ? `${asNumber(time.peak_hour)}:00`
         : asString(time.peak_text) || inLang(lang, "未标注", "Unspecified"),
-    peakWindow: asString(time.peak_window) || inLang(lang, "高峰时段", "Peak window"),
+    peakWindow: asString(time.peak_window) || asString(time.peak_text) || inLang(lang, "高峰时段", "Peak window"),
     peakWindowSessions: Math.max(...Object.values(distribution).map((value) => asNumber(value)), 0),
     hourDistribution: Object.fromEntries(
       Array.from({ length: 24 }, (_, hour) => [hour, asNumber(distribution[String(hour)])])
@@ -1015,6 +1035,52 @@ function deriveActivity(D: AnyRecord): ActivitySummary {
     activeDays: asNumber(asObject(D.profile).active_days),
     totalDays: Object.keys(heatmap).length,
     heatmap,
+  };
+}
+
+function deriveTokenCoverage(lang: CopyLang, profile: AnyRecord): {
+  partial: boolean;
+  label: string;
+  note: string;
+  missingAgents: string[];
+} {
+  const coverage = asObject(profile.token_coverage);
+  const explicitStatus = asString(coverage.status);
+  const explicitMissing = asArray(coverage.missing_agents)
+    .map((agent) => agentLabel(asString(agent).toLowerCase()))
+    .filter(Boolean);
+
+  const agentIds = Object.keys(asObject(profile.agents_used)).map((agent) =>
+    asString(agent).toLowerCase()
+  );
+  const inferredMissing = agentIds
+    .filter((agent) => TOKEN_BLIND_AGENTS.has(agent))
+    .map((agent) => agentLabel(agent));
+
+  const missingAgents = uniq(
+    explicitMissing.length > 0 ? explicitMissing : inferredMissing
+  );
+  const partial =
+    explicitStatus === "partial" ||
+    (missingAgents.length > 0 && asNumber(profile.total_tokens) > 0);
+
+  return {
+    partial,
+    label: partial
+      ? inLang(lang, "Observed tokens", "Observed tokens")
+      : "Tokens",
+    note: partial
+      ? inLang(
+          lang,
+          `${joinHuman(missingAgents, "zh") || "部分工具"} 本地没有稳定的 token 记录，所以这里展示的是可观测到的下限。`,
+          `${joinHuman(missingAgents, "en") || "Some agents"} do not expose reliable local token logs, so this number is an observed lower bound.`
+        )
+      : inLang(
+          lang,
+          "这些 token 来自当前扫描到的全部可计量来源。",
+          "These tokens come from all scanned sources that expose reliable local counts."
+        ),
+    missingAgents,
   };
 }
 
@@ -1179,6 +1245,7 @@ export async function loadPublicBuilderBioRecap(username: string) {
   const whenIbuild = deriveWhenIbuild(contentLang, E);
   const highMoments = deriveHighMoments(contentLang, D, E);
   const eras = deriveEras(contentLang, E);
+  const tokenCoverage = deriveTokenCoverage(contentLang, profile);
   const socialLinks = asArray<AnyRecord>(profile.social_links).map((item) => ({
     label: {
       x: "X",
@@ -1309,11 +1376,20 @@ export async function loadPublicBuilderBioRecap(username: string) {
           : normalizedChosenMode === "hybrid"
             ? "AI relationship scale"
             : "Collaboration scale",
-      summary: inLang(
-        contentLang,
-        `${formatCompact(totalTokens)} tokens、${formatNumber(totalSessions)} 个会话和 ${formatCompact(totalTurns)} turns，说明这已经是持续而深入的 AI 协作，而不是偶尔试用。`,
-        `${formatCompact(totalTokens)} tokens, ${formatNumber(totalSessions)} sessions, and ${formatCompact(totalTurns)} turns point to sustained, deep AI collaboration rather than occasional experimentation.`
-      ),
+      summary: tokenCoverage.partial
+        ? inLang(
+            contentLang,
+            `目前观测到 ${formatCompact(totalTokens)} tokens、${formatNumber(totalSessions)} 个会话和 ${formatCompact(totalTurns)} turns。由于 ${joinHuman(tokenCoverage.missingAgents, "zh") || "部分工具"} 本地不稳定记录 token，这里更接近可观测到的下限。`,
+            `BuilderBio currently observes ${formatCompact(totalTokens)} tokens across ${formatNumber(totalSessions)} sessions and ${formatCompact(totalTurns)} turns. Because ${joinHuman(tokenCoverage.missingAgents, "en") || "some agents"} do not keep reliable local token logs, this is closer to an observed lower bound than a complete total.`
+          )
+        : inLang(
+            contentLang,
+            `${formatCompact(totalTokens)} tokens、${formatNumber(totalSessions)} 个会话和 ${formatCompact(totalTurns)} turns，说明这已经是持续而深入的 AI 协作，而不是偶尔试用。`,
+            `${formatCompact(totalTokens)} tokens, ${formatNumber(totalSessions)} sessions, and ${formatCompact(totalTurns)} turns point to sustained, deep AI collaboration rather than occasional experimentation.`
+          ),
+      tokenLabel: tokenCoverage.label,
+      coverageNote: tokenCoverage.note,
+      partial: tokenCoverage.partial,
       facts: [
         { label: inLang(contentLang, "最大会话", "Biggest session"), value: `${formatNumber(asNumber(asObject(high.biggest_session).turns))} turns` },
         {
@@ -1325,7 +1401,13 @@ export async function loadPublicBuilderBioRecap(username: string) {
           ),
         },
         { label: inLang(contentLang, "最长连续天数", "Longest streak"), value: inLang(contentLang, `${formatNumber(asNumber(high.longest_streak))} 天`, `${formatNumber(asNumber(high.longest_streak))} days`) },
-      ],
+        tokenCoverage.partial
+          ? {
+              label: inLang(contentLang, "Token 口径", "Token scope"),
+              value: inLang(contentLang, "可观测下限", "Observed lower bound"),
+            }
+          : null,
+      ].filter(Boolean),
     },
     whenIbuild,
     activity,

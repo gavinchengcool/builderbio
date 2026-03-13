@@ -705,14 +705,19 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
 
   const time = asObject(D.time) ?? asObject(D.time_distribution);
   const timeDetail = asObject(E.time_detail);
+  const peakHour =
+    asNumber(time?.peak_hour) ?? asNumber(asObject(E.time)?.peak_hour) ?? 0;
   if (!hasKeys(E.time) && time) {
-    const peakHour = asNumber(time.peak_hour) ?? 0;
     const peakPattern = asString(insights.time_pattern);
     E.time = {
       hour_distribution: normalizeHourDistribution(time.hour_distribution),
       period_data: asObject(time.period_data) ?? asObject(time.periods) ?? {},
       builder_type: asString(time.builder_type) ?? "",
       peak_hour: peakHour,
+      peak_window:
+        asString(time.peak_window) ??
+        asString(timeDetail?.peak_window) ??
+        "",
       peak_text:
         asString(time.peak_text) ??
         asString(timeDetail?.peak_text) ??
@@ -742,10 +747,24 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
         normalizedTime.peak_text = timeDetail?.peak_text;
       }
       if (
+        !asString(normalizedTime.peak_window) &&
+        (asString(time?.peak_window) || asString(timeDetail?.peak_window))
+      ) {
+        normalizedTime.peak_window =
+          asString(time?.peak_window) ?? asString(timeDetail?.peak_window) ?? "";
+      }
+      if (
         !asString(normalizedTime.peak_detail) &&
         asString(timeDetail?.peak_detail)
       ) {
         normalizedTime.peak_detail = timeDetail?.peak_detail;
+      }
+      if (
+        !asString(normalizedTime.peak_detail) &&
+        peakHour !== null &&
+        peakHour >= 0
+      ) {
+        normalizedTime.peak_detail = `Peak around ${peakHour}:00`;
       }
       if (
         !asString(normalizedTime.peak_text) &&

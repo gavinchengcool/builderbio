@@ -327,6 +327,9 @@ const previewFallback = {
     title: "Collaboration scale",
     summary:
       "9.99B tokens、230 个会话和 12.7K turns，把 Gavin 这段时间和 AI 协作的强度直接摆了出来。",
+    tokenLabel: "与 AI 协作产生的 tokens",
+    coverageNote: "这些 tokens 来自当前扫描到的全部可计量来源。",
+    partial: false,
     facts: [
       { label: "最大会话", value: "1,283 turns" },
       { label: "最忙的一天", value: "13 个 sessions · 1,597 turns" },
@@ -705,6 +708,9 @@ function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
     preview.agentRoles[1];
   const name = preview.name;
   const dateLabel = busiestDay.date || preview.dateRange || (lang === "zh" ? "这段时间" : "this period");
+  const tokenLabel =
+    preview.socialCurrency?.tokenLabel ||
+    (lang === "zh" ? "与 AI 协作产生的 tokens" : "Tokens created through AI collaboration");
   const socialCurrencySummary =
     preview.socialCurrency.summary ||
     (lang === "zh"
@@ -717,6 +723,7 @@ function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
     recap: preview.recap,
     trustNote: preview.trust.note,
     socialCurrencySummary,
+    tokenLabel,
     socialCurrencyBadge: lang === "zh" ? "协作强度" : "Collaboration scale",
     highMomentsHeading:
       lang === "zh"
@@ -733,19 +740,19 @@ function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
     agentComparisonHeading:
       fastAgent && deepAgent && fastAgent.name !== deepAgent.name
         ? lang === "zh"
-          ? `${fastAgent.name} 扛速度，${deepAgent.name} 扛深度，这个分工已经很稳定。`
-          : `${fastAgent.name} carries speed while ${deepAgent.name} carries depth, and that split is already very stable.`
+          ? `${fastAgent.name} 和 ${deepAgent.name} 的使用形态不一样，但它们仍然在同一条工作流里反复出现。`
+          : `${fastAgent.name} and ${deepAgent.name} show different usage shapes, but they still keep returning inside the same overall workflow.`
         : lang === "zh"
           ? `这些 agent 使用轨迹，基本勾勒出了 ${name} 的协作方式。`
           : `These agent traces outline the way ${name} collaborates with AI.`,
     agentRolesHeading:
       lang === "zh"
-        ? `不同的 Agent 在 ${name} 这里有很明确的分工。`
-        : `Different agents have clearly defined jobs in ${name}'s workflow.`,
+        ? `这些 Agent 的会话形态不同，但不代表它们只负责完全不同的工作。`
+        : `These agents show different session shapes, but that does not mean each one owns a completely separate job.`,
     agentRolesSummary:
       lang === "zh"
-        ? `更关键的是 ${name} 会把不同 agent 放进不同任务，而不是混着用。`
-        : `What matters is not who shows up more often, but how ${name} assigns different agents to different kinds of work.`,
+        ? `更关键的是 ${name} 会在多个 agent 之间轮换推进，切换更多是为了继续把事情做完。`
+        : `What matters is that ${name} rotates across several agents to keep the work moving, not that each one is locked to a rigid specialty.`,
     erasHeading: eraTitles
       ? lang === "zh"
         ? `${eraTitles} 连在一起，能清楚看见 ${name} 这段时间的轨迹怎么一步步变化。`
@@ -758,8 +765,8 @@ function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
     evidenceSummary:
       preview.evidence.coverage.summary ||
       (lang === "zh"
-        ? `从 ${preview.whenIbuild.peakHour} 的时间高峰，到 ${busiestDay.date} 的忙碌峰值，再到 ${fastAgent.name} / ${deepAgent.name} 的角色分工，这些结论都能在原始日志里找到对应证据。`
-        : `From the ${preview.whenIbuild.peakHour} time peak, to the busiest day on ${busiestDay.date}, to the ${fastAgent.name} / ${deepAgent.name} role split, each conclusion maps back to the raw logs.`),
+        ? `从 ${preview.whenIbuild.peakHour} 的时间高峰，到 ${busiestDay.date} 的忙碌峰值，再到不同 agent 的使用密度，这些结论都能在原始日志里找到对应证据。`
+        : `From the ${preview.whenIbuild.peakHour} time peak, to the busiest day on ${busiestDay.date}, to the relative density of each agent trace, each conclusion maps back to the raw logs.`),
     evidenceNote:
       preview.evidence.coverage.note ||
       (lang === "zh"
@@ -776,6 +783,13 @@ function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
     ctaHeading: "Make your own BuilderBio.",
     ctaSummary:
       "Give BuilderBio the history of your local coding agents and it will turn your project arcs, collaboration patterns, and standout moments into a shareable builder profile.",
+  };
+}
+
+function getTokenStat(preview: typeof previewFallback) {
+  return {
+    label: preview.socialCurrency?.tokenLabel || "Tokens",
+    value: formatCompact(preview.totalTokens),
   };
 }
 
@@ -1433,7 +1447,7 @@ function TerminalNativeBuilderPage({
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {[...preview.stats, { label: "Tokens", value: formatCompact(preview.totalTokens) }].map((stat) => (
+                {[...preview.stats, getTokenStat(preview)].map((stat) => (
                   <div key={stat.label} className="rounded-2xl border border-[#164d33] bg-black/20 p-4">
                     <div className="text-[10px] uppercase tracking-[0.18em] text-[#7eb89a]">{stat.label}</div>
                     <div className="mt-2 text-2xl font-black text-[#00e676]">{stat.value}</div>
@@ -1445,8 +1459,8 @@ function TerminalNativeBuilderPage({
 
           <section className="mb-8 grid gap-5 lg:grid-cols-[1.08fr_0.92fr] sm:mb-10 sm:gap-6">
             <div className="rounded-[32px] border border-[#164d33] bg-[#07160f]/96 p-5 text-[#d7ffe8] sm:p-8">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#00e676]">Workbench split</p>
-              <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">How the terminal-native page reads the work</h2>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#00e676]">Agent mix</p>
+              <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">How the workflow actually looks</h2>
               <p className="mt-4 text-sm leading-7 text-[#b9f5d4]">{preview.howIbuild.summary}</p>
               <div className="mt-6 grid gap-4">
                 {preview.agentRoles.map((role) => (
@@ -1662,7 +1676,7 @@ function NightShiftBuilderPage({
                   <p className="mt-4 text-sm leading-6 text-white/72">{preview.presentation.themeReason}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {[...preview.stats.slice(0, 3), { label: "Tokens", value: formatCompact(preview.totalTokens) }].map((stat) => (
+                  {[...preview.stats.slice(0, 3), getTokenStat(preview)].map((stat) => (
                     <div key={stat.label} className="rounded-[24px] border border-[#4b2852] bg-black/15 p-4">
                       <div className="text-2xl font-black text-[#ff9a53]">{stat.value}</div>
                       <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-white/45">{stat.label}</div>
@@ -1807,7 +1821,7 @@ function ResearchForgeBuilderPage({
             <div className="rounded-[32px] border border-border bg-white/92 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.1)] sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Top-line facts</p>
               <div className="mt-5 space-y-3">
-                {[...preview.stats, { label: "Tokens", value: formatCompact(preview.totalTokens) }].map((stat) => (
+                  {[...preview.stats, getTokenStat(preview)].map((stat) => (
                   <div key={stat.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-border bg-bg-primary/55 px-4 py-3 text-sm">
                     <span className="text-text-secondary">{stat.label}</span>
                     <span className="font-bold text-text-primary">{stat.value}</span>
@@ -2159,7 +2173,7 @@ export default async function BuilderBioPreviewPage({
                         <div className="mt-2 text-4xl font-black leading-none text-text-primary">
                           {formatCompact(preview.totalTokens)}
                         </div>
-                        <p className="mt-2 text-sm font-semibold text-text-primary/90">{ui.tokenLabel}</p>
+                        <p className="mt-2 text-sm font-semibold text-text-primary/90">{pageCopy.tokenLabel}</p>
                       </div>
                       <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-accent">
                         {pageCopy.socialCurrencyBadge}
@@ -2250,7 +2264,7 @@ export default async function BuilderBioPreviewPage({
                       <div className="mt-2 text-3xl font-black leading-none text-text-primary sm:text-5xl">
                         {formatCompact(preview.totalTokens)}
                       </div>
-                      <p className="mt-2 text-sm font-semibold text-text-primary/90">{ui.tokenLabel}</p>
+                      <p className="mt-2 text-sm font-semibold text-text-primary/90">{pageCopy.tokenLabel}</p>
                     </div>
                     <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-accent">
                       {pageCopy.socialCurrencyBadge}

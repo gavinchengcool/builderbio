@@ -20,7 +20,7 @@ Primary parser output:
 
 ```json
 {
-  "scanner_version": "0.8.3",
+  "scanner_version": "0.8.4",
   "scan_audit": {
     "summary": {
       "status": "partial",
@@ -107,7 +107,14 @@ Examples:
     "secondary_agent": "claude-code",
     "command_ratio": 0.64,
     "peak_hour": 3,
+    "peak_window": "00:00-06:00",
     "builder_type": "Morning Builder",
+    "token_coverage": {
+      "status": "partial",
+      "observed_agents": ["claude-code", "codex"],
+      "missing_agents": ["cursor", "trae"],
+      "note": "Token totals are a lower bound because some scanned agents do not expose reliable local token logs."
+    },
     "inferred_interaction_mode": "builder",
     "chosen_interaction_mode": "builder",
     "interaction_mode": "builder",

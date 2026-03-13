@@ -1,6 +1,6 @@
 ---
 name: builderbio
-version: 0.8.3
+version: 0.8.4
 description: |
   Use this skill when the user wants a BuilderBio, builder recap, builder profile, AI build history, annual-review style coding recap, or a shareable page about how they build with AI agents. It scans local coding-agent logs across Claude Code, Codex, Trae, Cursor, OpenClaw, Antigravity, Gemini-hosted Antigravity fallbacks, Kiro, Windsurf, and other discovered sources; produces a scan audit; derives evidence-backed builder narratives; and publishes a shareable BuilderBio.
 allowed-tools:
@@ -81,6 +81,12 @@ Build in this order:
 Every interesting sentence on the page should be explainable from the evidence.
 
 Do not write meta-copy about the page itself.
+
+Do not overstate weak evidence:
+
+- if multiple agents appear in the same workflow, do not invent rigid task specialization without clear proof
+- if token logging is partial, present total tokens as an observed lower bound rather than a complete total
+- if sessions span overnight windows, derive active days and time rhythm from observed activity timestamps or spans, not only the session start date
 
 Avoid lines that talk about:
 

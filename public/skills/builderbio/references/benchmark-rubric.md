@@ -46,11 +46,13 @@ Produce a recap that is defensible from evidence.
 
 - Claims map back to facts and session evidence
 - Project clustering is plausible
-- Agent roles are consistent with tool usage and session depth
+- Agent roles describe observable usage shape without inventing rigid specialization from weak evidence
 - Interaction mode matches the evidence instead of forcing every user into a builder-only story
 - Inferred and chosen mode/theme values are both preserved when overrides happen
 - Scanner metadata flows through to the published result
 - `D.profile.lang` is set and used consistently so narrative copy follows the builder's dominant session language while UI/module titles stay English
+- `active_days`, heatmap, and time-rhythm outputs use observed activity dates/hours rather than only session start dates
+- If token logging is partial, BuilderBio exposes that honestly and treats total tokens as an observed lower bound
 - Redaction is applied by default
 
 ### Failure Signals
@@ -61,6 +63,8 @@ Produce a recap that is defensible from evidence.
 - A primarily conversational user is forced into fake build/project/tech-stack claims
 - Project arrays are empty or nonsense while session volume is large
 - Metrics are obviously inconsistent across sections
+- The page presents token totals as complete even though several scanned agents do not log tokens locally
+- The page says agents had fixed task specialties when the evidence only shows switching/usage density
 - Paths or secrets leak into the output
 
 ### Review Questions

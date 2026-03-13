@@ -162,6 +162,12 @@ Derive facts in a deterministic order:
 8. interaction mode
 9. visual-archetype candidates
 
+Accuracy rules inside fact derivation:
+
+- derive `active_days`, streaks, heatmaps, and time rhythm from all observed activity timestamps or trustworthy session spans, not only from a single session start date
+- carry `token_coverage` alongside `total_tokens`; if some agents have no reliable local token logs, treat the number as an observed lower bound
+- describe multi-agent usage as collaboration shape unless the evidence clearly supports fixed specialization
+
 Every interesting claim must have one or more supporting facts underneath it.
 
 See [profile-dimensions.md](profile-dimensions.md), [data-model.md](data-model.md), and [visual-archetypes.md](visual-archetypes.md).
