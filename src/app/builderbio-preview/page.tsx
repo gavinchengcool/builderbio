@@ -2479,8 +2479,40 @@ function NightShiftBuilderPage({
 
             <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:gap-8">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">{preview.slug}</p>
-                <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">{preview.name}</h1>
+                <div className="mb-5 flex items-start gap-4 sm:mb-6">
+                  <div
+                    className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[28px] border border-[#f97316]/25 bg-[#f97316]/10 text-3xl font-black text-[#ff9a53] shadow-[0_14px_36px_rgba(0,0,0,0.22)]"
+                    style={
+                      preview.avatarUrl
+                        ? {
+                            backgroundImage: `linear-gradient(rgba(17,17,17,0.04), rgba(17,17,17,0.04)), url(${preview.avatarUrl})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }
+                        : undefined
+                    }
+                  >
+                    <span className="sr-only">{preview.avatarLetter}</span>
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">{preview.slug}</p>
+                    <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">{preview.name}</h1>
+                    <p className="mt-2 text-sm text-white/55">{preview.title}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {preview.social.map((item) => (
+                        <a
+                          key={item.label}
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/72 transition-colors hover:border-[#f97316]/40 hover:text-[#ff9a53]"
+                        >
+                          {item.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </div>
                 <h2 className="mt-5 max-w-4xl text-[2.05rem] font-black leading-[1.03] text-white sm:text-6xl">
                   {preview.thesis}
                 </h2>
