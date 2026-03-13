@@ -760,8 +760,8 @@ function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
       : `${formatCompact(preview.totalTokens)} tokens, ${preview.stats[0].value} sessions, and ${preview.stats[1].value} turns point to sustained, deep AI collaboration rather than occasional experimentation.`);
 
   return {
-    badgeLabel: preview.label,
-    sectionLabel: liveProfile ? preview.sectionLabel : preview.sectionLabel,
+    badgeLabel: getHeroBadgeLabel(preview, liveProfile),
+    sectionLabel: getHeroSectionLabel(preview, liveProfile),
     recap: preview.recap,
     trustNote: preview.trust.note,
     socialCurrencySummary,
@@ -830,6 +830,19 @@ function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
     ctaSummary:
       "Give BuilderBio the history of your local coding agents and it will turn your project arcs, collaboration patterns, and standout moments into a shareable builder profile.",
   };
+}
+
+function getHeroBadgeLabel(preview: typeof previewFallback, liveProfile: boolean) {
+  if (!liveProfile) return preview.label;
+  return preview.trust?.unfiltered ? "Built from real logs" : "Published BuilderBio";
+}
+
+function getHeroSectionLabel(preview: typeof previewFallback, liveProfile: boolean) {
+  if (!liveProfile) return preview.sectionLabel;
+  const mode = getChosenMode(preview);
+  if (mode === "conversation-first") return "Conversation recap";
+  if (mode === "hybrid") return "Hybrid recap";
+  return "Annual recap edition";
 }
 
 function getTokenStat(preview: typeof previewFallback) {
@@ -1814,10 +1827,10 @@ function ConversationFirstRecapPage({
           <section className="mb-8 overflow-hidden rounded-[32px] border border-border bg-bg-secondary/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.1)] backdrop-blur sm:mb-10 sm:p-8">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
-                {preview.label}
+                {getHeroBadgeLabel(preview, liveProfile)}
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
-                {preview.sectionLabel}
+                {getHeroSectionLabel(preview, liveProfile)}
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
                 mode · conversation-first
@@ -2117,10 +2130,10 @@ function HybridRecapPage({
           <section className="mb-8 overflow-hidden rounded-[32px] border border-border bg-bg-secondary/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.08)] backdrop-blur sm:mb-10 sm:p-8">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
-                {preview.label}
+                {getHeroBadgeLabel(preview, liveProfile)}
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
-                {preview.sectionLabel}
+                {getHeroSectionLabel(preview, liveProfile)}
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
                 mode · hybrid
@@ -2339,7 +2352,7 @@ function TerminalNativeBuilderPage({
           <section className="mb-8 rounded-[32px] border border-[#164d33] bg-[#07160f]/96 p-5 text-[#d7ffe8] shadow-[0_24px_60px_rgba(0,0,0,0.28)] sm:mb-10 sm:p-8">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-[#00e676]/25 bg-[#00e676]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#00e676]">
-                {preview.label}
+                {getHeroBadgeLabel(preview, liveProfile)}
               </span>
               <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[#7eb89a]">
                 mode · builder
@@ -2409,7 +2422,7 @@ function EditorialMakerBuilderPage({
           <section className="mb-8 rounded-[32px] border border-[#dde3ff] bg-white/92 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.14)] sm:mb-10 sm:p-10">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-accent/25 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
-                {preview.label}
+                {getHeroBadgeLabel(preview, liveProfile)}
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
                 theme · editorial-maker
@@ -2470,7 +2483,7 @@ function NightShiftBuilderPage({
           <section className="mb-8 rounded-[32px] border border-[#4b2852] bg-[#140915]/88 p-5 text-[#ffe8d9] shadow-[0_24px_60px_rgba(0,0,0,0.3)] sm:mb-10 sm:p-8">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-[#f97316]/25 bg-[#f97316]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#ff9a53]">
-                {preview.label}
+                {getHeroBadgeLabel(preview, liveProfile)}
               </span>
               <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
                 theme · night-shift
@@ -2576,7 +2589,7 @@ function ResearchForgeBuilderPage({
           <section className="mb-8 rounded-[32px] border border-[#c8efea] bg-white/92 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.14)] sm:mb-10 sm:p-8">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-accent/25 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
-                {preview.label}
+                {getHeroBadgeLabel(preview, liveProfile)}
               </span>
               <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
                 theme · research-forge
@@ -2634,7 +2647,7 @@ function CalmCraftBuilderPage({
           <section className="mb-8 rounded-[32px] border border-[#3d342c] bg-[#1b1e22]/92 p-6 text-[#efe6dc] shadow-[0_24px_60px_rgba(0,0,0,0.28)] sm:mb-10 sm:p-8">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-[#d9a86c]/25 bg-[#d9a86c]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-[#e6bb84]">
-                {preview.label}
+                {getHeroBadgeLabel(preview, liveProfile)}
               </span>
               <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
                 theme · calm-craft
