@@ -841,6 +841,19 @@ function hasRenderableHeatmapCells(
   return cells.some((cell) => !cell.empty);
 }
 
+function hasRenderableRhythm(preview: PreviewData): boolean {
+  const hourlyTotal = Object.values(preview.whenIbuild.hourDistribution).reduce(
+    (sum, value) => sum + value,
+    0
+  );
+  const periodTotal = preview.whenIbuild.periods.reduce(
+    (sum, period) => sum + period.sessions + period.turns,
+    0
+  );
+
+  return hourlyTotal > 0 || periodTotal > 0 || preview.whenIbuild.peakWindowSessions > 0;
+}
+
 function renderHeatmapFallback(lang: "zh" | "en", tone: "light" | "dark" = "light") {
   return (
     <div
@@ -853,6 +866,22 @@ function renderHeatmapFallback(lang: "zh" | "en", tone: "light" | "dark" = "ligh
       {lang === "zh"
         ? "这份已发布数据没有带上可渲染的日级活跃热力图，所以这里先保留活跃天数和连续天数，不再硬画坏掉的网格。"
         : "This published payload did not include a renderable day-level activity heatmap, so BuilderBio keeps the streak and active-day stats here instead of drawing a broken grid."}
+    </div>
+  );
+}
+
+function renderRhythmFallback(lang: "zh" | "en", tone: "light" | "dark" = "light") {
+  return (
+    <div
+      className={`rounded-2xl border px-4 py-4 text-sm leading-6 ${
+        tone === "dark"
+          ? "border-white/10 bg-black/10 text-white/72"
+          : "border-border bg-bg-primary/55 text-text-secondary"
+      }`}
+    >
+      {lang === "zh"
+        ? "这份已发布数据没有带上可渲染的小时级时间分布，所以这里不再硬画全 0 的时间柱状图。"
+        : "This published payload did not include a renderable hour-level rhythm, so BuilderBio skips the all-zero time bars here."}
     </div>
   );
 }
@@ -935,7 +964,8 @@ type CorePackSection =
   | "projects"
   | "comparison"
   | "rhythm"
-  | "activity";
+  | "activity"
+  | "receipts";
 
 function BuilderCorePack({
   preview,
@@ -955,6 +985,7 @@ function BuilderCorePack({
   const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
   const heatmapCells = getHeatmapCells(preview);
   const hasHeatmap = hasRenderableHeatmapCells(heatmapCells);
+  const hasRhythm = hasRenderableRhythm(preview);
   const peakHeadline =
     preview.whenIbuild.peakLead || preview.whenIbuild.peakHour || preview.whenIbuild.peakWindow;
   const peakHeadlineIsWindow =
@@ -1180,104 +1211,120 @@ function BuilderCorePack({
               {preview.whenIbuild.builderType}
             </h2>
             <div className="mt-6">
-              <div className="overflow-x-auto pb-2">
-                <div className="min-w-[420px]">
-                  <div className={`flex h-36 items-end gap-1 rounded-2xl px-3 py-3 ${tone === "dark" ? "border border-white/10 bg-black/10" : "border border-border bg-bg-primary/60"}`}>
-                    {hourEntries.map((entry) => (
-                      <div key={entry.hour} className="flex h-full min-w-0 flex-1 items-end">
-                        <div
-                          className="w-full rounded-t-[4px]"
-                          style={{
-                            height: `${Math.max(2, Math.round((entry.sessions / maxHourSessions) * 100))}%`,
-                            background: hourColor(entry.hour),
-                          }}
-                          title={`${entry.hour}:00 — ${entry.sessions} sessions`}
-                        />
+              {hasRhythm ? (
+                <>
+                  <div className="overflow-x-auto pb-2">
+                    <div className="min-w-[420px]">
+                      <div className={`flex h-36 items-end gap-1 rounded-2xl px-3 py-3 ${tone === "dark" ? "border border-white/10 bg-black/10" : "border border-border bg-bg-primary/60"}`}>
+                        {hourEntries.map((entry) => (
+                          <div key={entry.hour} className="flex h-full min-w-0 flex-1 items-end">
+                            <div
+                              className="w-full rounded-t-[4px]"
+                              style={{
+                                height: `${Math.max(2, Math.round((entry.sessions / maxHourSessions) * 100))}%`,
+                                background: hourColor(entry.hour),
+                              }}
+                              title={`${entry.hour}:00 — ${entry.sessions} sessions`}
+                            />
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                      <div className={`mt-3 flex items-center justify-between text-[11px] ${mutedClass}`}>
+                        <span>0:00</span>
+                        <span>6:00</span>
+                        <span>12:00</span>
+                        <span>18:00</span>
+                        <span>23:00</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className={`mt-3 flex items-center justify-between text-[11px] ${mutedClass}`}>
-                    <span>0:00</span>
-                    <span>6:00</span>
-                    <span>12:00</span>
-                    <span>18:00</span>
-                    <span>23:00</span>
+                  <div className={`mt-5 rounded-2xl ${tone === "dark" ? "border border-white/10 bg-black/10" : "border border-border bg-bg-primary/60"} p-4`}>
+                    <div className={`text-xl font-black ${titleClass}`}>
+                      {peakHeadlineIsWindow ? peakHeadline : `${peakHeadline} ${ui.peakSentence}`}
+                    </div>
+                    <p className={`mt-2 text-sm leading-6 ${textClass}`}>
+                      {peakHeadlineIsWindow
+                        ? lang === "zh"
+                          ? `整个窗口内累计 ${preview.whenIbuild.peakWindowSessions} 个 sessions。`
+                          : `${preview.whenIbuild.peakWindowSessions} sessions inside this window.`
+                        : `${ui.peakWindowSummary} ${preview.whenIbuild.peakWindow}. ${preview.whenIbuild.peakWindowSessions} ${ui.sessionsSuffix}`}
+                    </p>
                   </div>
-                </div>
-              </div>
-              <div className={`mt-5 rounded-2xl ${tone === "dark" ? "border border-white/10 bg-black/10" : "border border-border bg-bg-primary/60"} p-4`}>
-                <div className={`text-xl font-black ${titleClass}`}>
-                  {peakHeadlineIsWindow ? peakHeadline : `${peakHeadline} ${ui.peakSentence}`}
-                </div>
-                <p className={`mt-2 text-sm leading-6 ${textClass}`}>
-                  {peakHeadlineIsWindow
-                    ? lang === "zh"
-                      ? `整个窗口内累计 ${preview.whenIbuild.peakWindowSessions} 个 sessions。`
-                      : `${preview.whenIbuild.peakWindowSessions} sessions inside this window.`
-                    : `${ui.peakWindowSummary} ${preview.whenIbuild.peakWindow}. ${preview.whenIbuild.peakWindowSessions} ${ui.sessionsSuffix}`}
-                </p>
-              </div>
+                </>
+              ) : (
+                <div className="mt-1">{renderRhythmFallback(lang, tone)}</div>
+              )}
             </div>
           </div>
         </section>
       ) : null}
 
-      {!hidden.has("activity") ? (
-        <section className="mb-8 grid gap-5 lg:grid-cols-[1.08fr_0.92fr] sm:mb-10 sm:gap-6">
-          <div className={sectionClass}>
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
-              Activity
-            </p>
-            <h2 className={`mt-2 text-2xl font-black sm:text-3xl ${titleClass}`}>
-              {pageCopy.activityHeading}
-            </h2>
-            {hasHeatmap ? (
-              <div className="mt-6 overflow-x-auto pb-2">
-                <div className="grid min-w-max grid-flow-col grid-rows-7 gap-1">
-                  {heatmapCells.map((cell) => (
-                    <div
-                      key={cell.key}
-                      className={`h-3 w-3 rounded-[3px] ${cell.empty ? "bg-transparent" : heatmapLevel(cell.value)}`}
-                      title={cell.empty ? undefined : `${cell.date}: ${cell.value} turns`}
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-6">{renderHeatmapFallback(lang, tone)}</div>
-            )}
-            <div className={`mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm ${textClass}`}>
-              <span>
-                {ui.activityLongest}: <strong className={titleClass}>{preview.activity.longestStreak} {ui.activityDays}</strong>
-              </span>
-              <span>
-                {ui.activityCurrent}: <strong className={titleClass}>{preview.activity.currentStreak} {ui.activityDays}</strong>
-              </span>
-              <span>
-                {ui.activityActive}: <strong className={titleClass}>{preview.activity.activeDays}/{preview.activity.totalDays} {ui.activityDays}</strong>
-              </span>
-            </div>
-          </div>
-
-          <div className={sectionClass}>
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
-              Log receipts
-            </p>
-            <h2 className={`mt-2 text-2xl font-black sm:text-3xl ${titleClass}`}>
-              {pageCopy.receiptsHeading}
-            </h2>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {preview.evidence.receipts.map((receipt) => (
-                <div key={receipt.label} className={cardClass}>
-                  <div className={`text-[11px] uppercase tracking-[0.18em] ${mutedClass}`}>
-                    {receipt.label}
+      {!hidden.has("activity") || !hidden.has("receipts") ? (
+        <section
+          className={`mb-8 grid gap-5 sm:mb-10 sm:gap-6 ${
+            !hidden.has("activity") && !hidden.has("receipts")
+              ? "lg:grid-cols-[1.08fr_0.92fr]"
+              : ""
+          }`}
+        >
+          {!hidden.has("activity") ? (
+            <div className={sectionClass}>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                Activity
+              </p>
+              <h2 className={`mt-2 text-2xl font-black sm:text-3xl ${titleClass}`}>
+                {pageCopy.activityHeading}
+              </h2>
+              {hasHeatmap ? (
+                <div className="mt-6 overflow-x-auto pb-2">
+                  <div className="grid min-w-max grid-flow-col grid-rows-7 gap-1">
+                    {heatmapCells.map((cell) => (
+                      <div
+                        key={cell.key}
+                        className={`h-3 w-3 rounded-[3px] ${cell.empty ? "bg-transparent" : heatmapLevel(cell.value)}`}
+                        title={cell.empty ? undefined : `${cell.date}: ${cell.value} turns`}
+                      />
+                    ))}
                   </div>
-                  <div className={`mt-2 text-2xl font-black ${titleClass}`}>{receipt.value}</div>
-                  <p className={`mt-2 text-xs leading-5 ${textClass}`}>{receipt.detail}</p>
                 </div>
-              ))}
+              ) : (
+                <div className="mt-6">{renderHeatmapFallback(lang, tone)}</div>
+              )}
+              <div className={`mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm ${textClass}`}>
+                <span>
+                  {ui.activityLongest}: <strong className={titleClass}>{preview.activity.longestStreak} {ui.activityDays}</strong>
+                </span>
+                <span>
+                  {ui.activityCurrent}: <strong className={titleClass}>{preview.activity.currentStreak} {ui.activityDays}</strong>
+                </span>
+                <span>
+                  {ui.activityActive}: <strong className={titleClass}>{preview.activity.activeDays}/{preview.activity.totalDays} {ui.activityDays}</strong>
+                </span>
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          {!hidden.has("receipts") ? (
+            <div className={sectionClass}>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                Log receipts
+              </p>
+              <h2 className={`mt-2 text-2xl font-black sm:text-3xl ${titleClass}`}>
+                {pageCopy.receiptsHeading}
+              </h2>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {preview.evidence.receipts.map((receipt) => (
+                  <div key={receipt.label} className={cardClass}>
+                    <div className={`text-[11px] uppercase tracking-[0.18em] ${mutedClass}`}>
+                      {receipt.label}
+                    </div>
+                    <div className={`mt-2 text-2xl font-black ${titleClass}`}>{receipt.value}</div>
+                    <p className={`mt-2 text-xs leading-5 ${textClass}`}>{receipt.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
     </>
@@ -1299,6 +1346,7 @@ function ConversationFirstRecapPage({
   const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
   const heatmapCells = getHeatmapCells(preview);
   const hasHeatmap = hasRenderableHeatmapCells(heatmapCells);
+  const hasRhythm = hasRenderableRhythm(preview);
   const chosenTheme = getChosenTheme(preview);
 
   return (
@@ -1525,19 +1573,25 @@ function ConversationFirstRecapPage({
                 {preview.whenIbuild.builderType}
               </h2>
               <div className="mt-6 rounded-[24px] border border-border bg-bg-primary/55 p-4">
-                <div className="flex h-28 items-end gap-2">
-                  {hourEntries.map((entry) => (
-                    <div key={entry.hour} className="flex-1">
-                      <div
-                        className="rounded-t-[6px] bg-accent"
-                        style={{ height: `${Math.max(8, (entry.sessions / maxHourSessions) * 100)}%`, opacity: 0.25 + entry.sessions / maxHourSessions * 0.75 }}
-                      />
+                {hasRhythm ? (
+                  <>
+                    <div className="flex h-28 items-end gap-2">
+                      {hourEntries.map((entry) => (
+                        <div key={entry.hour} className="flex-1">
+                          <div
+                            className="rounded-t-[6px] bg-accent"
+                            style={{ height: `${Math.max(8, (entry.sessions / maxHourSessions) * 100)}%`, opacity: 0.25 + (entry.sessions / maxHourSessions) * 0.75 }}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <p className="mt-4 text-sm leading-6 text-text-secondary">
-                  Peak window: {preview.whenIbuild.peakWindow} · {preview.whenIbuild.peakWindowSessions} sessions
-                </p>
+                    <p className="mt-4 text-sm leading-6 text-text-secondary">
+                      Peak window: {preview.whenIbuild.peakWindow} · {preview.whenIbuild.peakWindowSessions} sessions
+                    </p>
+                  </>
+                ) : (
+                  renderRhythmFallback(preview.lang === "en" ? "en" : "zh")
+                )}
               </div>
 
               <div className="mt-5 rounded-[24px] border border-border bg-bg-primary/55 p-4">
@@ -1591,6 +1645,7 @@ function HybridRecapPage({
   const chosenTheme = getChosenTheme(preview);
   const hourEntries = getHourEntries(preview);
   const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
+  const hasRhythm = hasRenderableRhythm(preview);
 
   return (
     <div className="builderbio-recap-shell">
@@ -1757,26 +1812,32 @@ function HybridRecapPage({
                 Build by day, rethink by night.
               </h2>
               <div className="mt-6 rounded-[24px] border border-border bg-bg-primary/55 p-4">
-                <div className="flex h-28 items-end gap-2">
-                  {hourEntries.map((entry) => (
-                    <div key={entry.hour} className="flex-1">
-                      <div
-                        className="rounded-t-[6px] bg-accent"
-                        style={{ height: `${Math.max(8, (entry.sessions / maxHourSessions) * 100)}%`, opacity: 0.25 + entry.sessions / maxHourSessions * 0.75 }}
-                      />
+                {hasRhythm ? (
+                  <>
+                    <div className="flex h-28 items-end gap-2">
+                      {hourEntries.map((entry) => (
+                        <div key={entry.hour} className="flex-1">
+                          <div
+                            className="rounded-t-[6px] bg-accent"
+                            style={{ height: `${Math.max(8, (entry.sessions / maxHourSessions) * 100)}%`, opacity: 0.25 + (entry.sessions / maxHourSessions) * 0.75 }}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <p className="mt-4 text-sm leading-6 text-text-secondary">
-                  Peak window: {preview.whenIbuild.peakWindow} · {preview.whenIbuild.peakWindowSessions} sessions
-                </p>
+                    <p className="mt-4 text-sm leading-6 text-text-secondary">
+                      Peak window: {preview.whenIbuild.peakWindow} · {preview.whenIbuild.peakWindowSessions} sessions
+                    </p>
+                  </>
+                ) : (
+                  renderRhythmFallback(preview.lang === "en" ? "en" : "zh")
+                )}
               </div>
               <div className="mt-5 rounded-[24px] border border-border bg-bg-primary/55 p-4">
                 <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                  Why this stays hybrid
+                  Shared evidence
                 </div>
                 <p className="mt-3 text-sm leading-6 text-text-secondary">
-                  The projects are real and the tool density is real, but the recurring threads are also real. This history loses truth if the page drops either side.
+                  {preview.hybrid.summary}
                 </p>
               </div>
             </div>
@@ -1836,7 +1897,7 @@ function TerminalNativeBuilderPage({
                   <div className="mt-2 text-sm text-[#b9f5d4]">{preview.slug}</div>
                 </div>
                 <div className="rounded-xl border border-[#164d33] px-3 py-2 text-right">
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-[#7eb89a]">why this fit</div>
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-[#7eb89a]">observed pattern</div>
                   <div className="mt-1 text-sm text-[#b9f5d4]">{preview.presentation.themeReason}</div>
                 </div>
               </div>
@@ -1894,7 +1955,7 @@ function TerminalNativeBuilderPage({
                 </div>
               </div>
               <div className="rounded-[32px] border border-[#164d33] bg-[#07160f]/96 p-5 text-[#d7ffe8] sm:p-8">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#00e676]">Session log</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#00e676]">High moments</p>
                 <div className="mt-4 space-y-3 text-sm leading-6 text-[#b9f5d4]">
                   {preview.highMoments.map((moment) => (
                     <div key={moment.label}>
@@ -1956,7 +2017,7 @@ function EditorialMakerBuilderPage({
             </h2>
             <div className="mt-6 grid gap-6 lg:grid-cols-[0.82fr_1.18fr]">
               <div className="rounded-[24px] bg-bg-primary/60 p-5">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">Theme reading</div>
+                <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">Observed pattern</div>
                 <p className="mt-3 text-sm leading-7 text-text-secondary">{preview.presentation.themeReason}</p>
               </div>
               <div>
@@ -2045,6 +2106,7 @@ function NightShiftBuilderPage({
   themeStyle,
 }: ThemePageProps) {
   const burstValues = preview.highMoments.map((_, index) => 42 + index * 18);
+  const lang = preview.lang === "en" ? "en" : "zh";
 
   return (
     <div className="builderbio-recap-shell">
@@ -2136,7 +2198,9 @@ function NightShiftBuilderPage({
             <div className="mt-5 grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="rounded-[24px] border border-[#4b2852] bg-black/15 p-4">
                 <p className="text-sm leading-7 text-white/72">
-                  The page is supposed to feel like the work hits in bursts: the busy day, the peak session, the night windows, and the agent handoff all stack into one atmosphere.
+                  {lang === "zh"
+                    ? `${preview.whenIbuild.peakWindow} 是最容易堆出高峰的窗口，${preview.activity.activeDays} 个活跃日和 ${preview.highlights.longestStreak} 天最长连续记录，把这段夜间节奏固定了下来。`
+                    : `${preview.whenIbuild.peakWindow} is where the work clusters hardest. ${preview.activity.activeDays} active days and a ${preview.highlights.longestStreak}-day streak keep that night-shift rhythm visible.`}
                 </p>
               </div>
               <div className="rounded-[24px] border border-[#4b2852] bg-black/15 p-4">
@@ -2186,7 +2250,7 @@ function ResearchForgeBuilderPage({
 
             <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
               <div className="rounded-[24px] border border-[#c8efea] bg-bg-primary/60 p-5">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">Case file</div>
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">Profile record</div>
                 <h1 className="mt-3 text-3xl font-black text-text-primary">{preview.name}</h1>
                 <p className="mt-2 text-sm text-text-secondary">{preview.slug}</p>
                 <div className="mt-5 space-y-3 text-sm text-text-secondary">
@@ -2271,6 +2335,7 @@ function CalmCraftBuilderPage({
   liveGavin,
   themeStyle,
 }: ThemePageProps) {
+  const hasRhythm = hasRenderableRhythm(preview);
   return (
     <div className="builderbio-recap-shell">
       <Titlebar
@@ -2329,10 +2394,16 @@ function CalmCraftBuilderPage({
             <div className="rounded-[32px] border border-[#3d342c] bg-[#1b1e22]/92 p-6 text-[#efe6dc] shadow-[0_18px_50px_rgba(0,0,0,0.24)] sm:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#e6bb84]">Time rhythm</p>
               <div className="mt-5 rounded-[24px] border border-[#3d342c] bg-black/10 p-4">
-                <RhythmBars preview={preview} />
-                <p className="mt-4 text-sm leading-6 text-white/68">
-                  Peak window: {preview.whenIbuild.peakWindow} · {preview.whenIbuild.peakWindowSessions} sessions
-                </p>
+                {hasRhythm ? (
+                  <>
+                    <RhythmBars preview={preview} />
+                    <p className="mt-4 text-sm leading-6 text-white/68">
+                      Peak window: {preview.whenIbuild.peakWindow} · {preview.whenIbuild.peakWindowSessions} sessions
+                    </p>
+                  </>
+                ) : (
+                  renderRhythmFallback(preview.lang === "en" ? "en" : "zh", "dark")
+                )}
               </div>
               <div className="mt-5 rounded-[24px] border border-[#3d342c] bg-black/10 p-4">
                 <MiniHeatmap preview={preview} />
@@ -2404,6 +2475,7 @@ export default async function BuilderBioPreviewPage({
   const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
   const heatmapCells = getHeatmapCells(preview);
   const hasHeatmap = hasRenderableHeatmapCells(heatmapCells);
+  const hasRhythm = hasRenderableRhythm(preview);
   const peakHeadline =
     preview.whenIbuild.peakLead || preview.whenIbuild.peakHour || preview.whenIbuild.peakWindow;
   const peakHeadlineIsWindow =
@@ -3216,60 +3288,66 @@ export default async function BuilderBioPreviewPage({
                 {preview.whenIbuild.builderType}
               </h2>
               <div className="mt-6">
-                <div className="overflow-x-auto pb-2">
-                  <div className="min-w-[420px]">
-                    <div className="flex h-36 items-end gap-1 rounded-2xl border border-border bg-bg-primary/60 px-3 py-3">
-                      {hourEntries.map((entry) => (
-                        <div key={entry.hour} className="flex h-full min-w-0 flex-1 items-end">
-                          <div
-                            className="w-full rounded-t-[4px]"
-                            style={{
-                              height: `${Math.max(2, Math.round((entry.sessions / maxHourSessions) * 100))}%`,
-                              background: hourColor(entry.hour),
-                            }}
-                            title={`${entry.hour}:00 — ${entry.sessions} sessions`}
-                          />
+                {hasRhythm ? (
+                  <>
+                    <div className="overflow-x-auto pb-2">
+                      <div className="min-w-[420px]">
+                        <div className="flex h-36 items-end gap-1 rounded-2xl border border-border bg-bg-primary/60 px-3 py-3">
+                          {hourEntries.map((entry) => (
+                            <div key={entry.hour} className="flex h-full min-w-0 flex-1 items-end">
+                              <div
+                                className="w-full rounded-t-[4px]"
+                                style={{
+                                  height: `${Math.max(2, Math.round((entry.sessions / maxHourSessions) * 100))}%`,
+                                  background: hourColor(entry.hour),
+                                }}
+                                title={`${entry.hour}:00 — ${entry.sessions} sessions`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex items-center justify-between text-[11px] text-text-muted">
+                          <span>0:00</span>
+                          <span>6:00</span>
+                          <span>12:00</span>
+                          <span>18:00</span>
+                          <span>23:00</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-5 rounded-2xl border border-border bg-bg-primary/60 p-4">
+                      <div className="text-xl font-black text-text-primary">
+                        {peakHeadlineIsWindow ? peakHeadline : `${peakHeadline} ${ui.peakSentence}`}
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-text-secondary">
+                        {peakHeadlineIsWindow
+                          ? lang === "zh"
+                            ? `整个窗口内累计 ${preview.whenIbuild.peakWindowSessions} 个 sessions。`
+                            : `${preview.whenIbuild.peakWindowSessions} sessions inside this window.`
+                          : `${ui.peakWindowSummary} ${preview.whenIbuild.peakWindow}. ${preview.whenIbuild.peakWindowSessions} ${ui.sessionsSuffix}`}
+                      </p>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      {preview.whenIbuild.periods.map((period) => (
+                        <div
+                          key={period.label}
+                          className="rounded-2xl border border-border bg-bg-primary/55 p-4"
+                        >
+                          <div className="text-sm font-bold text-text-primary">{period.label}</div>
+                          <div className="mt-3 text-2xl font-black text-text-primary">
+                            {period.sessions}
+                          </div>
+                          <div className="text-xs text-text-muted">{ui.sessions}</div>
+                          <div className="mt-2 text-xs text-text-secondary">
+                            {formatNumber(period.turns)} turns
+                          </div>
                         </div>
                       ))}
                     </div>
-                    <div className="mt-3 flex items-center justify-between text-[11px] text-text-muted">
-                      <span>0:00</span>
-                      <span>6:00</span>
-                      <span>12:00</span>
-                      <span>18:00</span>
-                      <span>23:00</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-5 rounded-2xl border border-border bg-bg-primary/60 p-4">
-                  <div className="text-xl font-black text-text-primary">
-                    {peakHeadlineIsWindow ? peakHeadline : `${peakHeadline} ${ui.peakSentence}`}
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-text-secondary">
-                    {peakHeadlineIsWindow
-                      ? lang === "zh"
-                        ? `整个窗口内累计 ${preview.whenIbuild.peakWindowSessions} 个 sessions。`
-                        : `${preview.whenIbuild.peakWindowSessions} sessions inside this window.`
-                      : `${ui.peakWindowSummary} ${preview.whenIbuild.peakWindow}. ${preview.whenIbuild.peakWindowSessions} ${ui.sessionsSuffix}`}
-                  </p>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {preview.whenIbuild.periods.map((period) => (
-                    <div
-                      key={period.label}
-                      className="rounded-2xl border border-border bg-bg-primary/55 p-4"
-                    >
-                      <div className="text-sm font-bold text-text-primary">{period.label}</div>
-                      <div className="mt-3 text-2xl font-black text-text-primary">
-                        {period.sessions}
-                      </div>
-                      <div className="text-xs text-text-muted">{ui.sessions}</div>
-                      <div className="mt-2 text-xs text-text-secondary">
-                        {formatNumber(period.turns)} turns
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                  </>
+                ) : (
+                  <div className="mt-1">{renderRhythmFallback(lang)}</div>
+                )}
               </div>
             </div>
           </section>
