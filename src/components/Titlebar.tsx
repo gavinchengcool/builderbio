@@ -5,13 +5,15 @@ import { usePathname } from "next/navigation";
 export default function Titlebar({
   forceBuiltByActive = false,
   forceTasteBoardActive = false,
+  forceHomeInactive = false,
 }: {
   forceBuiltByActive?: boolean;
   forceTasteBoardActive?: boolean;
+  forceHomeInactive?: boolean;
 }) {
   const pathname = usePathname();
   const isTasteBoard = forceTasteBoardActive || pathname.startsWith("/taste-board");
-  const isHome = pathname === "/";
+  const isHome = !forceHomeInactive && pathname === "/";
   const isBuiltBy = forceBuiltByActive;
 
   return (

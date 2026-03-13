@@ -718,6 +718,7 @@ export default async function BuilderBioPreviewPage() {
       <Titlebar
         forceBuiltByActive={liveGavin}
         forceTasteBoardActive={liveProfile && !liveGavin}
+        forceHomeInactive={liveProfile}
       />
       <div className="relative overflow-hidden pt-12" style={themeStyle}>
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,107,53,0.18),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(52,211,153,0.12),transparent_30%)]" />
