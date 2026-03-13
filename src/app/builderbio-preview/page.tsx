@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Titlebar from "@/components/Titlebar";
 import InstallCommandBox from "@/components/InstallCommandBox";
 import { loadPublicBuilderBioRecap } from "@/lib/builderbio-recap";
+import PreviewModeSwitch from "./PreviewModeSwitch";
 
 async function getBuilderBioSubdomainFromHost() {
   const headerStore = await headers();
@@ -253,6 +254,7 @@ const previewFallback = {
       summary:
         "当 Gavin 需要在一个问题里待得足够久，直到结构真正长出来时，就会切到 Claude Code。",
       evidence: "51 个 sessions · 6.4K turns · 平均每次 126 turns",
+      color: "#FF6B35",
     },
     {
       name: "Codex",
@@ -260,6 +262,7 @@ const previewFallback = {
       summary:
         "更适合高频执行、终端驱动的推进，以及问完就干的快循环。",
       evidence: "179 个 sessions · 6.3K turns · 平均每次 35 turns",
+      color: "#34D399",
     },
   ],
   comparison: [
@@ -479,7 +482,113 @@ const previewFallback = {
       { label: "Late night", sessions: 19 },
     ],
   },
+  presentation: {
+    inferredMode: "builder",
+    chosenMode: "builder",
+    modeReason: "Project-backed sessions, tool usage, and file traces dominate the history.",
+    inferredTheme: "product-operator",
+    chosenTheme: "product-operator",
+    themeReason: "Shipping-oriented product arcs and operator energy make product-operator the clearest fit.",
+    themeCandidates: [
+      {
+        theme: "product-operator",
+        score: 0.91,
+        reason: "Product-heavy project arcs and visible shipping momentum.",
+      },
+      {
+        theme: "terminal-native",
+        score: 0.78,
+        reason: "High command density and CLI-heavy execution.",
+      },
+      {
+        theme: "research-forge",
+        score: 0.64,
+        reason: "Research and ecosystem analysis keep showing up in the work.",
+      },
+    ],
+  },
+  conversation: {
+    signatureThread: {
+      name: "Decision unwind loop",
+      summary:
+        "白天推进完项目后，晚上会回来把没想清楚的问题重新拆开，直到第二天的方向变得更清楚。",
+      why: "它说明这里的 AI 关系不只是在执行任务，也在承担复盘和再组织判断的工作。",
+      proof: ["12.7K turns", "34 个活跃日", "高峰时段在 10 AM / 夜晚延续"],
+    },
+    recurringThreads: [
+      {
+        title: "Decision untangling",
+        summary: "很多对话不是为了立即产出，而是为了把第二天要做的决定先讲清楚。",
+      },
+      {
+        title: "Learning by dialogue",
+        summary: "研究和理解会通过对话不断往回压，而不是只查一次资料就结束。",
+      },
+      {
+        title: "Late-night reframing",
+        summary: "晚上经常用 AI 把白天的问题重新命名，帮助第二天更快推进。",
+      },
+    ],
+    aiRoles: [
+      {
+        name: "Claude Code",
+        role: "Reflection partner",
+        summary: "承担更长、更深的对话和结构整理。",
+        evidence: "51 个 sessions · 6.4K turns · 2.2K 次工具调用",
+        color: "#FF6B35",
+      },
+      {
+        name: "Codex",
+        role: "Research helper",
+        summary: "承担高频执行，也会快速补充信息和事实。",
+        evidence: "179 个 sessions · 6.3K turns · 6.5K 次工具调用",
+        color: "#34D399",
+      },
+    ],
+  },
+  hybrid: {
+    summary:
+      "Gavin 这条 BuilderBio 里同时存在清楚的 build line 和思考 thread，只展示其中一边都会把人压扁。",
+    threadBridge: {
+      name: "Decision unwind loop",
+      summary:
+        "晚间会回来重新组织白天没想清楚的问题，让第二天的推进更稳。",
+      why: "它把产品决策、复盘和实际执行重新扣到了一起。",
+      proof: ["高峰日 2026-03-06", "最长连续 7 天", "持续回看和再组织"],
+    },
+  },
 };
+
+type PreviewData = typeof previewFallback;
+
+function getChosenMode(preview: PreviewData) {
+  return preview.presentation?.chosenMode || "builder";
+}
+
+function getChosenTheme(preview: PreviewData) {
+  return preview.presentation?.chosenTheme || "product-operator";
+}
+
+function getModeBackdrop(mode: string, theme: string) {
+  if (mode === "conversation-first") {
+    return theme === "companion-journal"
+      ? "bg-[radial-gradient(circle_at_top_left,rgba(198,123,85,0.16),transparent_32%),linear-gradient(180deg,#f7f2ea_0%,#fffdf8_52%,#f5efe6_100%)]"
+      : "bg-[radial-gradient(circle_at_top_left,rgba(109,94,245,0.18),transparent_32%),linear-gradient(180deg,#f5f0ff_0%,#fffdff_52%,#f1ecff_100%)]";
+  }
+  if (mode === "hybrid") {
+    return "bg-[radial-gradient(circle_at_top_left,rgba(91,108,255,0.16),transparent_30%),radial-gradient(circle_at_82%_0%,rgba(255,107,53,0.12),transparent_26%),linear-gradient(180deg,#f7f8fc_0%,#ffffff_48%,#f3f4fa_100%)]";
+  }
+  if (theme === "terminal-native") {
+    return "bg-[radial-gradient(circle_at_top,rgba(0,230,118,0.12),transparent_36%),linear-gradient(180deg,#0b0f0d_0%,#0f1512_100%)]";
+  }
+  if (theme === "night-shift") {
+    return "bg-[radial-gradient(circle_at_top,rgba(249,115,22,0.18),transparent_34%),linear-gradient(180deg,#130b16_0%,#17111c_100%)]";
+  }
+  if (theme === "calm-craft") {
+    return "bg-[radial-gradient(circle_at_top,rgba(217,168,108,0.12),transparent_34%),linear-gradient(180deg,#15171a_0%,#181b1f_100%)]";
+  }
+  return "bg-[radial-gradient(circle_at_top,rgba(255,107,53,0.18),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(52,211,153,0.12),transparent_30%)]";
+}
 
 function pct(value: number) {
   return `${Math.max(6, Math.min(100, value))}%`;
@@ -670,35 +779,24 @@ function buildPageCopy(preview: typeof previewFallback, liveProfile: boolean) {
   };
 }
 
-export default async function BuilderBioPreviewPage() {
-  const subdomain = await getBuilderBioSubdomainFromHost();
-  const liveProfile = !!subdomain;
-  const liveGavin = subdomain === "gavin";
-  const loaded = !liveGavin && subdomain ? await loadPublicBuilderBioRecap(subdomain) : null;
-
-  if (subdomain && !liveGavin && !loaded) {
-    notFound();
-  }
-
-  const preview = (loaded?.recap ?? previewFallback) as typeof previewFallback;
-  const lang = preview.lang === "en" ? "en" : "zh";
-  const ui = getUiCopy(lang);
-  const themeStyle = (loaded?.themeStyle ?? {}) as CSSProperties;
-  const pageCopy = buildPageCopy(preview, liveProfile);
-  const hourEntries = Array.from({ length: 24 }, (_, hour) => ({
+function getHourEntries(preview: PreviewData) {
+  return Array.from({ length: 24 }, (_, hour) => ({
     hour,
     sessions:
       preview.whenIbuild.hourDistribution[
         hour as keyof typeof preview.whenIbuild.hourDistribution
       ] ?? 0,
   }));
-  const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
+}
+
+function getHeatmapCells(preview: PreviewData) {
   const heatmapDates = Object.keys(preview.activity.heatmap || {}).sort();
   const firstHeatmapDate = heatmapDates.length
     ? new Date(`${heatmapDates[0]}T00:00:00`)
     : new Date();
   const heatmapPadBefore = heatmapDates.length ? (firstHeatmapDate.getDay() || 7) - 1 : 0;
-  const heatmapCells = [
+
+  return [
     ...Array.from({ length: heatmapPadBefore }, (_, index) => ({
       key: `pad-${index}`,
       value: 0,
@@ -712,6 +810,86 @@ export default async function BuilderBioPreviewPage() {
       empty: false,
     })),
   ];
+}
+
+type ThemePageProps = {
+  preview: PreviewData;
+  liveProfile: boolean;
+  liveGavin: boolean;
+  themeStyle: CSSProperties;
+};
+
+function ThemeCtaBlock({
+  summary,
+}: {
+  summary: string;
+}) {
+  return (
+    <section className="rounded-3xl border border-border bg-bg-secondary/82 p-5 sm:p-8">
+      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Make your own</p>
+      <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
+        Make your own BuilderBio.
+      </h2>
+      <p className="mt-3 max-w-3xl text-sm leading-7 text-text-secondary">{summary}</p>
+      <div className="mt-6">
+        <InstallCommandBox eyebrow="PASTE INTO YOUR CODING AGENT" align="left" />
+      </div>
+    </section>
+  );
+}
+
+function MiniHeatmap({ preview }: { preview: PreviewData }) {
+  const heatmapCells = getHeatmapCells(preview);
+
+  return (
+    <div className="grid grid-cols-7 gap-1.5">
+      {heatmapCells.map((cell) => (
+        <div
+          key={cell.key}
+          className={`aspect-square rounded-[6px] border border-border/60 ${cell.empty ? "bg-transparent" : heatmapLevel(cell.value)}`}
+          title={cell.date || undefined}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RhythmBars({ preview }: { preview: PreviewData }) {
+  const hourEntries = getHourEntries(preview);
+  const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
+
+  return (
+    <div className="flex h-28 items-end gap-2">
+      {hourEntries.map((entry) => (
+        <div key={entry.hour} className="flex-1">
+          <div
+            className="rounded-t-[6px] bg-accent"
+            style={{
+              height: `${Math.max(8, (entry.sessions / maxHourSessions) * 100)}%`,
+              opacity: 0.25 + (entry.sessions / maxHourSessions) * 0.75,
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ConversationFirstRecapPage({
+  preview,
+  liveProfile,
+  liveGavin,
+  themeStyle,
+}: {
+  preview: PreviewData;
+  liveProfile: boolean;
+  liveGavin: boolean;
+  themeStyle: CSSProperties;
+}) {
+  const hourEntries = getHourEntries(preview);
+  const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
+  const heatmapCells = getHeatmapCells(preview);
+  const chosenTheme = getChosenTheme(preview);
 
   return (
     <div className="builderbio-recap-shell">
@@ -720,10 +898,1150 @@ export default async function BuilderBioPreviewPage() {
         forceTasteBoardActive={liveProfile && !liveGavin}
         forceHomeInactive={liveProfile}
       />
-      <div className="relative overflow-hidden pt-12" style={themeStyle}>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,107,53,0.18),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(52,211,153,0.12),transparent_30%)]" />
+      <div className={`relative overflow-hidden pt-12 ${getModeBackdrop("conversation-first", chosenTheme)}`} style={themeStyle}>
+        <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-12">
+          {!liveProfile ? <PreviewModeSwitch active="conversation-first" /> : null}
+
+          <section className="mb-8 overflow-hidden rounded-[32px] border border-border bg-bg-secondary/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.1)] backdrop-blur sm:mb-10 sm:p-8">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
+                {preview.label}
+              </span>
+              <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
+                {preview.sectionLabel}
+              </span>
+              <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
+                mode · conversation-first
+              </span>
+              <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
+                theme · {chosenTheme}
+              </span>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:gap-8">
+              <div>
+                <div className="mb-5 flex items-start gap-4 sm:mb-6">
+                  <div
+                    className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[28px] border border-accent/25 bg-accent/10 text-3xl font-black text-accent shadow-[0_14px_36px_rgba(0,0,0,0.12)]"
+                    style={
+                      preview.avatarUrl
+                        ? {
+                            backgroundImage: `linear-gradient(rgba(17,17,17,0.04), rgba(17,17,17,0.04)), url(${preview.avatarUrl})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }
+                        : undefined
+                    }
+                  >
+                    <span className="sr-only">{preview.avatarLetter}</span>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-text-muted">{preview.slug}</p>
+                    <h1 className="mt-2 text-4xl font-black text-text-primary sm:text-5xl">{preview.name}</h1>
+                    <p className="mt-2 text-sm text-text-secondary">{preview.title}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {preview.social.map((item) => (
+                        <a
+                          key={item.label}
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-text-secondary transition-colors hover:border-accent/40 hover:text-accent"
+                        >
+                          {item.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  {preview.trust.unfiltered ? (
+                    <span className="inline-flex items-center gap-2 rounded-full border border-[#34d399]/25 bg-[#34d399]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#34d399]">
+                      Unfiltered
+                    </span>
+                  ) : null}
+                  <span className="rounded-full border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-text-secondary">
+                    Generated {preview.trust.generatedAt}
+                  </span>
+                </div>
+
+                <h2 className="max-w-4xl text-[2.05rem] font-black leading-[1.05] text-text-primary sm:text-6xl sm:leading-[0.96]">
+                  {preview.thesis}
+                </h2>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {preview.tasteSignals.map((signal) => (
+                    <span
+                      key={signal}
+                      className="rounded-full border border-border bg-bg-primary/55 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-primary sm:text-[11px]"
+                    >
+                      {signal}
+                    </span>
+                  ))}
+                </div>
+
+                <p className="mt-5 max-w-3xl text-sm leading-7 text-text-secondary sm:text-base">
+                  {preview.recap}
+                </p>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="rounded-[28px] border border-accent/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.86),rgba(255,255,255,0.62))] p-5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
+                    {preview.socialCurrency.title}
+                  </p>
+                  <div className="mt-3 text-5xl font-black text-text-primary">{formatCompact(preview.totalTokens)}</div>
+                  <p className="mt-2 text-sm font-semibold text-text-primary">
+                    Tokens created through AI conversation
+                  </p>
+                  <p className="mt-4 text-sm leading-6 text-text-secondary">{preview.socialCurrency.summary}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {preview.stats.map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="rounded-[24px] border border-border bg-bg-primary/60 p-4"
+                    >
+                      <div className="text-2xl font-black text-accent">{stat.value}</div>
+                      <div className="mt-2 text-[11px] uppercase tracking-[0.2em] text-text-muted">
+                        {stat.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-[28px] border border-border bg-bg-primary/60 p-5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
+                    AI relationship style
+                  </p>
+                  <h3 className="mt-2 text-2xl font-black text-text-primary">
+                    {preview.managementStyle.name}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-text-secondary">
+                    {preview.managementStyle.summary}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-[1.06fr_0.94fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-border bg-bg-secondary/82 p-5 sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                Signature Thread
+              </p>
+              <h2 className="mt-2 text-3xl font-black text-text-primary sm:text-4xl">
+                {preview.conversation.signatureThread.name}
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-text-secondary sm:text-base">
+                {preview.conversation.signatureThread.summary}
+              </p>
+              <div className="mt-6 rounded-[24px] border border-border bg-bg-primary/55 p-4">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
+                  Why it matters
+                </div>
+                <p className="mt-3 text-sm leading-6 text-text-secondary">
+                  {preview.conversation.signatureThread.why}
+                </p>
+                <div className="mt-4 space-y-3">
+                  {preview.conversation.signatureThread.proof.map((item) => (
+                    <div key={item} className="flex gap-3 text-sm text-text-secondary">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-border bg-bg-secondary/82 p-5 sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                Recurring Threads
+              </p>
+              <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
+                These are the themes that keep returning.
+              </h2>
+              <div className="mt-6 space-y-4">
+                {preview.conversation.recurringThreads.map((thread) => (
+                  <div
+                    key={thread.title}
+                    className="rounded-[24px] border border-border bg-bg-primary/55 p-4"
+                  >
+                    <div className="text-lg font-black text-text-primary">{thread.title}</div>
+                    <p className="mt-2 text-sm leading-6 text-text-secondary">{thread.summary}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-2 sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-border bg-bg-secondary/82 p-5 sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                AI Roles
+              </p>
+              <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
+                Here the agents feel more like different conversation partners than coding lanes.
+              </h2>
+              <div className="mt-6 grid gap-4">
+                {preview.conversation.aiRoles.map((role) => (
+                  <div
+                    key={role.name}
+                    className="rounded-[24px] border border-border bg-bg-primary/55 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-lg font-black text-text-primary">{role.name}</div>
+                        <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-text-muted">
+                          {role.role}
+                        </div>
+                      </div>
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: role.color }} />
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-text-secondary">{role.summary}</p>
+                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-text-muted">{role.evidence}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-border bg-bg-secondary/82 p-5 sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                When We Talk
+              </p>
+              <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
+                {preview.whenIbuild.builderType}
+              </h2>
+              <div className="mt-6 rounded-[24px] border border-border bg-bg-primary/55 p-4">
+                <div className="flex h-28 items-end gap-2">
+                  {hourEntries.map((entry) => (
+                    <div key={entry.hour} className="flex-1">
+                      <div
+                        className="rounded-t-[6px] bg-accent"
+                        style={{ height: `${Math.max(8, (entry.sessions / maxHourSessions) * 100)}%`, opacity: 0.25 + entry.sessions / maxHourSessions * 0.75 }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 text-sm leading-6 text-text-secondary">
+                  Peak window: {preview.whenIbuild.peakWindow} · {preview.whenIbuild.peakWindowSessions} sessions
+                </p>
+              </div>
+
+              <div className="mt-5 rounded-[24px] border border-border bg-bg-primary/55 p-4">
+                <div className="mb-3 text-[11px] uppercase tracking-[0.18em] text-text-muted">Conversation activity</div>
+                <div className="grid grid-cols-7 gap-1.5">
+                  {heatmapCells.map((cell) => (
+                    <div
+                      key={cell.key}
+                      className={`aspect-square rounded-[6px] border border-border/60 ${cell.empty ? "bg-transparent" : heatmapLevel(cell.value)}`}
+                      title={cell.date || undefined}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-border bg-bg-secondary/82 p-5 sm:p-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Make your own</p>
+            <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
+              Make your own BuilderBio.
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-text-secondary">
+              Give BuilderBio the history of your local coding agents and it will turn your project arcs, conversation threads, and standout moments into a shareable AI profile.
+            </p>
+            <div className="mt-6">
+              <InstallCommandBox eyebrow="PASTE INTO YOUR CODING AGENT" align="left" />
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function HybridRecapPage({
+  preview,
+  liveProfile,
+  liveGavin,
+  themeStyle,
+}: {
+  preview: PreviewData;
+  liveProfile: boolean;
+  liveGavin: boolean;
+  themeStyle: CSSProperties;
+}) {
+  const chosenTheme = getChosenTheme(preview);
+  const hourEntries = getHourEntries(preview);
+  const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
+
+  return (
+    <div className="builderbio-recap-shell">
+      <Titlebar
+        forceBuiltByActive={liveGavin}
+        forceTasteBoardActive={liveProfile && !liveGavin}
+        forceHomeInactive={liveProfile}
+      />
+      <div className={`relative overflow-hidden pt-12 ${getModeBackdrop("hybrid", chosenTheme)}`} style={themeStyle}>
+        <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-12">
+          {!liveProfile ? <PreviewModeSwitch active="hybrid" /> : null}
+
+          <section className="mb-8 overflow-hidden rounded-[32px] border border-border bg-bg-secondary/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.08)] backdrop-blur sm:mb-10 sm:p-8">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
+                {preview.label}
+              </span>
+              <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
+                {preview.sectionLabel}
+              </span>
+              <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
+                mode · hybrid
+              </span>
+              <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
+                theme · {chosenTheme}
+              </span>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-text-muted">{preview.slug}</p>
+                <h1 className="mt-2 text-4xl font-black text-text-primary sm:text-5xl">{preview.name}</h1>
+                <p className="mt-2 text-sm text-text-secondary">{preview.title}</p>
+                <h2 className="mt-5 max-w-4xl text-[2.05rem] font-black leading-[1.05] text-text-primary sm:text-6xl sm:leading-[0.96]">
+                  {preview.thesis}
+                </h2>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {preview.tasteSignals.map((signal) => (
+                    <span
+                      key={signal}
+                      className="rounded-full border border-border bg-bg-primary/55 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-primary sm:text-[11px]"
+                    >
+                      {signal}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-5 max-w-3xl text-sm leading-7 text-text-secondary sm:text-base">
+                  {preview.hybrid.summary}
+                </p>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {preview.stats.map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="rounded-[24px] border border-border bg-bg-primary/60 p-4"
+                    >
+                      <div className="text-2xl font-black text-accent">{stat.value}</div>
+                      <div className="mt-2 text-[11px] uppercase tracking-[0.2em] text-text-muted">
+                        {stat.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-[28px] border border-border bg-bg-primary/60 p-5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
+                    AI management style
+                  </p>
+                  <h3 className="mt-2 text-2xl font-black text-text-primary">
+                    {preview.managementStyle.name}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-text-secondary">
+                    {preview.managementStyle.summary}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-2 sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-border bg-bg-secondary/82 p-5 sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                Signature Build
+              </p>
+              <h2 className="mt-2 text-3xl font-black text-text-primary sm:text-4xl">
+                {preview.signatureBuild.name}
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-text-secondary sm:text-base">
+                {preview.signatureBuild.summary}
+              </p>
+              <div className="mt-6 space-y-3">
+                {preview.signatureBuild.proof.map((item) => (
+                  <div key={item} className="flex gap-3 text-sm text-text-secondary">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-border bg-bg-secondary/82 p-5 sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                Signature Thread
+              </p>
+              <h2 className="mt-2 text-3xl font-black text-text-primary sm:text-4xl">
+                {preview.hybrid.threadBridge.name}
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-text-secondary sm:text-base">
+                {preview.hybrid.threadBridge.summary}
+              </p>
+              <p className="mt-4 text-sm leading-7 text-text-primary/90">
+                {preview.hybrid.threadBridge.why}
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {preview.hybrid.threadBridge.proof.map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-border bg-bg-primary/55 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-primary sm:text-[11px]"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-[1.02fr_0.98fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-border bg-bg-secondary/82 p-5 sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                AI Roles
+              </p>
+              <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
+                The same AI relationship is doing both execution and reflection.
+              </h2>
+              <div className="mt-6 grid gap-4">
+                {preview.agentRoles.map((role) => (
+                  <div
+                    key={role.name}
+                    className="rounded-[24px] border border-border bg-bg-primary/55 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-lg font-black text-text-primary">{role.name}</div>
+                        <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-text-muted">
+                          {role.role}
+                        </div>
+                      </div>
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: role.color }} />
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-text-secondary">{role.summary}</p>
+                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-text-muted">{role.evidence}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-border bg-bg-secondary/82 p-5 sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
+                Shared rhythm
+              </p>
+              <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
+                Build by day, rethink by night.
+              </h2>
+              <div className="mt-6 rounded-[24px] border border-border bg-bg-primary/55 p-4">
+                <div className="flex h-28 items-end gap-2">
+                  {hourEntries.map((entry) => (
+                    <div key={entry.hour} className="flex-1">
+                      <div
+                        className="rounded-t-[6px] bg-accent"
+                        style={{ height: `${Math.max(8, (entry.sessions / maxHourSessions) * 100)}%`, opacity: 0.25 + entry.sessions / maxHourSessions * 0.75 }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 text-sm leading-6 text-text-secondary">
+                  Peak window: {preview.whenIbuild.peakWindow} · {preview.whenIbuild.peakWindowSessions} sessions
+                </p>
+              </div>
+              <div className="mt-5 rounded-[24px] border border-border bg-bg-primary/55 p-4">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
+                  Why this stays hybrid
+                </div>
+                <p className="mt-3 text-sm leading-6 text-text-secondary">
+                  The projects are real and the tool density is real, but the recurring threads are also real. This history loses truth if the page drops either side.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-border bg-bg-secondary/82 p-5 sm:p-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Make your own</p>
+            <h2 className="mt-2 text-2xl font-black text-text-primary sm:text-3xl">
+              Make your own BuilderBio.
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-text-secondary">
+              Give BuilderBio the history of your local coding agents and it will turn your build lines, recurring threads, and standout moments into a shareable AI profile.
+            </p>
+            <div className="mt-6">
+              <InstallCommandBox eyebrow="PASTE INTO YOUR CODING AGENT" align="left" />
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function TerminalNativeBuilderPage({
+  preview,
+  liveProfile,
+  liveGavin,
+  themeStyle,
+}: ThemePageProps) {
+  return (
+    <div className="builderbio-recap-shell">
+      <Titlebar
+        forceBuiltByActive={liveGavin}
+        forceTasteBoardActive={liveProfile && !liveGavin}
+        forceHomeInactive={liveProfile}
+      />
+      <div className={`relative overflow-hidden pt-12 ${getModeBackdrop("builder", "terminal-native")}`} style={themeStyle}>
+        <main className="relative mx-auto max-w-6xl px-4 py-6 font-mono sm:px-6 sm:py-12">
+          <section className="mb-8 rounded-[32px] border border-[#164d33] bg-[#07160f]/96 p-5 text-[#d7ffe8] shadow-[0_24px_60px_rgba(0,0,0,0.28)] sm:mb-10 sm:p-8">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-[#00e676]/25 bg-[#00e676]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#00e676]">
+                {preview.label}
+              </span>
+              <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[#7eb89a]">
+                mode · builder
+              </span>
+              <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[#7eb89a]">
+                theme · terminal-native
+              </span>
+            </div>
+
+            <div className="rounded-[28px] border border-[#164d33] bg-black/20 p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#164d33] pb-4">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.2em] text-[#7eb89a]">$ whoami</div>
+                  <div className="mt-2 text-3xl font-black text-[#00e676] sm:text-4xl">{preview.name.toLowerCase()}</div>
+                  <div className="mt-2 text-sm text-[#b9f5d4]">{preview.slug}</div>
+                </div>
+                <div className="rounded-xl border border-[#164d33] px-3 py-2 text-right">
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-[#7eb89a]">why this fit</div>
+                  <div className="mt-1 text-sm text-[#b9f5d4]">{preview.presentation.themeReason}</div>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3 text-sm leading-6 text-[#b9f5d4]">
+                <p><span className="text-[#00e676]">$ thesis</span> {preview.thesis}</p>
+                <p><span className="text-[#00e676]">$ recap</span> {preview.recap}</p>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {[...preview.stats, { label: "Tokens", value: formatCompact(preview.totalTokens) }].map((stat) => (
+                  <div key={stat.label} className="rounded-2xl border border-[#164d33] bg-black/20 p-4">
+                    <div className="text-[10px] uppercase tracking-[0.18em] text-[#7eb89a]">{stat.label}</div>
+                    <div className="mt-2 text-2xl font-black text-[#00e676]">{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-[1.08fr_0.92fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-[#164d33] bg-[#07160f]/96 p-5 text-[#d7ffe8] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#00e676]">Workbench split</p>
+              <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">How the terminal-native page reads the work</h2>
+              <p className="mt-4 text-sm leading-7 text-[#b9f5d4]">{preview.howIbuild.summary}</p>
+              <div className="mt-6 grid gap-4">
+                {preview.agentRoles.map((role) => (
+                  <div key={role.name} className="rounded-[24px] border border-[#164d33] bg-black/20 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-lg font-black text-white">{role.name}</div>
+                        <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-[#7eb89a]">{role.role}</div>
+                      </div>
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: role.color }} />
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-[#b9f5d4]">{role.summary}</p>
+                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-[#7eb89a]">{role.evidence}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-5">
+              <div className="rounded-[32px] border border-[#164d33] bg-[#07160f]/96 p-5 text-[#d7ffe8] sm:p-8">
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#00e676]">Signature build</p>
+                <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">{preview.signatureBuild.name}</h2>
+                <p className="mt-4 text-sm leading-7 text-[#b9f5d4]">{preview.signatureBuild.summary}</p>
+                <div className="mt-5 space-y-3">
+                  {preview.signatureBuild.proof.map((item) => (
+                    <div key={item} className="flex gap-3 text-sm text-[#b9f5d4]">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#00e676]" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-[32px] border border-[#164d33] bg-[#07160f]/96 p-5 text-[#d7ffe8] sm:p-8">
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#00e676]">Session log</p>
+                <div className="mt-4 space-y-3 text-sm leading-6 text-[#b9f5d4]">
+                  {preview.highMoments.map((moment) => (
+                    <div key={moment.label}>
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-[#7eb89a]">{moment.label}</div>
+                      <div className="mt-1 font-bold text-white">{moment.value}</div>
+                      <div className="mt-1">{moment.detail}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <ThemeCtaBlock summary="Give BuilderBio the history of your local coding agents and it will turn your build lines, command habits, and standout sessions into a shareable builder profile." />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function EditorialMakerBuilderPage({
+  preview,
+  liveProfile,
+  liveGavin,
+  themeStyle,
+}: ThemePageProps) {
+  return (
+    <div className="builderbio-recap-shell">
+      <Titlebar
+        forceBuiltByActive={liveGavin}
+        forceTasteBoardActive={liveProfile && !liveGavin}
+        forceHomeInactive={liveProfile}
+      />
+      <div className={`relative overflow-hidden pt-12 ${getModeBackdrop("builder", "editorial-maker")}`} style={themeStyle}>
+        <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-12">
+          <section className="mb-8 rounded-[32px] border border-[#dde3ff] bg-white/92 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.14)] sm:mb-10 sm:p-10">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-accent/25 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
+                {preview.label}
+              </span>
+              <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
+                theme · editorial-maker
+              </span>
+            </div>
+
+            <p className="mt-5 text-[11px] uppercase tracking-[0.24em] text-text-muted">{preview.slug}</p>
+            <h1 className="mt-3 text-5xl font-black text-text-primary [font-family:ui-serif,Georgia,Cambria,'Times_New_Roman',serif] sm:text-6xl">
+              {preview.name}
+            </h1>
+            <h2 className="mt-6 max-w-4xl text-[2.25rem] font-black leading-[1.02] text-text-primary [font-family:ui-serif,Georgia,Cambria,'Times_New_Roman',serif] sm:text-[3.15rem]">
+              {preview.thesis}
+            </h2>
+            <div className="mt-6 grid gap-6 lg:grid-cols-[0.82fr_1.18fr]">
+              <div className="rounded-[24px] bg-bg-primary/60 p-5">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">Theme reading</div>
+                <p className="mt-3 text-sm leading-7 text-text-secondary">{preview.presentation.themeReason}</p>
+              </div>
+              <div>
+                <p className="text-sm leading-7 text-text-secondary">{preview.recap}</p>
+                <blockquote className="mt-6 border-l-2 border-accent pl-4 text-lg font-bold leading-8 text-text-primary [font-family:ui-serif,Georgia,Cambria,'Times_New_Roman',serif]">
+                  “{preview.signatureMoves[0]?.summary || preview.signatureBuild.why}”
+                </blockquote>
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-2 sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-border bg-white/92 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.1)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Signature build</p>
+              <h2 className="mt-2 text-3xl font-black text-text-primary [font-family:ui-serif,Georgia,Cambria,'Times_New_Roman',serif] sm:text-4xl">
+                {preview.signatureBuild.name}
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-text-secondary">{preview.signatureBuild.summary}</p>
+              <p className="mt-4 text-sm leading-7 text-text-primary/90">{preview.signatureBuild.why}</p>
+            </div>
+            <div className="rounded-[32px] border border-border bg-white/92 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.1)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">High moments</p>
+              <div className="mt-5 space-y-4">
+                {preview.highMoments.map((moment) => (
+                  <div key={moment.label} className="rounded-[22px] border border-border bg-bg-primary/55 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">{moment.label}</div>
+                    <div className="mt-2 text-xl font-black text-text-primary">{moment.value}</div>
+                    <p className="mt-2 text-sm leading-6 text-text-secondary">{moment.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-[1.08fr_0.92fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-border bg-white/92 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.1)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">What actually got built</p>
+              <div className="mt-5 grid gap-4">
+                {preview.projects.slice(0, 4).map((project) => (
+                  <div key={project.name} className="rounded-[24px] border border-border bg-bg-primary/55 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-lg font-black text-text-primary">{project.name}</div>
+                      <span className="rounded-full border border-border px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-text-muted">
+                        {project.status}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-text-secondary">{project.summary}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[32px] border border-border bg-white/92 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.1)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Taste signals</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {preview.tasteSignals.map((signal) => (
+                  <span key={signal} className="rounded-full border border-border bg-bg-primary/55 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-text-primary">
+                    {signal}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-6 rounded-[24px] border border-border bg-bg-primary/55 p-5">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">Agent split</div>
+                <p className="mt-3 text-sm leading-7 text-text-secondary">{preview.presentation.modeReason}</p>
+              </div>
+            </div>
+          </section>
+
+          <ThemeCtaBlock summary="Give BuilderBio the history of your local coding agents and it will turn your projects, working style, and standout moments into a shareable builder portrait." />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function NightShiftBuilderPage({
+  preview,
+  liveProfile,
+  liveGavin,
+  themeStyle,
+}: ThemePageProps) {
+  const burstValues = preview.highMoments.map((_, index) => 42 + index * 18);
+
+  return (
+    <div className="builderbio-recap-shell">
+      <Titlebar
+        forceBuiltByActive={liveGavin}
+        forceTasteBoardActive={liveProfile && !liveGavin}
+        forceHomeInactive={liveProfile}
+      />
+      <div className={`relative overflow-hidden pt-12 ${getModeBackdrop("builder", "night-shift")}`} style={themeStyle}>
+        <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-12">
+          <section className="mb-8 rounded-[32px] border border-[#4b2852] bg-[#140915]/88 p-5 text-[#ffe8d9] shadow-[0_24px_60px_rgba(0,0,0,0.3)] sm:mb-10 sm:p-8">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-[#f97316]/25 bg-[#f97316]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#ff9a53]">
+                {preview.label}
+              </span>
+              <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
+                theme · night-shift
+              </span>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:gap-8">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">{preview.slug}</p>
+                <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">{preview.name}</h1>
+                <h2 className="mt-5 max-w-4xl text-[2.05rem] font-black leading-[1.03] text-white sm:text-6xl">
+                  {preview.thesis}
+                </h2>
+                <p className="mt-5 max-w-3xl text-sm leading-7 text-white/72">{preview.recap}</p>
+              </div>
+              <div className="grid gap-4">
+                <div className="rounded-[28px] border border-[#4b2852] bg-black/15 p-5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#ff9a53]">Burst profile</p>
+                  <div className="mt-4 flex h-24 items-end gap-2">
+                    {burstValues.map((value, index) => (
+                      <div key={index} className="flex-1">
+                        <div
+                          className="rounded-t-[6px] bg-[linear-gradient(180deg,#ffbe8f,#f97316)]"
+                          style={{ height: `${value}%` }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-white/72">{preview.presentation.themeReason}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[...preview.stats.slice(0, 3), { label: "Tokens", value: formatCompact(preview.totalTokens) }].map((stat) => (
+                    <div key={stat.label} className="rounded-[24px] border border-[#4b2852] bg-black/15 p-4">
+                      <div className="text-2xl font-black text-[#ff9a53]">{stat.value}</div>
+                      <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-white/45">{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-2 sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-[#4b2852] bg-[#140915]/88 p-5 text-[#ffe8d9] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#ff9a53]">High moments</p>
+              <div className="mt-5 space-y-4">
+                {preview.highMoments.map((moment) => (
+                  <div key={moment.label} className="rounded-[24px] border border-[#4b2852] bg-black/15 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-white/45">{moment.label}</div>
+                    <div className="mt-2 text-xl font-black text-white">{moment.value}</div>
+                    <p className="mt-2 text-sm leading-6 text-white/72">{moment.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#4b2852] bg-[#140915]/88 p-5 text-[#ffe8d9] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#ff9a53]">Agent relay</p>
+              <div className="mt-5 grid gap-4">
+                {preview.agentRoles.map((role) => (
+                  <div key={role.name} className="rounded-[24px] border border-[#4b2852] bg-black/15 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-lg font-black text-white">{role.name}</div>
+                      <span className="text-[11px] uppercase tracking-[0.16em] text-white/45">{role.role}</span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-white/72">{role.summary}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 rounded-[32px] border border-[#4b2852] bg-[#140915]/88 p-5 text-[#ffe8d9] sm:mb-10 sm:p-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#ff9a53]">Activity</p>
+            <div className="mt-5 grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+              <div className="rounded-[24px] border border-[#4b2852] bg-black/15 p-4">
+                <p className="text-sm leading-7 text-white/72">
+                  The page is supposed to feel like the work hits in bursts: the busy day, the peak session, the night windows, and the agent handoff all stack into one atmosphere.
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-[#4b2852] bg-black/15 p-4">
+                <MiniHeatmap preview={preview} />
+              </div>
+            </div>
+          </section>
+
+          <ThemeCtaBlock summary="Give BuilderBio the history of your local coding agents and it will turn your spikes, relay moments, and strongest sessions into a shareable builder profile." />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function ResearchForgeBuilderPage({
+  preview,
+  liveProfile,
+  liveGavin,
+  themeStyle,
+}: ThemePageProps) {
+  return (
+    <div className="builderbio-recap-shell">
+      <Titlebar
+        forceBuiltByActive={liveGavin}
+        forceTasteBoardActive={liveProfile && !liveGavin}
+        forceHomeInactive={liveProfile}
+      />
+      <div className={`relative overflow-hidden pt-12 ${getModeBackdrop("builder", "research-forge")}`} style={themeStyle}>
+        <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-12">
+          <section className="mb-8 rounded-[32px] border border-[#c8efea] bg-white/92 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.14)] sm:mb-10 sm:p-8">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-accent/25 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
+                {preview.label}
+              </span>
+              <span className="rounded-full border border-border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
+                theme · research-forge
+              </span>
+            </div>
+
+            <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="rounded-[24px] border border-[#c8efea] bg-bg-primary/60 p-5">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">Case file</div>
+                <h1 className="mt-3 text-3xl font-black text-text-primary">{preview.name}</h1>
+                <p className="mt-2 text-sm text-text-secondary">{preview.slug}</p>
+                <div className="mt-5 space-y-3 text-sm text-text-secondary">
+                  <div>mode: builder</div>
+                  <div>theme: research-forge</div>
+                  <div>reason: {preview.presentation.themeReason}</div>
+                </div>
+              </div>
+              <div>
+                <h2 className="text-[2.05rem] font-black leading-[1.05] text-text-primary sm:text-[2.6rem]">
+                  {preview.thesis}
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-text-secondary">{preview.recap}</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-[1.02fr_0.98fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-border bg-white/92 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.1)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Evidence cluster</p>
+              <div className="mt-5 grid gap-4">
+                {preview.evidence.receipts.map((receipt) => (
+                  <div key={receipt.label} className="rounded-[24px] border border-border bg-bg-primary/55 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-text-muted">{receipt.label}</div>
+                    <div className="mt-2 text-xl font-black text-text-primary">{receipt.value}</div>
+                    <p className="mt-2 text-sm leading-6 text-text-secondary">{receipt.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[32px] border border-border bg-white/92 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.1)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Signature build</p>
+              <h2 className="mt-2 text-3xl font-black text-text-primary">{preview.signatureBuild.name}</h2>
+              <p className="mt-4 text-sm leading-7 text-text-secondary">{preview.signatureBuild.summary}</p>
+              <p className="mt-4 text-sm leading-7 text-text-primary/90">{preview.signatureBuild.why}</p>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-2 sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-border bg-white/92 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.1)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Agent roles</p>
+              <div className="mt-5 grid gap-4">
+                {preview.agentRoles.map((role) => (
+                  <div key={role.name} className="rounded-[24px] border border-border bg-bg-primary/55 p-4">
+                    <div className="text-lg font-black text-text-primary">{role.name}</div>
+                    <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-text-muted">{role.role}</div>
+                    <p className="mt-3 text-sm leading-6 text-text-secondary">{role.summary}</p>
+                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-text-muted">{role.evidence}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[32px] border border-border bg-white/92 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.1)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent">Top-line facts</p>
+              <div className="mt-5 space-y-3">
+                {[...preview.stats, { label: "Tokens", value: formatCompact(preview.totalTokens) }].map((stat) => (
+                  <div key={stat.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-border bg-bg-primary/55 px-4 py-3 text-sm">
+                    <span className="text-text-secondary">{stat.label}</span>
+                    <span className="font-bold text-text-primary">{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <ThemeCtaBlock summary="Give BuilderBio the history of your local coding agents and it will turn your evidence clusters, project arcs, and AI roles into a shareable builder dossier." />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function CalmCraftBuilderPage({
+  preview,
+  liveProfile,
+  liveGavin,
+  themeStyle,
+}: ThemePageProps) {
+  return (
+    <div className="builderbio-recap-shell">
+      <Titlebar
+        forceBuiltByActive={liveGavin}
+        forceTasteBoardActive={liveProfile && !liveGavin}
+        forceHomeInactive={liveProfile}
+      />
+      <div className={`relative overflow-hidden pt-12 ${getModeBackdrop("builder", "calm-craft")}`} style={themeStyle}>
+        <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-12">
+          <section className="mb-8 rounded-[32px] border border-[#3d342c] bg-[#1b1e22]/92 p-6 text-[#efe6dc] shadow-[0_24px_60px_rgba(0,0,0,0.28)] sm:mb-10 sm:p-8">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-[#d9a86c]/25 bg-[#d9a86c]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-[#e6bb84]">
+                {preview.label}
+              </span>
+              <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55">
+                theme · calm-craft
+              </span>
+            </div>
+
+            <p className="mt-5 text-[11px] uppercase tracking-[0.24em] text-white/42">{preview.slug}</p>
+            <h1 className="mt-3 text-4xl font-black text-white sm:text-5xl">{preview.name}</h1>
+            <h2 className="mt-6 max-w-4xl text-[2rem] font-black leading-[1.06] text-white sm:text-[2.6rem]">
+              {preview.thesis}
+            </h2>
+            <p className="mt-5 max-w-3xl text-sm leading-7 text-white/68">{preview.recap}</p>
+
+            <div className="mt-7 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div className="rounded-[24px] border border-[#3d342c] bg-black/10 p-5">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">Signature build</div>
+                <div className="mt-2 text-2xl font-black text-[#e6bb84]">{preview.signatureBuild.name}</div>
+                <p className="mt-3 text-sm leading-6 text-white/68">{preview.signatureBuild.summary}</p>
+              </div>
+              <div className="grid gap-2">
+                {preview.stats.slice(0, 3).map((stat) => (
+                  <div key={stat.label} className="rounded-2xl border border-[#3d342c] bg-black/10 px-4 py-3 text-right">
+                    <div className="text-[10px] uppercase tracking-[0.18em] text-white/42">{stat.label}</div>
+                    <div className="mt-1 text-lg font-black text-white">{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-8 grid gap-5 lg:grid-cols-[1.02fr_0.98fr] sm:mb-10 sm:gap-6">
+            <div className="rounded-[32px] border border-[#3d342c] bg-[#1b1e22]/92 p-6 text-[#efe6dc] shadow-[0_18px_50px_rgba(0,0,0,0.24)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#e6bb84]">What actually got built</p>
+              <div className="mt-5 grid gap-4">
+                {preview.projects.slice(0, 4).map((project) => (
+                  <div key={project.name} className="rounded-[24px] border border-[#3d342c] bg-black/10 p-4">
+                    <div className="text-lg font-black text-white">{project.name}</div>
+                    <p className="mt-3 text-sm leading-6 text-white/68">{project.summary}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[32px] border border-[#3d342c] bg-[#1b1e22]/92 p-6 text-[#efe6dc] shadow-[0_18px_50px_rgba(0,0,0,0.24)] sm:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#e6bb84]">Time rhythm</p>
+              <div className="mt-5 rounded-[24px] border border-[#3d342c] bg-black/10 p-4">
+                <RhythmBars preview={preview} />
+                <p className="mt-4 text-sm leading-6 text-white/68">
+                  Peak window: {preview.whenIbuild.peakWindow} · {preview.whenIbuild.peakWindowSessions} sessions
+                </p>
+              </div>
+              <div className="mt-5 rounded-[24px] border border-[#3d342c] bg-black/10 p-4">
+                <MiniHeatmap preview={preview} />
+              </div>
+            </div>
+          </section>
+
+          <ThemeCtaBlock summary="Give BuilderBio the history of your local coding agents and it will turn your compounding work, calmer build rhythm, and signature projects into a shareable builder profile." />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+type SearchParams = Record<string, string | string[] | undefined>;
+
+const VALID_PREVIEW_THEMES = new Set([
+  "product-operator",
+  "terminal-native",
+  "editorial-maker",
+  "night-shift",
+  "research-forge",
+  "calm-craft",
+  "companion-journal",
+  "idea-salon",
+]);
+
+export default async function BuilderBioPreviewPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>;
+}) {
+  const subdomain = await getBuilderBioSubdomainFromHost();
+  const liveProfile = !!subdomain;
+  const liveGavin = subdomain === "gavin";
+  const loaded = !liveGavin && subdomain ? await loadPublicBuilderBioRecap(subdomain) : null;
+
+  if (subdomain && !liveGavin && !loaded) {
+    notFound();
+  }
+
+  const rawPreview = structuredClone((loaded?.recap ?? previewFallback) as typeof previewFallback);
+  const params = (await searchParams) ?? {};
+  const themeOverrideRaw = Array.isArray(params.theme) ? params.theme[0] : params.theme;
+  const themeOverride =
+    !liveProfile && themeOverrideRaw && VALID_PREVIEW_THEMES.has(themeOverrideRaw)
+      ? themeOverrideRaw
+      : null;
+
+  if (themeOverride) {
+    rawPreview.presentation.inferredTheme = themeOverride;
+    rawPreview.presentation.chosenTheme = themeOverride;
+  }
+
+  const preview = rawPreview;
+  const lang = preview.lang === "en" ? "en" : "zh";
+  const ui = getUiCopy(lang);
+  const themeStyle = (loaded?.themeStyle ?? {}) as CSSProperties;
+  const pageCopy = buildPageCopy(preview, liveProfile);
+  const chosenMode = getChosenMode(preview);
+  const hourEntries = getHourEntries(preview);
+  const maxHourSessions = Math.max(...hourEntries.map((entry) => entry.sessions), 1);
+  const heatmapCells = getHeatmapCells(preview);
+
+  if (chosenMode === "conversation-first") {
+    return (
+      <ConversationFirstRecapPage
+        preview={preview}
+        liveProfile={liveProfile}
+        liveGavin={liveGavin}
+        themeStyle={themeStyle}
+      />
+    );
+  }
+
+  if (chosenMode === "hybrid") {
+    return (
+      <HybridRecapPage
+        preview={preview}
+        liveProfile={liveProfile}
+        liveGavin={liveGavin}
+        themeStyle={themeStyle}
+      />
+    );
+  }
+
+  const chosenTheme = getChosenTheme(preview);
+  if (chosenTheme === "terminal-native") {
+    return (
+      <TerminalNativeBuilderPage
+        preview={preview}
+        liveProfile={liveProfile}
+        liveGavin={liveGavin}
+        themeStyle={themeStyle}
+      />
+    );
+  }
+  if (chosenTheme === "editorial-maker") {
+    return (
+      <EditorialMakerBuilderPage
+        preview={preview}
+        liveProfile={liveProfile}
+        liveGavin={liveGavin}
+        themeStyle={themeStyle}
+      />
+    );
+  }
+  if (chosenTheme === "night-shift") {
+    return (
+      <NightShiftBuilderPage
+        preview={preview}
+        liveProfile={liveProfile}
+        liveGavin={liveGavin}
+        themeStyle={themeStyle}
+      />
+    );
+  }
+  if (chosenTheme === "research-forge") {
+    return (
+      <ResearchForgeBuilderPage
+        preview={preview}
+        liveProfile={liveProfile}
+        liveGavin={liveGavin}
+        themeStyle={themeStyle}
+      />
+    );
+  }
+  if (chosenTheme === "calm-craft") {
+    return (
+      <CalmCraftBuilderPage
+        preview={preview}
+        liveProfile={liveProfile}
+        liveGavin={liveGavin}
+        themeStyle={themeStyle}
+      />
+    );
+  }
+
+  return (
+    <div className="builderbio-recap-shell">
+      <Titlebar
+        forceBuiltByActive={liveGavin}
+        forceTasteBoardActive={liveProfile && !liveGavin}
+        forceHomeInactive={liveProfile}
+      />
+      <div className={`relative overflow-hidden pt-12 ${getModeBackdrop("builder", chosenTheme)}`} style={themeStyle}>
 
         <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-12">
+          {!liveProfile ? <PreviewModeSwitch active="builder" /> : null}
+
           <section className="mb-8 rounded-3xl border border-accent/20 bg-bg-secondary/70 p-5 shadow-[0_0_0_1px_rgba(255,107,53,0.06)] backdrop-blur sm:mb-10 sm:p-8">
             <div className="mb-5 flex flex-wrap items-center gap-2 sm:mb-6 sm:gap-3">
               <span className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-accent">
@@ -792,6 +2110,16 @@ export default async function BuilderBioPreviewPage() {
                   <span className="rounded-full border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-text-secondary">
                     {ui.generatedAt} {preview.trust.generatedAt}
                   </span>
+                  {!liveProfile ? (
+                    <>
+                      <span className="rounded-full border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-text-secondary">
+                        mode · builder
+                      </span>
+                      <span className="rounded-full border border-border px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-text-secondary">
+                        theme · product-operator
+                      </span>
+                    </>
+                  ) : null}
                 </div>
 
                 <h2 className="max-w-4xl text-[2rem] font-black leading-[1.06] text-text-primary sm:leading-[0.98] sm:text-6xl">

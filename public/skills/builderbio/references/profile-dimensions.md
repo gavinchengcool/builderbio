@@ -12,6 +12,47 @@ The finished profile should create:
 2. **Identity**: "This actually sounds like me."
 3. **Share impulse**: "This is interesting enough to post."
 
+## Mode Architecture
+
+BuilderBio should not assume every user is primarily building software.
+
+Infer one of these first:
+
+- `builder`
+- `hybrid`
+- `conversation-first`
+
+Presentation metadata should preserve both the inferred and final chosen mode/theme so the system can explain why a page looks the way it does.
+
+This decision changes not just the theme, but the middle of the page.
+
+### `builder`
+
+Use the standard builder-oriented structure:
+
+- `Signature Build`
+- `What Actually Got Built`
+- `Agent Roles`
+- `Tech Fingerprint`
+
+### `conversation-first`
+
+Replace build-centric middle modules with:
+
+- `Signature Thread`
+- `What Kept Coming Up`
+- `AI Roles`
+- `When We Talk`
+- `Conversation Activity`
+
+### `hybrid`
+
+Mix both:
+
+- one representative build
+- one representative thread
+- AI roles that cover both execution and reflection
+
 ## Section Priority
 
 Not every section has equal importance.
@@ -140,6 +181,12 @@ Use a combination of:
 - uniqueness of topic
 - narrative centrality
 
+If the page is `conversation-first`, swap this module for `Signature Thread`:
+
+- the recurring dialogue arc or question thread that best represents the user
+- why they keep coming back to it
+- proof points such as sessions, turns, span, and recurring topics
+
 What to show:
 
 - project name
@@ -226,6 +273,12 @@ The page should be able to say something like:
 
 - "Uses Codex to cut fast, Claude Code to stay with ambiguity, and Trae to stay in flow."
 
+For `conversation-first` users, this module should become more like relationship style than project orchestration. Examples:
+
+- "Uses AI as a sounding board before making decisions."
+- "Returns to AI for perspective, reframing, and emotional clarity."
+- "Treats different agents as different kinds of conversational partners."
+
 ## 6. Signature Moves
 
 **Question answered:** What does this builder do that feels characteristic?
@@ -258,6 +311,13 @@ Examples:
 - Longest streak
 - Turning point
 - Most unexpected build
+
+For `conversation-first` users, high moments may instead be:
+
+- deepest thread
+- longest return arc
+- breakthrough conversation
+- most revisited question
 
 These should feel like recap moments, not just superlatives.
 

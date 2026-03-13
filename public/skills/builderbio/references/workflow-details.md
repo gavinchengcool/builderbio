@@ -12,7 +12,7 @@ BuilderBio should behave like a **local annual-recap director with receipts**, n
 - Phase 4: Recover
 - Phase 5: Derive Facts
 - Phase 6: Narrate
-- Phase 7: Theme Choice
+- Phase 7: Infer Mode and Visual Archetype
 - Phase 8: Publish
 - Phase 9: Report Back
 
@@ -159,10 +159,12 @@ Derive facts in a deterministic order:
 5. tool distribution
 6. evolution stages
 7. highlights
+8. interaction mode
+9. visual-archetype candidates
 
 Every interesting claim must have one or more supporting facts underneath it.
 
-See [profile-dimensions.md](profile-dimensions.md) and [data-model.md](data-model.md).
+See [profile-dimensions.md](profile-dimensions.md), [data-model.md](data-model.md), and [visual-archetypes.md](visual-archetypes.md).
 
 ## Phase 6: Narrate
 
@@ -195,11 +197,51 @@ The page should create both:
 - a private aha for the user
 - a public reason to share
 
-## Phase 7: Theme Choice
+Mode rule:
 
-This is the only normal user prompt.
+- If the evidence says the user is primarily a builder, use the builder-oriented structure
+- If the evidence says the user is `conversation-first`, switch to the conversation-first structure instead of forcing build-centric modules
+- If the evidence is mixed, use the hybrid structure with both build and thread evidence
 
-Offer:
+## Phase 7: Infer Mode and Visual Archetype
+
+Do not start by asking the user to choose a theme.
+
+Infer two things first:
+
+1. `interaction_mode`
+2. `style_theme`
+
+Persist four values:
+
+1. `inferred_interaction_mode`
+2. `chosen_interaction_mode`
+3. `inferred_style_theme`
+4. `chosen_style_theme`
+
+### Interaction modes
+
+- `builder`
+- `hybrid`
+- `conversation-first`
+
+### Archetypes
+
+Builder-oriented:
+
+- `product-operator`
+- `terminal-native`
+- `editorial-maker`
+- `night-shift`
+- `research-forge`
+- `calm-craft`
+
+Conversation-oriented:
+
+- `companion-journal`
+- `idea-salon`
+
+Compatibility themes that may still appear in legacy payloads:
 
 - `default`
 - `yc-orange`
@@ -207,13 +249,25 @@ Offer:
 - `minimal-light`
 - `cyberpunk`
 
-Default to `yc-orange` if the user is indifferent.
+Selection rules:
+
+- use deterministic evidence, not random taste
+- explain the default choice briefly
+- only ask the user if they want to override the inferred default
+- if the user is indifferent, keep the inferred default
+- if the user overrides, keep both the inferred and chosen values in the payload
 
 ## Phase 8: Publish
 
 Required payload keys:
 
+- `inferred_interaction_mode`
+- `chosen_interaction_mode`
+- `interaction_mode`
+- `inferred_style_theme`
+- `chosen_style_theme`
 - `style_theme`
+- `style_theme_reason`
 - `scanner_version`
 - `scan_audit`
 - `builderbio: { D, E }`

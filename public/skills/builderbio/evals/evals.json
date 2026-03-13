@@ -1,10 +1,10 @@
 {
   "skill_name": "builderbio",
-  "version": "0.7.3",
+  "version": "0.8.1",
   "benchmark_axes": {
     "coverage": "Discover strong-path logs plus weak-path candidates, never silently dropping unknown sources.",
     "truth": "Produce evidence-backed facts and carry scan transparency through publish.",
-    "delight": "Generate an annual-review style builder recap with a distinct identity, signature build, and shareable taste signals."
+    "delight": "Generate an annual-review style recap with the right interaction mode, a distinct identity, and a shareable visual archetype."
   },
   "evals": [
     {
@@ -74,6 +74,20 @@
         "Keeps scanner_version and scan_audit metadata on republish",
         "Explains whether the scan is complete or partial using the audit summary",
         "Rebuilds the narrative around the requested time window rather than stale full-history claims"
+      ]
+    },
+    {
+      "id": 6,
+      "axis": ["truth", "delight"],
+      "prompt": "我主要不是拿 AI 写代码，而是和它聊天、想事情、整理问题。不要把我硬写成 builder，要做成更像 AI 对话年鉴的页面。",
+      "expected_output": "Infers a conversation-first interaction mode, swaps out build-centric modules, and proposes a fitting default visual archetype instead of forcing a coding profile.",
+      "assertions": [
+        "Infers interaction_mode = conversation-first when projects and tool use are not the dominant signals",
+        "Does not force modules like Signature Build or Tech Stack onto a conversation-first user",
+        "Produces conversation-oriented modules such as Signature Thread, AI Roles, or recurring threads",
+        "Proposes a default visual archetype for the inferred mode before asking for override",
+        "Persists inferred and chosen mode/theme values instead of losing the system default after override",
+        "Keeps English module titles and Make your own CTA while following the user's dominant content language inside the page"
       ]
     }
   ]

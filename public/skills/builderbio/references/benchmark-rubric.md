@@ -47,6 +47,8 @@ Produce a recap that is defensible from evidence.
 - Claims map back to facts and session evidence
 - Project clustering is plausible
 - Agent roles are consistent with tool usage and session depth
+- Interaction mode matches the evidence instead of forcing every user into a builder-only story
+- Inferred and chosen mode/theme values are both preserved when overrides happen
 - Scanner metadata flows through to the published result
 - `D.profile.lang` is set and used consistently so narrative copy follows the builder's dominant session language while UI/module titles stay English
 - Redaction is applied by default
@@ -56,6 +58,7 @@ Produce a recap that is defensible from evidence.
 - Confident personality copy with thin evidence
 - Meta-copy about the page, product philosophy, or design intent instead of the builder
 - The page mixes arbitrary Chinese and English because no dominant language was inferred
+- A primarily conversational user is forced into fake build/project/tech-stack claims
 - Project arrays are empty or nonsense while session volume is large
 - Metrics are obviously inconsistent across sections
 - Paths or secrets leak into the output
@@ -79,12 +82,14 @@ Make the user feel seen and make the page worth sharing.
 - Taste signals are memorable and screenshotable
 - Builder eras tell a believable arc
 - The listing card feels like a person, not just stats
+- The chosen visual archetype feels fitted to the user rather than like a recolored default
 
 ### Failure Signals
 
 - The page reads like a dashboard with no identity
 - Summary text is generic ("full-stack builder", "AI developer")
 - Summary text talks about "the page" instead of the builder
+- Every user gets the same visual treatment except for accent color
 - All charts are equally weighted and nothing stands out
 - A stranger cannot tell why the builder is interesting
 

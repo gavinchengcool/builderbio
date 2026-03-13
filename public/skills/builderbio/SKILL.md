@@ -1,6 +1,6 @@
 ---
 name: builderbio
-version: 0.7.3
+version: 0.8.1
 description: |
   Use this skill when the user wants a BuilderBio, builder recap, builder profile, AI build history, annual-review style coding recap, or a shareable page about how they build with AI agents. It scans local coding-agent logs across Claude Code, Codex, Trae, Cursor, OpenClaw, Antigravity, Gemini-hosted Antigravity fallbacks, Kiro, Windsurf, and other discovered sources; produces a scan audit; derives evidence-backed builder narratives; and publishes a shareable BuilderBio.
 allowed-tools:
@@ -34,6 +34,7 @@ Before doing anything else, read:
 - [references/profile-dimensions.md](references/profile-dimensions.md) for the recap information architecture
 - [references/data-model.md](references/data-model.md) for the layered evidence/facts/narrative model
 - [references/benchmark-rubric.md](references/benchmark-rubric.md) for pass/fail criteria
+- [references/visual-archetypes.md](references/visual-archetypes.md) for interaction modes and the theme system
 
 Only read format-specific references when needed:
 
@@ -128,7 +129,16 @@ If the audit is partial, do not hide that fact.
 
 Run autonomously from scan through publish.
 
-The only user input that should normally be required is **visual theme choice**. Everything else should be discovered, inferred, or recovered automatically.
+The normal path should require **no mandatory design decision from the user**.
+
+The agent should:
+
+- infer the user's dominant interaction mode
+- infer a default visual archetype
+- explain the default briefly
+- allow override only after a strong default has been proposed
+
+Everything else should be discovered, inferred, or recovered automatically.
 
 If the user explicitly asks to stop before publish, stop.
 
@@ -144,7 +154,7 @@ High-level flow:
 4. **Recover** partial/unknown sources where possible
 5. **Derive facts** from canonical sessions
 6. **Narrate** the builder recap
-7. **Ask for theme**
+7. **Infer mode and default visual archetype**
 8. **Publish** with scan metadata attached
 
 ## What the Final BuilderBio Must Communicate
@@ -158,6 +168,13 @@ The finished profile should answer these questions quickly:
 - What makes their taste distinct?
 
 The page should feel closer to a great annual recap than a control panel.
+
+If the user's AI history is primarily conversational rather than build-centric, adapt the page so it answers the parallel questions instead:
+
+- How do they think or talk with AI?
+- What threads keep returning?
+- What roles does AI play in their life or work?
+- What makes their interaction style recognizable?
 
 ## Required Narrative Outputs
 
@@ -180,6 +197,14 @@ Narrative copy must read like a user recap, not a product deck:
 - good: "Claude Code handles the deep sessions while Codex handles fast execution"
 - bad: "The speed-depth split should be visible"
 
+If the inferred mode is `conversation-first`, do not force builder-centric language such as:
+
+- "what they shipped"
+- "their tech stack"
+- "signature build"
+
+Use the conversation-first structure from [references/visual-archetypes.md](references/visual-archetypes.md) and [references/profile-dimensions.md](references/profile-dimensions.md) instead.
+
 ## Scan Audit Contract
 
 The parser output must flow through to the published profile.
@@ -190,16 +215,51 @@ Carry through:
 - `scan_audit.summary`
 - `scan_audit.agent_sources_found`
 - `D.profile.lang`
+- `D.profile.inferred_interaction_mode`
+- `D.profile.chosen_interaction_mode`
+- `D.profile.interaction_mode`
+- `D.profile.interaction_mode_reason`
+- `D.profile.inferred_style_theme`
+- `D.profile.chosen_style_theme`
+- `D.profile.style_theme`
+- `D.profile.style_theme_reason`
+- `D.profile.theme_candidates`
 - per-session provenance fields such as `source_refs`, `parse_mode`, `partial_reasons`
 - stable top-line counts required for verification hashes
 
 If the parser returns `partial`, the final BuilderBio should still be useful and shareable, but the agent must mention the limitation before publish.
 
-## Theme Choice
+## Presentation Choice
 
-Ask the user to choose a visual theme after the recap has been built.
+Do not ask the user to pick a theme from a blank slate.
 
-Supported themes:
+First infer:
+
+- `interaction_mode`: `builder`, `hybrid`, or `conversation-first`
+- `style_theme`: a best-fit visual archetype
+
+Persist both:
+
+- inferred values: what the system picked from evidence
+- chosen values: what will actually render after optional user override
+
+Compatibility rule:
+
+- `interaction_mode` should mirror `chosen_interaction_mode`
+- `style_theme` should mirror `chosen_style_theme`
+
+Supported archetypes:
+
+- `product-operator`
+- `terminal-native`
+- `editorial-maker`
+- `night-shift`
+- `research-forge`
+- `calm-craft`
+- `companion-journal`
+- `idea-salon`
+
+Legacy themes remain valid for compatibility:
 
 - `default`
 - `yc-orange`
@@ -207,13 +267,19 @@ Supported themes:
 - `minimal-light`
 - `cyberpunk`
 
-If the user has no preference, default to `yc-orange`.
+If the user has no preference, keep the inferred default.
+
+Only after proposing the default may the agent offer an override.
+
+If the user overrides, do not throw away the inferred result. Persist both the inferred and chosen values.
 
 ## Publish Contract
 
 Required payload keys:
 
+- `interaction_mode`
 - `style_theme`
+- `style_theme_reason`
 - `scanner_version`
 - `scan_audit`
 - `builderbio: { D, E }`

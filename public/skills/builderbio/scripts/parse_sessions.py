@@ -32,7 +32,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 
-SCANNER_VERSION = "0.7.3"
+SCANNER_VERSION = "0.8.1"
 MAX_AUDIT_ITEMS = 25
 WEAK_SCAN_LIMIT = 400
 COMMON_DISCOVERY_ROOTS = [
@@ -170,6 +170,19 @@ def main():
     keywords = compute_keywords(sessions)
     evolution = compute_evolution(sessions)
     comparison = compute_agent_comparison(sessions)
+    presentation = infer_interaction_mode_and_theme(
+        sessions, style, tech_stack, time_dist, comparison
+    )
+    profile["inferred_interaction_mode"] = presentation["inferred_interaction_mode"]
+    profile["interaction_mode_reason"] = presentation["interaction_mode_reason"]
+    profile["chosen_interaction_mode"] = presentation["chosen_interaction_mode"]
+    profile["interaction_mode"] = presentation["chosen_interaction_mode"]
+    profile["inferred_style_theme"] = presentation["inferred_style_theme"]
+    profile["style_theme_reason"] = presentation["style_theme_reason"]
+    profile["chosen_style_theme"] = presentation["chosen_style_theme"]
+    profile["style_theme"] = presentation["chosen_style_theme"]
+    profile["theme_candidates"] = presentation["theme_candidates"]
+    style["theme_candidates"] = presentation["theme_candidates"]
 
     # Strip private _start_hour before output
     for s in sessions:
@@ -3193,6 +3206,228 @@ def compute_style(sessions):
         "avg_first_msg_length": round(avg_first_msg_len),
         "avg_user_ratio": round(avg_user_ratio, 2),
         "tool_totals": dict(all_tools.most_common(10)),
+    }
+
+
+def infer_interaction_mode_and_theme(sessions, style, tech_stack, time_dist, comparison):
+    """Infer the dominant interaction mode and the default visual archetype."""
+    if not sessions:
+        return {
+            "inferred_interaction_mode": "builder",
+            "interaction_mode_reason": "No sessions were available, so BuilderBio fell back to the default builder mode.",
+            "chosen_interaction_mode": "builder",
+            "inferred_style_theme": "product-operator",
+            "style_theme_reason": "Without usable evidence, BuilderBio fell back to the default product-operator theme.",
+            "chosen_style_theme": "product-operator",
+            "theme_candidates": [
+                {
+                    "theme": "product-operator",
+                    "score": 1.0,
+                    "reason": "Default fallback when evidence is missing.",
+                }
+            ],
+        }
+
+    total_sessions = len(sessions)
+    total_tools = sum(s.get("tool_calls", 0) for s in sessions)
+    avg_tools = total_tools / max(total_sessions, 1)
+    avg_turns = sum(s.get("turns", 0) for s in sessions) / max(total_sessions, 1)
+    cwd_ratio = sum(1 for s in sessions if s.get("cwd")) / max(total_sessions, 1)
+    zero_tool_ratio = sum(1 for s in sessions if s.get("tool_calls", 0) == 0) / max(total_sessions, 1)
+    command_ratio = style.get("command_ratio", 0) or 0
+    build_ratio = style.get("build_ratio", 0) or 0
+    explore_ratio = style.get("exploration_ratio", 0) or 0
+
+    reflective_terms = [
+        "为什么", "怎么想", "我应该", "我想", "焦虑", "情绪", "陪", "聊天", "倾诉", "困惑",
+        "learn", "reflect", "cope", "feel", "stuck", "thinking", "talk to me", "journal", "emotion",
+    ]
+    ideation_terms = [
+        "brainstorm", "idea", "framework", "plan", "tradeoff", "compare", "learn", "explain",
+        "观点", "想法", "头脑风暴", "学习", "解释", "比较", "方案", "方向",
+    ]
+    product_terms = [
+        "product", "strategy", "iteration", "growth", "onboarding", "e-commerce", "saas",
+        "产品", "策略", "迭代", "运营", "增长", "官网", "电商",
+    ]
+    research_terms = [
+        "research", "analysis", "translate", "reading", "document", "paper", "article",
+        "研究", "分析", "翻译", "阅读", "文章", "文档", "报告",
+    ]
+    design_terms = [
+        "design", "ui", "ux", "visual", "brand", "landing", "portfolio",
+        "设计", "视觉", "排版", "品牌", "落地页", "展示",
+    ]
+    build_terms = [
+        "fix", "bug", "build", "deploy", "refactor", "implement", "component", "api",
+        "修复", "构建", "部署", "重构", "实现", "组件", "接口",
+    ]
+
+    reflective_hits = 0
+    ideation_hits = 0
+    product_hits = 0
+    research_hits = 0
+    design_hits = 0
+    build_hits = 0
+    conversationish_sessions = 0
+    buildish_sessions = 0
+
+    for s in sessions:
+        text = " ".join(
+            str(part).lower()
+            for part in [s.get("display", ""), s.get("first_msg", "")]
+            if part
+        )
+        tools = s.get("tools", {}) or {}
+        has_build_tool = any(
+            tools.get(name, 0) > 0
+            for name in ["Write", "Edit", "Bash", "shell_command", "write_stdin"]
+        )
+        if s.get("cwd") or has_build_tool or any(term in text for term in build_terms):
+            buildish_sessions += 1
+        if (
+            s.get("tool_calls", 0) == 0
+            and not s.get("cwd")
+            and (s.get("turns", 0) >= 8 or any(term in text for term in reflective_terms + ideation_terms))
+        ):
+            conversationish_sessions += 1
+        reflective_hits += sum(1 for term in reflective_terms if term in text)
+        ideation_hits += sum(1 for term in ideation_terms if term in text)
+        product_hits += sum(1 for term in product_terms if term in text)
+        research_hits += sum(1 for term in research_terms if term in text)
+        design_hits += sum(1 for term in design_terms if term in text)
+        build_hits += sum(1 for term in build_terms if term in text)
+
+    buildish_ratio = buildish_sessions / max(total_sessions, 1)
+    conversationish_ratio = conversationish_sessions / max(total_sessions, 1)
+
+    builder_score = 0.0
+    conversation_score = 0.0
+
+    builder_score += min(command_ratio * 3.5, 2.5)
+    builder_score += min(build_ratio * 6.0, 2.0)
+    builder_score += min(cwd_ratio * 3.0, 2.0)
+    builder_score += min(buildish_ratio * 3.0, 2.0)
+    builder_score += 1.0 if avg_tools >= 1.5 else 0.0
+    builder_score += 0.75 if build_hits >= max(3, total_sessions // 10) else 0.0
+
+    conversation_score += min(zero_tool_ratio * 3.0, 2.5)
+    conversation_score += min(conversationish_ratio * 3.0, 2.5)
+    conversation_score += 0.75 if avg_turns >= 45 else 0.0
+    conversation_score += 0.75 if reflective_hits >= max(4, total_sessions // 8) else 0.0
+    conversation_score += 0.75 if ideation_hits >= max(4, total_sessions // 8) else 0.0
+    conversation_score += 0.5 if cwd_ratio <= 0.1 else 0.0
+
+    if builder_score >= conversation_score + 1.4:
+        interaction_mode = "builder"
+        interaction_reason = (
+            "Project-backed sessions, tool usage, and file/workspace traces dominate this history, "
+            "so BuilderBio treats it as builder-first rather than conversation-first."
+        )
+    elif conversation_score >= builder_score + 1.4:
+        interaction_mode = "conversation-first"
+        interaction_reason = (
+            "This history is dominated by long, low-tool conversations and recurring question threads, "
+            "so BuilderBio treats it as conversation-first instead of forcing a builder profile."
+        )
+    else:
+        interaction_mode = "hybrid"
+        interaction_reason = (
+            "Both build activity and open-ended conversation are significant here, "
+            "so BuilderBio treats it as a hybrid AI relationship."
+        )
+
+    period_data = time_dist.get("period_data", {}) or {}
+    evening_sessions = (
+        period_data.get("evening", {}).get("sessions", 0)
+        + period_data.get("deep_night", {}).get("sessions", 0)
+    )
+    night_ratio = evening_sessions / max(total_sessions, 1)
+
+    if isinstance(tech_stack, dict):
+        top_tech = [str(name).lower() for name in list(tech_stack.keys())[:4]]
+    else:
+        top_tech = [str(name).lower() for name, _score in tech_stack[:4]]
+
+    theme_scores = {}
+    theme_reasons = {}
+
+    def add_theme(theme, score, reason):
+        theme_scores[theme] = round(score, 4)
+        theme_reasons[theme] = reason
+
+    if interaction_mode == "conversation-first":
+        companion_score = conversation_score + (1.2 if reflective_hits >= ideation_hits else 0.3)
+        salon_score = conversation_score + (1.2 if ideation_hits > reflective_hits else 0.4)
+        add_theme(
+            "companion-journal",
+            companion_score,
+            "Recurring reflective sessions and relationship-like return patterns make companion-journal the closest fit."
+        )
+        add_theme(
+            "idea-salon",
+            salon_score,
+            "Idea-oriented threads, reframing, and discussion-heavy usage make idea-salon a strong fit."
+        )
+    else:
+        add_theme(
+            "terminal-native",
+            command_ratio * 4.5 + (1.2 if avg_tools >= 2 else 0.0),
+            "High shell density and command-heavy sessions make terminal-native the strongest default."
+        )
+        add_theme(
+            "night-shift",
+            night_ratio * 4.0 + (0.8 if avg_turns >= 55 else 0.0),
+            "The history clusters around late-day and night sessions, with visible burst intensity."
+        )
+        add_theme(
+            "research-forge",
+            explore_ratio * 3.0 + (1.4 if research_hits >= max(3, total_sessions // 12) else 0.0),
+            "Research, analysis, reading, or translation themes are strong enough to justify a dossier-like presentation."
+        )
+        add_theme(
+            "editorial-maker",
+            (1.6 if design_hits >= max(3, total_sessions // 12) else 0.4)
+            + (0.9 if any(term in top_tech for term in ["html", "css", "frontend", "ui", "design"]) else 0.0),
+            "Presentation-oriented work and visual/UI signals suggest an editorial treatment."
+        )
+        add_theme(
+            "product-operator",
+            (1.5 if product_hits >= max(3, total_sessions // 12) else 0.5)
+            + (0.8 if any(term in top_tech for term in ["product strategy", "saas", "ai agent ecosystem", "ai tooling"]) else 0.0)
+            + (0.6 if buildish_ratio >= 0.45 else 0.0),
+            "Shipping-oriented product arcs and operator energy make product-operator a strong fit."
+        )
+        add_theme(
+            "calm-craft",
+            (0.9 if avg_turns >= 35 else 0.4)
+            + (1.1 if buildish_ratio >= 0.35 and total_sessions <= 140 else 0.3),
+            "Steady depth and compounding focus make calm-craft the most restrained fit."
+        )
+
+    ranked = sorted(theme_scores.items(), key=lambda item: item[1], reverse=True)
+    style_theme = ranked[0][0] if ranked else "product-operator"
+    style_theme_reason = theme_reasons.get(
+        style_theme,
+        "BuilderBio selected the default visual archetype because it best matches the strongest evidence-backed behavior signals."
+    )
+    theme_candidates = [
+        {
+            "theme": theme,
+            "score": round(score, 2),
+            "reason": theme_reasons.get(theme, ""),
+        }
+        for theme, score in ranked[:3]
+    ]
+
+    return {
+        "inferred_interaction_mode": interaction_mode,
+        "interaction_mode_reason": interaction_reason,
+        "chosen_interaction_mode": interaction_mode,
+        "inferred_style_theme": style_theme,
+        "style_theme_reason": style_theme_reason,
+        "chosen_style_theme": style_theme,
+        "theme_candidates": theme_candidates,
     }
 
 

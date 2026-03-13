@@ -36,6 +36,16 @@ type HighMoment = {
   value: string;
   detail: string;
 };
+type ThreadEntry = {
+  title: string;
+  summary: string;
+};
+type SignatureThread = {
+  name: string;
+  summary: string;
+  why: string;
+  proof: string[];
+};
 type EraEntry = {
   title: string;
   period: string;
@@ -288,7 +298,26 @@ function deriveTasteSignals(profile: AnyRecord, D: AnyRecord, E: AnyRecord): str
   return uniq(signals).slice(0, 6);
 }
 
-function deriveProfileTitle(lang: CopyLang, techLabels: string[], agentCount: number): string {
+function deriveProfileTitle(
+  lang: CopyLang,
+  techLabels: string[],
+  agentCount: number,
+  mode = "builder"
+): string {
+  if (mode === "conversation-first") {
+    return inLang(
+      lang,
+      "AI 思考搭子型用户 · Conversation-first",
+      "Conversation-first user · Thinks with AI"
+    );
+  }
+  if (mode === "hybrid") {
+    return inLang(
+      lang,
+      "混合型 AI 协作者 · Build + Think",
+      "Hybrid AI collaborator · Build + Think"
+    );
+  }
   const lower = techLabels.map((item) => item.toLowerCase());
 
   if (lower.some((item) => /(product|strategy|saas)/.test(item))) {
@@ -612,6 +641,170 @@ function deriveHighMoments(lang: CopyLang, D: AnyRecord, E: AnyRecord): HighMome
   ].filter((moment): moment is HighMoment => Boolean(moment));
 }
 
+function deriveSignatureThread(
+  lang: CopyLang,
+  profile: AnyRecord,
+  D: AnyRecord,
+  E: AnyRecord
+): SignatureThread {
+  const favoritePrompt = asString(asObject(D.highlights).favorite_prompt);
+  const time = asObject(E.time);
+  const totalTurns = asNumber(profile.total_turns);
+  const activeDays = asNumber(profile.active_days);
+  const peakWindow = asString(time.peak_window) || asString(time.peak_text);
+  const lowerPrompt = favoritePrompt.toLowerCase();
+
+  let name = inLang(lang, "反复回来的问题线程", "Recurring question thread");
+  if (
+    /(为什么|怎么想|怎么办|should|decide|decision|方向|问题)/.test(lowerPrompt)
+  ) {
+    name = inLang(lang, "Decision unwind loop", "Decision unwind loop");
+  } else if (
+    /(learn|explain|study|理解|学习|解释|分析)/.test(lowerPrompt)
+  ) {
+    name = inLang(lang, "Learning-by-dialogue thread", "Learning-by-dialogue thread");
+  } else if (
+    /(feel|emotion|anxiety|情绪|焦虑|关系|陪伴)/.test(lowerPrompt)
+  ) {
+    name = inLang(lang, "Reflection and reset thread", "Reflection and reset thread");
+  }
+
+  return {
+    name,
+    summary:
+      favoritePrompt ||
+      inLang(
+        lang,
+        "这条 thread 最像这类用户会一再回来的对话主线：不是为了交付代码，而是为了把问题讲清楚。",
+        "This thread best captures the kind of conversation the user keeps returning to: not for code delivery, but to make the question clearer."
+      ),
+    why: inLang(
+      lang,
+      "它说明 AI 在这里不只是工具，而是一个会被反复叫回来、继续往下想的对话对象。",
+      "It shows that AI is not only a tool here, but a conversational counterpart the user keeps returning to in order to keep thinking."
+    ),
+    proof: [
+      inLang(lang, `${formatCompact(totalTurns)} turns`, `${formatCompact(totalTurns)} turns`),
+      activeDays > 0
+        ? inLang(lang, `${formatNumber(activeDays)} 个活跃日`, `${formatNumber(activeDays)} active days`)
+        : "",
+      peakWindow
+        ? inLang(lang, `高峰时段在 ${peakWindow}`, `Peak window around ${peakWindow}`)
+        : "",
+    ].filter(Boolean),
+  };
+}
+
+function deriveRecurringThreads(
+  lang: CopyLang,
+  profile: AnyRecord,
+  D: AnyRecord,
+  E: AnyRecord
+): ThreadEntry[] {
+  const favoritePrompt = asString(asObject(D.highlights).favorite_prompt).toLowerCase();
+  const summaryText = [
+    asString(profile.summary),
+    asString(profile.builder_thesis),
+    asString(asObject(E.time).peak_detail),
+  ]
+    .join(" ")
+    .toLowerCase();
+  const combined = `${favoritePrompt} ${summaryText}`;
+  const entries: ThreadEntry[] = [];
+
+  if (/(decide|decision|tradeoff|方向|选择|取舍|问题)/.test(combined)) {
+    entries.push({
+      title: "Decision untangling",
+      summary: inLang(
+        lang,
+        "面对模糊决定时，会反复回来把问题重新拆开，而不是只问一次就离开。",
+        "When a decision stays fuzzy, the user keeps coming back to unpack it instead of asking once and leaving."
+      ),
+    });
+  }
+  if (/(learn|explain|study|理解|学习|解释|分析|research)/.test(combined)) {
+    entries.push({
+      title: "Learning by dialogue",
+      summary: inLang(
+        lang,
+        "学习不是一次性查答案，而是通过追问、换角度和复述把理解慢慢压实。",
+        "Learning happens through follow-up questions, reframing, and rephrasing rather than one-off answer lookup."
+      ),
+    });
+  }
+  if (/(night|late|晚上|深夜|凌晨|焦虑|reflect|emotion|情绪)/.test(combined)) {
+    entries.push({
+      title: "Late-night reframing",
+      summary: inLang(
+        lang,
+        "很多关键对话发生在晚间，更像是在给白天没想清楚的事情重新命名。",
+        "Many of the key conversations happen late in the day, more like renaming things that did not get clarified earlier."
+      ),
+    });
+  }
+
+  if (entries.length < 3) {
+    const keywords = asArray(E.keywords)
+      .slice(0, 6)
+      .map((item) => (Array.isArray(item) ? asString(item[0]) : asString(asObject(item).word)))
+      .filter(Boolean);
+    for (const keyword of keywords) {
+      entries.push({
+        title: humanizeTag(keyword),
+        summary: inLang(
+          lang,
+          `${humanizeTag(keyword)} 会反复出现，说明它不是一次性的提问，而是一条长期会回来的对话主题。`,
+          `${humanizeTag(keyword)} keeps showing up, which means it is a recurring thread rather than a one-off question.`
+        ),
+      });
+      if (entries.length >= 3) break;
+    }
+  }
+
+  return entries.slice(0, 3);
+}
+
+function deriveConversationRoles(
+  lang: CopyLang,
+  comparison: ComparisonEntry[]
+): AgentRoleEntry[] {
+  return comparison.slice(0, 4).map((entry) => {
+    let role = inLang(lang, "Thinking partner", "Thinking partner");
+    let summary = inLang(
+      lang,
+      "更多承担对话、澄清和来回推敲，而不是单纯执行代码任务。",
+      "Shows up more as a dialogue and clarification partner than as a pure code execution lane."
+    );
+
+    if (entry.totalToolCalls >= entry.totalTurns * 0.5) {
+      role = inLang(lang, "Research helper", "Research helper");
+      summary = inLang(
+        lang,
+        "更适合查找、整理和快速补充事实，再把结果带回主线程里。",
+        "More useful for looking things up, organizing material, and feeding it back into the main thread."
+      );
+    } else if (entry.avgTurns >= 60) {
+      role = inLang(lang, "Reflection partner", "Reflection partner");
+      summary = inLang(
+        lang,
+        "会陪着一个问题待得更久，帮助用户把含混的感觉重新说清楚。",
+        "Stays with a question longer and helps the user turn fuzzy feelings into clearer language."
+      );
+    }
+
+    return {
+      ...entry,
+      role,
+      summary,
+      evidence: inLang(
+        lang,
+        `${formatNumber(entry.sessions)} 个 sessions · ${formatNumber(entry.totalTurns)} turns · ${formatNumber(entry.totalToolCalls)} 次工具调用`,
+        `${formatNumber(entry.sessions)} sessions · ${formatNumber(entry.totalTurns)} turns · ${formatNumber(entry.totalToolCalls)} tool calls`
+      ),
+    };
+  });
+}
+
 function deriveEras(lang: CopyLang, E: AnyRecord): EraEntry[] {
   const evolution = asArray<AnyRecord>(E.evolution);
   if (!evolution.length) {
@@ -837,6 +1030,67 @@ const THEME_STYLES: Record<string, Record<string, string>> = {
     "--accent-dim": "#F472B633",
     "--accent-hover": "#FB7185",
   },
+  "product-operator": {
+    "--accent": "#FF6B35",
+    "--accent-dim": "#FF6B3533",
+    "--accent-hover": "#FF8A5C",
+  },
+  "terminal-native": {
+    "--accent": "#00E676",
+    "--accent-dim": "#00E67633",
+    "--accent-hover": "#34F5A1",
+  },
+  "editorial-maker": {
+    "--accent": "#5B6CFF",
+    "--accent-dim": "#5B6CFF24",
+    "--accent-hover": "#7A88FF",
+  },
+  "night-shift": {
+    "--accent": "#F97316",
+    "--accent-dim": "#F9731630",
+    "--accent-hover": "#FB923C",
+  },
+  "research-forge": {
+    "--accent": "#2DD4BF",
+    "--accent-dim": "#2DD4BF26",
+    "--accent-hover": "#5EEAD4",
+  },
+  "calm-craft": {
+    "--bg-primary": "#15171A",
+    "--bg-secondary": "#1B1E22",
+    "--bg-tertiary": "#22262B",
+    "--border": "#2E343D",
+    "--text-primary": "#F6F1EA",
+    "--text-secondary": "#C6BBB0",
+    "--text-muted": "#9A9188",
+    "--accent": "#D9A86C",
+    "--accent-dim": "#D9A86C26",
+    "--accent-hover": "#E6BB84",
+  },
+  "companion-journal": {
+    "--bg-primary": "#F7F2EA",
+    "--bg-secondary": "#FFFDF8",
+    "--bg-tertiary": "#F1E8D9",
+    "--border": "#E2D2BC",
+    "--text-primary": "#2F241D",
+    "--text-secondary": "#6B5649",
+    "--text-muted": "#987F70",
+    "--accent": "#C67B55",
+    "--accent-dim": "#C67B5520",
+    "--accent-hover": "#D99671",
+  },
+  "idea-salon": {
+    "--bg-primary": "#F5F0FF",
+    "--bg-secondary": "#FFFDFF",
+    "--bg-tertiary": "#EDE5FF",
+    "--border": "#D6C6FF",
+    "--text-primary": "#271A45",
+    "--text-secondary": "#56467A",
+    "--text-muted": "#8476A5",
+    "--accent": "#6D5EF5",
+    "--accent-dim": "#6D5EF520",
+    "--accent-hover": "#877BFF",
+  },
 };
 
 export async function loadPublicBuilderBioRecap(username: string) {
@@ -882,6 +1136,21 @@ export async function loadPublicBuilderBioRecap(username: string) {
   const totalToolCalls = asNumber(profile.total_tool_calls);
   const totalTokens = asNumber(profile.total_tokens);
   const activeDays = asNumber(profile.active_days);
+  const normalizedChosenTheme =
+    asString(profile.chosen_style_theme) ?? asString(profile.style_theme);
+  const normalizedInferredTheme =
+    asString(profile.inferred_style_theme) ?? normalizedChosenTheme;
+  const normalizedChosenMode =
+    asString(profile.chosen_interaction_mode) ??
+    asString(profile.interaction_mode) ??
+    "builder";
+  const normalizedInferredMode =
+    asString(profile.inferred_interaction_mode) ?? normalizedChosenMode;
+  const storedTheme = asString(result.styleTheme);
+  const effectiveTheme =
+    storedTheme && storedTheme !== "default"
+      ? storedTheme
+      : normalizedChosenTheme || normalizedInferredTheme || storedTheme || "default";
   const isUnfiltered = result.dataHash
     ? result.dataHash === (await computeVerificationHash(D))
     : false;
@@ -905,6 +1174,9 @@ export async function loadPublicBuilderBioRecap(username: string) {
   })).filter((item) => item.href);
   const favoritePrompt = asString(asObject(D.highlights).favorite_prompt);
   const high = asObject(D.highlights);
+  const signatureThread = deriveSignatureThread(contentLang, profile, D, E);
+  const recurringThreads = deriveRecurringThreads(contentLang, profile, D, E);
+  const conversationRoles = deriveConversationRoles(contentLang, comparison);
 
   const recap = {
     label: isUnfiltered ? "Built from real session logs" : "Built from published BuilderBio data",
@@ -914,7 +1186,12 @@ export async function loadPublicBuilderBioRecap(username: string) {
     slug: `${username}.builderbio.dev`,
     avatarUrl,
     avatarLetter: (displayName || username || "?")[0]?.toUpperCase() || "?",
-    title: deriveProfileTitle(contentLang, topTechLabels, comparison.length),
+    title: deriveProfileTitle(
+      contentLang,
+      topTechLabels,
+      comparison.length,
+      normalizedChosenMode
+    ),
     thesis: deriveBuilderThesis(contentLang, displayName, { ...profile, display_name: displayName, username }, D, E),
     recap: inLang(
       contentLang,
@@ -928,6 +1205,24 @@ export async function loadPublicBuilderBioRecap(username: string) {
       note: isUnfiltered
         ? inLang(contentLang, "顶部统计和 Unfiltered 标记对应原始 session 日志校验结果。", "Top-line metrics and the Unfiltered badge are backed by raw session-log verification.")
         : inLang(contentLang, "这页基于已发布的 BuilderBio 数据重组为 recap 结构，核心统计仍然来自用户自己的扫描结果。", "This page is rebuilt from published BuilderBio data, and the core metrics still come from the user's own scan results."),
+    },
+    presentation: {
+      inferredMode: normalizedInferredMode,
+      chosenMode: normalizedChosenMode,
+      modeReason: asString(profile.interaction_mode_reason),
+      inferredTheme: normalizedInferredTheme || effectiveTheme,
+      chosenTheme: normalizedChosenTheme || effectiveTheme,
+      themeReason: asString(profile.style_theme_reason),
+      themeCandidates: asArray<AnyRecord>(profile.theme_candidates)
+        .map((item) => {
+          const candidate = asObject(item);
+          return {
+            theme: asString(candidate.theme),
+            score: asNumber(candidate.score),
+            reason: asString(candidate.reason),
+          };
+        })
+        .filter((item) => item.theme),
     },
     dateRange,
     stats: [
@@ -991,7 +1286,12 @@ export async function loadPublicBuilderBioRecap(username: string) {
     comparison,
     eras,
     socialCurrency: {
-      title: "Collaboration scale",
+      title:
+        normalizedChosenMode === "conversation-first"
+          ? "Conversation scale"
+          : normalizedChosenMode === "hybrid"
+            ? "AI relationship scale"
+            : "Collaboration scale",
       summary: inLang(
         contentLang,
         `${formatCompact(totalTokens)} tokens、${formatNumber(totalSessions)} 个会话和 ${formatCompact(totalTurns)} turns，说明这已经是持续而深入的 AI 协作，而不是偶尔试用。`,
@@ -1027,15 +1327,38 @@ export async function loadPublicBuilderBioRecap(username: string) {
       longestStreak: asNumber(high.longest_streak),
       favoritePrompt,
     },
+    conversation: {
+      signatureThread,
+      recurringThreads,
+      aiRoles: conversationRoles,
+    },
+    hybrid: {
+      summary: inLang(
+        contentLang,
+        `${displayName} 的 BuilderBio 同时有 build line 和 thread line。页面中段不该只剩项目，也不该只剩对话，而是把两条线一起摆出来。`,
+        `${displayName}'s BuilderBio clearly contains both a build line and a thread line. The middle of the page should not collapse into only projects or only dialogue; it needs to show both.`
+      ),
+      threadBridge: signatureThread,
+    },
     evidence,
   };
 
   return {
     recap,
-    themeStyle: THEME_STYLES[asString(result.styleTheme) || "default"] || {},
+    themeStyle: THEME_STYLES[effectiveTheme] || {},
     seo: {
-      title: `${displayName}'s BuilderBio — What I Built with AI`,
-      description: `${formatNumber(totalSessions)} sessions, ${formatNumber(totalTurns)} turns, ${formatNumber(activeDays)} active days of building with ${comparison.map((item) => item.name.toLowerCase()).join(" and ") || "AI coding agents"}. See what ${displayName} shipped with AI coding agents.`,
+      title:
+        normalizedChosenMode === "conversation-first"
+          ? `${displayName}'s BuilderBio — How They Think With AI`
+          : normalizedChosenMode === "hybrid"
+            ? `${displayName}'s BuilderBio — Build and Think With AI`
+            : `${displayName}'s BuilderBio — What I Built with AI`,
+      description:
+        normalizedChosenMode === "conversation-first"
+          ? `${formatNumber(totalSessions)} sessions, ${formatNumber(totalTurns)} turns, and ${formatNumber(activeDays)} active days of thinking with ${comparison.map((item) => item.name.toLowerCase()).join(" and ") || "AI agents"}. See the recurring threads in ${displayName}'s AI relationship.`
+          : normalizedChosenMode === "hybrid"
+            ? `${formatNumber(totalSessions)} sessions, ${formatNumber(totalTurns)} turns, and ${formatNumber(activeDays)} active days of building and thinking with ${comparison.map((item) => item.name.toLowerCase()).join(" and ") || "AI agents"}. See how ${displayName} mixes project work with recurring AI threads.`
+            : `${formatNumber(totalSessions)} sessions, ${formatNumber(totalTurns)} turns, ${formatNumber(activeDays)} active days of building with ${comparison.map((item) => item.name.toLowerCase()).join(" and ") || "AI coding agents"}. See what ${displayName} shipped with AI coding agents.`,
       canonical: `https://${username}.builderbio.dev`,
     },
   };

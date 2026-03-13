@@ -124,6 +124,183 @@ function normalizeStringArray(value: unknown): string[] {
     .filter((item): item is string => item !== null);
 }
 
+function joinedProfileText(profile: JsonObject, D: JsonObject): string {
+  const projectText = normalizeProjects(D.projects)
+    .slice(0, 6)
+    .flatMap((project) => [
+      asString(project.name),
+      asString(project.summary),
+      asString(project.description),
+      ...normalizeStringArray(project.tags),
+    ])
+    .filter(Boolean)
+    .join(" ");
+
+  return [
+    asString(profile.summary),
+    asString(profile.builder_thesis),
+    asString(asObject(D.highlights)?.favorite_prompt),
+    projectText,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function inferInteractionModeFallback(
+  profile: JsonObject,
+  D: JsonObject,
+  E: JsonObject
+): { mode: string; reason: string } {
+  const style = asObject(D.style) ?? {};
+  const projects = normalizeProjects(D.projects);
+  const agentsUsed = asObject(profile.agents_used) ?? {};
+  const text = joinedProfileText(profile, D);
+  const commandRatio = asNumber(style.command_ratio) ?? 0;
+  const totalToolCalls = asNumber(profile.total_tool_calls) ?? 0;
+  const totalSessions = asNumber(profile.total_sessions) ?? 0;
+  const avgTools = totalSessions > 0 ? totalToolCalls / totalSessions : 0;
+  const hasProjects = projects.length >= 2;
+  const hasAgentComparison = hasKeys(E.comparison) || hasKeys(E.agent_comparison);
+
+  const reflectiveSignals = [
+    "brainstorm",
+    "reflect",
+    "thinking",
+    "journal",
+    "emotion",
+    "learn",
+    "idea",
+    "问题",
+    "想法",
+    "情绪",
+    "学习",
+    "聊天",
+    "陪伴",
+  ].filter((term) => text.includes(term)).length;
+  const builderSignals = [
+    "api",
+    "component",
+    "deploy",
+    "product",
+    "saas",
+    "frontend",
+    "typescript",
+    "python",
+    "修复",
+    "部署",
+    "产品",
+    "前端",
+    "组件",
+  ].filter((term) => text.includes(term)).length;
+
+  if (
+    (hasProjects && avgTools >= 0.8) ||
+    commandRatio >= 0.22 ||
+    hasAgentComparison ||
+    builderSignals >= reflectiveSignals + 2
+  ) {
+    return {
+      mode: "builder",
+      reason:
+        "Projects, tool usage, and build-oriented traces are strong enough that BuilderBio treats this as builder-first.",
+    };
+  }
+
+  if (
+    (!hasProjects && avgTools <= 0.35 && reflectiveSignals >= 2) ||
+    (Object.keys(agentsUsed).length <= 1 && totalToolCalls === 0)
+  ) {
+    return {
+      mode: "conversation-first",
+      reason:
+        "This profile looks more like recurring dialogue and idea threads than software delivery, so BuilderBio treats it as conversation-first.",
+    };
+  }
+
+  return {
+    mode: "hybrid",
+    reason:
+      "Both build evidence and open-ended conversation signals are present, so BuilderBio treats it as a hybrid AI relationship.",
+  };
+}
+
+function inferStyleThemeFallback(
+  profile: JsonObject,
+  D: JsonObject,
+  E: JsonObject,
+  mode: string
+): { theme: string; reason: string } {
+  const style = asObject(D.style) ?? {};
+  const time = asObject(E.time) ?? {};
+  const text = joinedProfileText(profile, D);
+  const commandRatio = asNumber(style.command_ratio) ?? 0;
+  const peakText = `${asString(time.builder_type) ?? ""} ${asString(time.peak_text) ?? ""}`.toLowerCase();
+  const topTech = Object.keys(asObject(E.tech) ?? {})
+    .slice(0, 4)
+    .join(" ")
+    .toLowerCase();
+
+  if (mode === "conversation-first") {
+    const reflectiveSignals = ["journal", "emotion", "陪伴", "情绪", "聊天", "reflect"].filter((term) =>
+      text.includes(term)
+    ).length;
+    if (reflectiveSignals >= 2) {
+      return {
+        theme: "companion-journal",
+        reason:
+          "Reflective, relationship-like conversation signals make companion-journal the closest fit.",
+      };
+    }
+    return {
+      theme: "idea-salon",
+      reason:
+        "Idea-oriented conversation and learning signals make idea-salon the clearest default.",
+      };
+  }
+
+  if (commandRatio >= 0.45) {
+    return {
+      theme: "terminal-native",
+      reason:
+        "Shell-heavy, command-dense work makes terminal-native the strongest fit.",
+    };
+  }
+  if (peakText.includes("night") || peakText.includes("夜") || peakText.includes("深夜")) {
+    return {
+      theme: "night-shift",
+      reason:
+        "The work clusters around night-time momentum, so night-shift fits best.",
+    };
+  }
+  if (/(research|analysis|translation|reading|研究|分析|翻译|阅读)/.test(text + " " + topTech)) {
+    return {
+      theme: "research-forge",
+      reason:
+        "Research and evidence-heavy work make research-forge the strongest fit.",
+    };
+  }
+  if (/(design|ui|ux|visual|brand|landing|设计|视觉|排版)/.test(text + " " + topTech)) {
+    return {
+      theme: "editorial-maker",
+      reason:
+        "Presentation and visual expression signals make editorial-maker a natural fit.",
+    };
+  }
+  if (/(product|strategy|saas|迭代|产品|策略|运营|增长)/.test(text + " " + topTech)) {
+    return {
+      theme: "product-operator",
+      reason:
+        "Product and shipping-oriented work make product-operator the clearest fit.",
+    };
+  }
+  return {
+    theme: "calm-craft",
+    reason:
+      "Steady, compounding work without one dominant extreme fits calm-craft best.",
+  };
+}
+
 function normalizeScanAudit(
   value: unknown,
   scannerVersionHint?: unknown
@@ -749,6 +926,43 @@ export function normalizeBuilderBioData(data: BuilderBioData): BuilderBioData {
     style.command_ratio =
       totalToolCalls > 0 ? shellToolCalls / totalToolCalls : 0;
   }
+
+  const inferredMode = inferInteractionModeFallback(profile, D, E);
+  const effectiveInferredMode =
+    asString(profile.inferred_interaction_mode) ??
+    asString(profile.interaction_mode) ??
+    inferredMode.mode;
+  profile.inferred_interaction_mode = effectiveInferredMode;
+  if (!asString(profile.interaction_mode_reason)) {
+    profile.interaction_mode_reason = inferredMode.reason;
+  }
+  const effectiveChosenMode =
+    asString(profile.chosen_interaction_mode) ??
+    asString(profile.interaction_mode) ??
+    effectiveInferredMode;
+  profile.chosen_interaction_mode = effectiveChosenMode;
+  profile.interaction_mode = effectiveChosenMode;
+
+  const inferredTheme = inferStyleThemeFallback(
+    profile,
+    D,
+    E,
+    effectiveChosenMode
+  );
+  const effectiveInferredTheme =
+    asString(profile.inferred_style_theme) ??
+    asString(profile.style_theme) ??
+    inferredTheme.theme;
+  profile.inferred_style_theme = effectiveInferredTheme;
+  if (!asString(profile.style_theme_reason)) {
+    profile.style_theme_reason = inferredTheme.reason;
+  }
+  const effectiveChosenTheme =
+    asString(profile.chosen_style_theme) ??
+    asString(profile.style_theme) ??
+    effectiveInferredTheme;
+  profile.chosen_style_theme = effectiveChosenTheme;
+  profile.style_theme = effectiveChosenTheme;
 
   const highlights = asObject(D.highlights) ?? {};
   D.highlights = highlights;

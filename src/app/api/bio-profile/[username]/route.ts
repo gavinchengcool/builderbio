@@ -54,6 +54,56 @@ const THEMES: Record<
     badgeBorder: "rgba(244,114,182,.15)",
     ctaGradient: "rgba(244,114,182,.06),rgba(96,165,250,.04)",
   },
+  "product-operator": {
+    vars: "--ac:#FF6B35;--acd:#E55A2B;--acb:rgba(255,107,53,.08)",
+    glow: "rgba(255,107,53,.06)",
+    badgeBorder: "rgba(255,107,53,.15)",
+    ctaGradient: "rgba(255,107,53,.06),rgba(52,211,153,.04)",
+  },
+  "terminal-native": {
+    vars: "--ac:#00E676;--acd:#00C853;--acb:rgba(0,230,118,.08)",
+    glow: "rgba(0,230,118,.06)",
+    badgeBorder: "rgba(0,230,118,.15)",
+    ctaGradient: "rgba(0,230,118,.06),rgba(0,200,83,.04)",
+    bodyOverrides:
+      "font-family:'SF Mono','Fira Code','JetBrains Mono','Cascadia Code',monospace",
+  },
+  "editorial-maker": {
+    vars: "--ac:#5B6CFF;--acd:#4255E6;--acb:rgba(91,108,255,.08)",
+    glow: "rgba(91,108,255,.06)",
+    badgeBorder: "rgba(91,108,255,.15)",
+    ctaGradient: "rgba(91,108,255,.06),rgba(255,255,255,.02)",
+  },
+  "night-shift": {
+    vars: "--ac:#F97316;--acd:#EA580C;--acb:rgba(249,115,22,.08)",
+    glow: "rgba(249,115,22,.06)",
+    badgeBorder: "rgba(249,115,22,.15)",
+    ctaGradient: "rgba(249,115,22,.06),rgba(124,58,237,.04)",
+  },
+  "research-forge": {
+    vars: "--ac:#2DD4BF;--acd:#14B8A6;--acb:rgba(45,212,191,.08)",
+    glow: "rgba(45,212,191,.06)",
+    badgeBorder: "rgba(45,212,191,.15)",
+    ctaGradient: "rgba(45,212,191,.06),rgba(96,165,250,.04)",
+  },
+  "calm-craft": {
+    vars: "--ac:#D9A86C;--acd:#C38F50;--acb:rgba(217,168,108,.08)",
+    glow: "rgba(217,168,108,.06)",
+    badgeBorder: "rgba(217,168,108,.15)",
+    ctaGradient: "rgba(217,168,108,.06),rgba(255,255,255,.02)",
+  },
+  "companion-journal": {
+    vars: "--ac:#C67B55;--acd:#B4663E;--acb:rgba(198,123,85,.08)",
+    glow: "rgba(198,123,85,.06)",
+    badgeBorder: "rgba(198,123,85,.15)",
+    ctaGradient: "rgba(198,123,85,.06),rgba(245,240,255,.02)",
+  },
+  "idea-salon": {
+    vars: "--ac:#6D5EF5;--acd:#5B4BE0;--acb:rgba(109,94,245,.08)",
+    glow: "rgba(109,94,245,.06)",
+    badgeBorder: "rgba(109,94,245,.15)",
+    ctaGradient: "rgba(109,94,245,.06),rgba(255,255,255,.02)",
+  },
 };
 
 // Minimal Light needs full background/text color overrides
