@@ -2,9 +2,15 @@
 
 import { usePathname } from "next/navigation";
 
-export default function Titlebar({ forceBuiltByActive = false }: { forceBuiltByActive?: boolean }) {
+export default function Titlebar({
+  forceBuiltByActive = false,
+  forceTasteBoardActive = false,
+}: {
+  forceBuiltByActive?: boolean;
+  forceTasteBoardActive?: boolean;
+}) {
   const pathname = usePathname();
-  const isTasteBoard = pathname.startsWith("/taste-board");
+  const isTasteBoard = forceTasteBoardActive || pathname.startsWith("/taste-board");
   const isHome = pathname === "/";
   const isBuiltBy = forceBuiltByActive;
 
