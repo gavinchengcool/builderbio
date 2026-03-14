@@ -110,7 +110,7 @@ const previewFallback = {
     { label: "工具调用", value: "16.1K" },
     { label: "活跃天数", value: "60" },
   ],
-  totalTokens: 1_636_815_058,
+  totalTokens: 28_200_000_000,
   agents: [
     { name: "Claude Code", role: "深度协作", sessions: 45, color: "#FF6B35" },
     { name: "Codex", role: "快速执行", sessions: 186, color: "#34D399" },
@@ -327,7 +327,7 @@ const previewFallback = {
   socialCurrency: {
     title: "Collaboration scale",
     summary:
-      "1.64B tokens、231 个会话和 25.1K turns，把 Gavin 从 2025-12-05 到现在的 AI 协作强度完整拉了出来。",
+      "28.2B tokens、231 个会话和 25.1K turns，把 Gavin 从 2025-12-05 到现在的 AI 协作强度完整拉了出来。",
     tokenLabel: "与 AI 协作产生的 tokens",
     coverageNote: "这些 tokens 来自当前扫描到的全部可计量来源。",
     partial: false,
