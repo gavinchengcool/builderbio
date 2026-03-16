@@ -13,33 +13,35 @@ const SITE_FOOTER_LINKS = [
   },
 ] as const;
 
-export function SiteFooter() {
+export function SiteFooter({ hideLinks = false }: { hideLinks?: boolean }) {
   return (
     <footer className="py-6 text-center text-xs text-text-muted">
       <div className="mx-auto max-w-6xl px-4 flex flex-col items-center gap-3">
         <p>{SITE_FOOTER_TEXT}</p>
-        <div className="flex items-center gap-4">
-          {SITE_FOOTER_LINKS.map((link) => (
-            <a
-              key={link.title}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-text-secondary transition-colors"
-              title={link.title}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="currentColor"
+        {!hideLinks ? (
+          <div className="flex items-center gap-4">
+            {SITE_FOOTER_LINKS.map((link) => (
+              <a
+                key={link.title}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-text-secondary transition-colors"
+                title={link.title}
               >
-                <path d={link.path} />
-              </svg>
-            </a>
-          ))}
-        </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d={link.path} />
+                </svg>
+              </a>
+            ))}
+          </div>
+        ) : null}
       </div>
     </footer>
   );

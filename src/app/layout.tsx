@@ -130,7 +130,7 @@ export default async function RootLayout({
       <body className={`${jetbrainsMono.variable} antialiased min-h-screen flex flex-col`}>
         <RootSiteNav initialHost={host} />
         <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <SiteFooter hideLinks={host === "gavin.builderbio.dev"} />
       </body>
     </html>
   );
