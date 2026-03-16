@@ -94,8 +94,6 @@ const previewFallback = {
   recap:
     "从 2025 年 12 月到 2026 年 3 月，Gavin 先用 Codex 拉出高频执行节奏，再把 Claude Code 接进来处理长会话和结构整理，逐步把 Agent 研究、产品策略和实际交付压成同一条主线。",
   social: [
-    { label: "X", href: "https://x.com/gavin0922" },
-    { label: "LinkedIn", href: "https://www.linkedin.com/in/gavin-c-b271a492/" },
     { label: "网站", href: "https://builderbio.dev" },
   ],
   trust: {
@@ -110,7 +108,7 @@ const previewFallback = {
     { label: "工具调用", value: "16.1K" },
     { label: "活跃天数", value: "60" },
   ],
-  totalTokens: 28_200_000_000,
+  totalTokens: 288_000_000_000,
   agents: [
     { name: "Claude Code", role: "深度协作", sessions: 45, color: "#FF6B35" },
     { name: "Codex", role: "快速执行", sessions: 186, color: "#34D399" },
@@ -327,7 +325,7 @@ const previewFallback = {
   socialCurrency: {
     title: "Collaboration scale",
     summary:
-      "28.2B tokens、231 个会话和 25.1K turns，把 Gavin 从 2025-12-05 到现在的 AI 协作强度完整拉了出来。",
+      "288B tokens、231 个会话和 25.1K turns，把 Gavin 从 2025-12-05 到现在的 AI 协作强度完整拉了出来。",
     tokenLabel: "与 AI 协作产生的 tokens",
     coverageNote: "这些 tokens 来自当前扫描到的全部可计量来源。",
     partial: false,
